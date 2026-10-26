@@ -22,12 +22,12 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.equality (λ: <>,
-      exception_do (do:  (conversion.initialize' #());;;
+      exception_do (do:  (code.k8s_io.apimachinery.pkg.conversion.conversion.initialize' #());;;
       do:  (Semantic'init #()))
       ).
 
 Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
-  #[global] import_conversion_Assumption :: conversion.Assumptions;
+  #[global] import_conversion_Assumption :: code.k8s_io.apimachinery.pkg.conversion.conversion.Assumptions;
 }.
 End equality.

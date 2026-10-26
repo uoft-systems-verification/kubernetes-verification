@@ -55,61 +55,61 @@ Definition CloneSelectorAndAddLabelⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
   λ: "selector" "labelKey" "labelValue",
     exception_do (let: "labelValue" := (GoAlloc go.string "labelValue") in
     let: "labelKey" := (GoAlloc go.string "labelKey") in
-    let: "selector" := (GoAlloc (go.PointerType v1.LabelSelector) "selector") in
+    let: "selector" := (GoAlloc (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector) "selector") in
     (if: Convert go.untyped_bool go.bool ((![go.string] "labelKey") =⟨go.string⟩ #""%go)
-    then return: (![go.PointerType v1.LabelSelector] "selector")
+    then return: (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector] "selector")
     else do:  #());;;
-    let: "newSelector" := (GoAlloc (go.PointerType v1.LabelSelector) (GoZeroVal (go.PointerType v1.LabelSelector) #())) in
-    let: "$r0" := (GoAlloc v1.LabelSelector (GoZeroVal v1.LabelSelector #())) in
-    do:  ("newSelector" <-[go.PointerType v1.LabelSelector] "$r0");;;
+    let: "newSelector" := (GoAlloc (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector) (GoZeroVal (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector) #())) in
+    let: "$r0" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector #())) in
+    do:  ("newSelector" <-[go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector] "$r0");;;
     let: "$r0" := ((FuncResolve go.make1 [go.MapType go.string go.string] #()) #()) in
-    do:  ((StructFieldRef v1.LabelSelector "MatchLabels"%go (![go.PointerType v1.LabelSelector] "newSelector")) <-[go.MapType go.string go.string] "$r0");;;
-    (if: Convert go.untyped_bool go.bool ((![go.MapType go.string go.string] (StructFieldRef v1.LabelSelector "MatchLabels"%go (![go.PointerType v1.LabelSelector] "selector"))) ≠⟨go.MapType go.string go.string⟩ (Convert go.untyped_nil (go.MapType go.string go.string) UntypedNil))
+    do:  ((StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector "MatchLabels"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector] "newSelector")) <-[go.MapType go.string go.string] "$r0");;;
+    (if: Convert go.untyped_bool go.bool ((![go.MapType go.string go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector "MatchLabels"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector] "selector"))) ≠⟨go.MapType go.string go.string⟩ (Convert go.untyped_nil (go.MapType go.string go.string) UntypedNil))
     then
-      let: "$range" := (![go.MapType go.string go.string] (StructFieldRef v1.LabelSelector "MatchLabels"%go (![go.PointerType v1.LabelSelector] "selector"))) in
+      let: "$range" := (![go.MapType go.string go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector "MatchLabels"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector] "selector"))) in
       (let: "val" := (GoAlloc go.string (GoZeroVal go.string #())) in
       let: "key" := (GoAlloc go.string (GoZeroVal go.string #())) in
       map.for_range go.string go.string "$range" (λ: "$key" "$value",
         do:  ("val" <-[go.string] "$value");;;
         do:  ("key" <-[go.string] "$key");;;
         let: "$r0" := (![go.string] "val") in
-        do:  (map.insert go.string (![go.MapType go.string go.string] (StructFieldRef v1.LabelSelector "MatchLabels"%go (![go.PointerType v1.LabelSelector] "newSelector"))) (![go.string] "key") "$r0")))
+        do:  (map.insert go.string (![go.MapType go.string go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector "MatchLabels"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector] "newSelector"))) (![go.string] "key") "$r0")))
     else do:  #());;;
     let: "$r0" := (![go.string] "labelValue") in
-    do:  (map.insert go.string (![go.MapType go.string go.string] (StructFieldRef v1.LabelSelector "MatchLabels"%go (![go.PointerType v1.LabelSelector] "newSelector"))) (![go.string] "labelKey") "$r0");;;
-    (if: Convert go.untyped_bool go.bool ((![go.SliceType v1.LabelSelectorRequirement] (StructFieldRef v1.LabelSelector "MatchExpressions"%go (![go.PointerType v1.LabelSelector] "selector"))) ≠⟨go.SliceType v1.LabelSelectorRequirement⟩ (Convert go.untyped_nil (go.SliceType v1.LabelSelectorRequirement) UntypedNil))
+    do:  (map.insert go.string (![go.MapType go.string go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector "MatchLabels"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector] "newSelector"))) (![go.string] "labelKey") "$r0");;;
+    (if: Convert go.untyped_bool go.bool ((![go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector "MatchExpressions"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector] "selector"))) ≠⟨go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement⟩ (Convert go.untyped_nil (go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement) UntypedNil))
     then
-      let: "newMExps" := (GoAlloc (go.SliceType v1.LabelSelectorRequirement) (GoZeroVal (go.SliceType v1.LabelSelectorRequirement) #())) in
-      let: "$r0" := ((FuncResolve go.make2 [go.SliceType v1.LabelSelectorRequirement] #()) (let: "$a0" := (![go.SliceType v1.LabelSelectorRequirement] (StructFieldRef v1.LabelSelector "MatchExpressions"%go (![go.PointerType v1.LabelSelector] "selector"))) in
-      (FuncResolve go.len [go.SliceType v1.LabelSelectorRequirement] #()) "$a0")) in
-      do:  ("newMExps" <-[go.SliceType v1.LabelSelectorRequirement] "$r0");;;
-      let: "$range" := (![go.SliceType v1.LabelSelectorRequirement] (StructFieldRef v1.LabelSelector "MatchExpressions"%go (![go.PointerType v1.LabelSelector] "selector"))) in
-      (let: "me" := (GoAlloc v1.LabelSelectorRequirement (GoZeroVal v1.LabelSelectorRequirement #())) in
+      let: "newMExps" := (GoAlloc (go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement) (GoZeroVal (go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement) #())) in
+      let: "$r0" := ((FuncResolve go.make2 [go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement] #()) (let: "$a0" := (![go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector "MatchExpressions"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector] "selector"))) in
+      (FuncResolve go.len [go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement] #()) "$a0")) in
+      do:  ("newMExps" <-[go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement] "$r0");;;
+      let: "$range" := (![go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector "MatchExpressions"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector] "selector"))) in
+      (let: "me" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement #())) in
       let: "i" := (GoAlloc go.int (GoZeroVal go.int #())) in
-      slice.for_range v1.LabelSelectorRequirement "$range" (λ: "$key" "$value",
-        do:  ("me" <-[v1.LabelSelectorRequirement] "$value");;;
+      slice.for_range code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement "$range" (λ: "$key" "$value",
+        do:  ("me" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement] "$value");;;
         do:  ("i" <-[go.int] "$key");;;
-        let: "$r0" := (![go.string] (StructFieldRef v1.LabelSelectorRequirement "Key"%go "me")) in
-        do:  ((StructFieldRef v1.LabelSelectorRequirement "Key"%go (IndexRef (go.SliceType v1.LabelSelectorRequirement) (![go.SliceType v1.LabelSelectorRequirement] "newMExps", ![go.int] "i"))) <-[go.string] "$r0");;;
-        let: "$r0" := (![v1.LabelSelectorOperator] (StructFieldRef v1.LabelSelectorRequirement "Operator"%go "me")) in
-        do:  ((StructFieldRef v1.LabelSelectorRequirement "Operator"%go (IndexRef (go.SliceType v1.LabelSelectorRequirement) (![go.SliceType v1.LabelSelectorRequirement] "newMExps", ![go.int] "i"))) <-[v1.LabelSelectorOperator] "$r0");;;
-        (if: Convert go.untyped_bool go.bool ((![go.SliceType go.string] (StructFieldRef v1.LabelSelectorRequirement "Values"%go "me")) ≠⟨go.SliceType go.string⟩ (Convert go.untyped_nil (go.SliceType go.string) UntypedNil))
+        let: "$r0" := (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement "Key"%go "me")) in
+        do:  ((StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement "Key"%go (IndexRef (go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement) (![go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement] "newMExps", ![go.int] "i"))) <-[go.string] "$r0");;;
+        let: "$r0" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorOperator] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement "Operator"%go "me")) in
+        do:  ((StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement "Operator"%go (IndexRef (go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement) (![go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement] "newMExps", ![go.int] "i"))) <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorOperator] "$r0");;;
+        (if: Convert go.untyped_bool go.bool ((![go.SliceType go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement "Values"%go "me")) ≠⟨go.SliceType go.string⟩ (Convert go.untyped_nil (go.SliceType go.string) UntypedNil))
         then
-          let: "$r0" := ((FuncResolve go.make2 [go.SliceType go.string] #()) (let: "$a0" := (![go.SliceType go.string] (StructFieldRef v1.LabelSelectorRequirement "Values"%go "me")) in
+          let: "$r0" := ((FuncResolve go.make2 [go.SliceType go.string] #()) (let: "$a0" := (![go.SliceType go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement "Values"%go "me")) in
           (FuncResolve go.len [go.SliceType go.string] #()) "$a0")) in
-          do:  ((StructFieldRef v1.LabelSelectorRequirement "Values"%go (IndexRef (go.SliceType v1.LabelSelectorRequirement) (![go.SliceType v1.LabelSelectorRequirement] "newMExps", ![go.int] "i"))) <-[go.SliceType go.string] "$r0");;;
-          do:  (let: "$a0" := (![go.SliceType go.string] (StructFieldRef v1.LabelSelectorRequirement "Values"%go (IndexRef (go.SliceType v1.LabelSelectorRequirement) (![go.SliceType v1.LabelSelectorRequirement] "newMExps", ![go.int] "i")))) in
-          let: "$a1" := (![go.SliceType go.string] (StructFieldRef v1.LabelSelectorRequirement "Values"%go "me")) in
+          do:  ((StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement "Values"%go (IndexRef (go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement) (![go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement] "newMExps", ![go.int] "i"))) <-[go.SliceType go.string] "$r0");;;
+          do:  (let: "$a0" := (![go.SliceType go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement "Values"%go (IndexRef (go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement) (![go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement] "newMExps", ![go.int] "i")))) in
+          let: "$a1" := (![go.SliceType go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement "Values"%go "me")) in
           (FuncResolve go.copy [go.SliceType go.string] #()) "$a0" "$a1")
         else
           let: "$r0" := (Convert go.untyped_nil (go.SliceType go.string) UntypedNil) in
-          do:  ((StructFieldRef v1.LabelSelectorRequirement "Values"%go (IndexRef (go.SliceType v1.LabelSelectorRequirement) (![go.SliceType v1.LabelSelectorRequirement] "newMExps", ![go.int] "i"))) <-[go.SliceType go.string] "$r0"))));;;
-      let: "$r0" := (![go.SliceType v1.LabelSelectorRequirement] "newMExps") in
-      do:  ((StructFieldRef v1.LabelSelector "MatchExpressions"%go (![go.PointerType v1.LabelSelector] "newSelector")) <-[go.SliceType v1.LabelSelectorRequirement] "$r0")
+          do:  ((StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement "Values"%go (IndexRef (go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement) (![go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement] "newMExps", ![go.int] "i"))) <-[go.SliceType go.string] "$r0"))));;;
+      let: "$r0" := (![go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement] "newMExps") in
+      do:  ((StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector "MatchExpressions"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector] "newSelector")) <-[go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement] "$r0")
     else
-      let: "$r0" := (Convert go.untyped_nil (go.SliceType v1.LabelSelectorRequirement) UntypedNil) in
-      do:  ((StructFieldRef v1.LabelSelector "MatchExpressions"%go (![go.PointerType v1.LabelSelector] "newSelector")) <-[go.SliceType v1.LabelSelectorRequirement] "$r0"));;;
-    return: (![go.PointerType v1.LabelSelector] "newSelector")).
+      let: "$r0" := (Convert go.untyped_nil (go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement) UntypedNil) in
+      do:  ((StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector "MatchExpressions"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector] "newSelector")) <-[go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorRequirement] "$r0"));;;
+    return: (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector] "newSelector")).
 
 #[global] Instance info' : PkgInfo pkg_id.labels :=
 {|
@@ -121,13 +121,13 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.labels (λ: <>,
-      exception_do (do:  (v1.initialize' #()))
+      exception_do (do:  (code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.initialize' #()))
       ).
 
 Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] CloneAndAddLabel_unfold :: FuncUnfold CloneAndAddLabel [] (CloneAndAddLabelⁱᵐᵖˡ);
   #[global] CloneSelectorAndAddLabel_unfold :: FuncUnfold CloneSelectorAndAddLabel [] (CloneSelectorAndAddLabelⁱᵐᵖˡ);
-  #[global] import_v1_Assumption :: v1.Assumptions;
+  #[global] import_v1_Assumption :: code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions;
 }.
 End labels.

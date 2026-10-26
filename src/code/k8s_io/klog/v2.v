@@ -410,7 +410,7 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.klog (λ: <>,
-      exception_do (do:  (logr.initialize' #());;;
+      exception_do (do:  (code.github_com.go_logr.logr.logr.initialize' #());;;
       do:  (klogLogger'init #());;;
       do:  (ExitFlushTimeout'init #());;;
       do:  (OsExit'init #());;;
@@ -847,6 +847,6 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] Verbose_instance :: Verbose_Assumptions;
   #[global] LogFilter_instance :: LogFilter_Assumptions;
   #[global] klogger_instance :: klogger_Assumptions;
-  #[global] import_logr_Assumption :: logr.Assumptions;
+  #[global] import_logr_Assumption :: code.github_com.go_logr.logr.logr.Assumptions;
 }.
 End klog.

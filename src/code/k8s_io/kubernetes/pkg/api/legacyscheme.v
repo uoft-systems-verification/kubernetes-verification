@@ -30,7 +30,7 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.legacyscheme (λ: <>,
-      exception_do (do:  (serializer.initialize' #());;;
+      exception_do (do:  (code.k8s_io.apimachinery.pkg.runtime.serializer.serializer.initialize' #());;;
       do:  (Scheme'init #());;;
       do:  (Codecs'init #());;;
       do:  (ParameterCodec'init #()))
@@ -38,6 +38,6 @@ Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
 
 Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
-  #[global] import_serializer_Assumption :: serializer.Assumptions;
+  #[global] import_serializer_Assumption :: code.k8s_io.apimachinery.pkg.runtime.serializer.serializer.Assumptions;
 }.
 End legacyscheme.

@@ -154,77 +154,77 @@ Definition setPreconditionResourceVersion {ext : ffi_syntax} {go_gctx : GoGlobal
 Definition NewStateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     exception_do (return: (GoAlloc State (let: "$v0" := ((FuncResolve go.make1 [go.MapType KKey (go.InterfaceType [])] #()) #()) in
-     let: "$v1" := ((FuncResolve go.make1 [go.MapType types.UID (go.StructType [
+     let: "$v1" := ((FuncResolve go.make1 [go.MapType code.k8s_io.apimachinery.pkg.types.types.UID (go.StructType [
 
       ])] #()) #()) in
      let: "$v2" := ((FuncResolve go.make1 [go.MapType go.string (go.StructType [
 
       ])] #()) #()) in
      let: "$v3" := #(W64 0) in
-     let: "$v4" := (GoAlloc sync.Mutex (GoZeroVal sync.Mutex #())) in
-     CompositeLiteral State (LiteralValue [KeyedElement (Some (KeyField "m"%go)) (ElementExpression (go.MapType KKey (go.InterfaceType [])) "$v0"); KeyedElement (Some (KeyField "usedUID"%go)) (ElementExpression (go.MapType types.UID (go.StructType [
+     let: "$v4" := (GoAlloc code.sync.sync.Mutex (GoZeroVal code.sync.sync.Mutex #())) in
+     CompositeLiteral State (LiteralValue [KeyedElement (Some (KeyField "m"%go)) (ElementExpression (go.MapType KKey (go.InterfaceType [])) "$v0"); KeyedElement (Some (KeyField "usedUID"%go)) (ElementExpression (go.MapType code.k8s_io.apimachinery.pkg.types.types.UID (go.StructType [
 
       ])) "$v1"); KeyedElement (Some (KeyField "usedRV"%go)) (ElementExpression (go.MapType go.string (go.StructType [
 
-      ])) "$v2"); KeyedElement (Some (KeyField "resourceVersionCounter"%go)) (ElementExpression go.int64 "$v3"); KeyedElement (Some (KeyField "mu"%go)) (ElementExpression (go.PointerType sync.Mutex) "$v4")])))).
+      ])) "$v2"); KeyedElement (Some (KeyField "resourceVersionCounter"%go)) (ElementExpression go.int64 "$v3"); KeyedElement (Some (KeyField "mu"%go)) (ElementExpression (go.PointerType code.sync.sync.Mutex) "$v4")])))).
 
 (* go: api_model.go:96:6 *)
 Definition deepCopyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "obj",
     exception_do (let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
     let: "$y" := (![go.InterfaceType []] "obj") in
-    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_core_v1.Pod) "$y") in
+    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "$y") in
     (if: "$ok"
     then
-      let: "o" := (GoAlloc (go.PointerType api_core_v1.Pod) "$x") in
-      return: (Convert (go.PointerType api_core_v1.Pod) (go.InterfaceType []) ((MethodResolve (go.PointerType api_core_v1.Pod) "DeepCopy"%go (![go.PointerType api_core_v1.Pod] "o")) #()))
+      let: "o" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "$x") in
+      return: (Convert (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (go.InterfaceType []) ((MethodResolve (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "DeepCopy"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "o")) #()))
     else
-      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_core_v1.PersistentVolumeClaim) "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) "$y") in
       (if: "$ok"
       then
-        let: "o" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) "$x") in
-        return: (Convert (go.PointerType api_core_v1.PersistentVolumeClaim) (go.InterfaceType []) ((MethodResolve (go.PointerType api_core_v1.PersistentVolumeClaim) "DeepCopy"%go (![go.PointerType api_core_v1.PersistentVolumeClaim] "o")) #()))
+        let: "o" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) "$x") in
+        return: (Convert (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) (go.InterfaceType []) ((MethodResolve (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) "DeepCopy"%go (![go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim] "o")) #()))
       else
-        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_core_v1.Namespace) "$y") in
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.Namespace) "$y") in
         (if: "$ok"
         then
-          let: "o" := (GoAlloc (go.PointerType api_core_v1.Namespace) "$x") in
-          return: (Convert (go.PointerType api_core_v1.Namespace) (go.InterfaceType []) ((MethodResolve (go.PointerType api_core_v1.Namespace) "DeepCopy"%go (![go.PointerType api_core_v1.Namespace] "o")) #()))
+          let: "o" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Namespace) "$x") in
+          return: (Convert (go.PointerType code.k8s_io.api.core.v1.v1.Namespace) (go.InterfaceType []) ((MethodResolve (go.PointerType code.k8s_io.api.core.v1.v1.Namespace) "DeepCopy"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Namespace] "o")) #()))
         else
-          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_core_v1.ServiceAccount) "$y") in
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount) "$y") in
           (if: "$ok"
           then
-            let: "o" := (GoAlloc (go.PointerType api_core_v1.ServiceAccount) "$x") in
-            return: (Convert (go.PointerType api_core_v1.ServiceAccount) (go.InterfaceType []) ((MethodResolve (go.PointerType api_core_v1.ServiceAccount) "DeepCopy"%go (![go.PointerType api_core_v1.ServiceAccount] "o")) #()))
+            let: "o" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount) "$x") in
+            return: (Convert (go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount) (go.InterfaceType []) ((MethodResolve (go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount) "DeepCopy"%go (![go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount] "o")) #()))
           else
-            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_apps_v1.ReplicaSet) "$y") in
+            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) "$y") in
             (if: "$ok"
             then
-              let: "o" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "$x") in
-              return: (Convert (go.PointerType api_apps_v1.ReplicaSet) (go.InterfaceType []) ((MethodResolve (go.PointerType api_apps_v1.ReplicaSet) "DeepCopy"%go (![go.PointerType api_apps_v1.ReplicaSet] "o")) #()))
+              let: "o" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) "$x") in
+              return: (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (go.InterfaceType []) ((MethodResolve (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) "DeepCopy"%go (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "o")) #()))
             else
-              let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_apps_v1.StatefulSet) "$y") in
+              let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) "$y") in
               (if: "$ok"
               then
-                let: "o" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) "$x") in
-                return: (Convert (go.PointerType api_apps_v1.StatefulSet) (go.InterfaceType []) ((MethodResolve (go.PointerType api_apps_v1.StatefulSet) "DeepCopy"%go (![go.PointerType api_apps_v1.StatefulSet] "o")) #()))
+                let: "o" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) "$x") in
+                return: (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) (go.InterfaceType []) ((MethodResolve (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) "DeepCopy"%go (![go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "o")) #()))
               else
-                let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_apps_v1.Deployment) "$y") in
+                let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) "$y") in
                 (if: "$ok"
                 then
-                  let: "o" := (GoAlloc (go.PointerType api_apps_v1.Deployment) "$x") in
-                  return: (Convert (go.PointerType api_apps_v1.Deployment) (go.InterfaceType []) ((MethodResolve (go.PointerType api_apps_v1.Deployment) "DeepCopy"%go (![go.PointerType api_apps_v1.Deployment] "o")) #()))
+                  let: "o" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) "$x") in
+                  return: (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) (go.InterfaceType []) ((MethodResolve (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) "DeepCopy"%go (![go.PointerType code.k8s_io.api.apps.v1.v1.Deployment] "o")) #()))
                 else
-                  let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_rbac_v1.ClusterRole) "$y") in
+                  let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) "$y") in
                   (if: "$ok"
                   then
-                    let: "o" := (GoAlloc (go.PointerType api_rbac_v1.ClusterRole) "$x") in
-                    return: (Convert (go.PointerType api_rbac_v1.ClusterRole) (go.InterfaceType []) ((MethodResolve (go.PointerType api_rbac_v1.ClusterRole) "DeepCopy"%go (![go.PointerType api_rbac_v1.ClusterRole] "o")) #()))
+                    let: "o" := (GoAlloc (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) "$x") in
+                    return: (Convert (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) (go.InterfaceType []) ((MethodResolve (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) "DeepCopy"%go (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "o")) #()))
                   else
                     do:  (let: "$a0" := (Convert go.string (go.InterfaceType []) (let: "$a0" := #"copyObject: unsupported type %T"%go in
                     let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
                     CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-                    (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1")) in
+                    (FuncResolve code.fmt.fmt.Sprintf [] #()) "$a0" "$a1")) in
                     (FuncResolve go.panic [] #()) "$a0")))))))))).
 
 (* go: api_model.go:119:17 *)
@@ -242,7 +242,7 @@ Definition State__objListLockedⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
       do:  ("key" <-[KKey] "$key");;;
       (if: Convert go.untyped_bool go.bool ((![go.string] "kind") =⟨go.string⟩ (![go.string] (StructFieldRef KKey "Kind"%go "key")))
       then
-        (if: Convert go.untyped_bool go.bool (((![go.string] "namespace") =⟨go.string⟩ (Convert go.untyped_string go.string apis_meta_v1.NamespaceAll)) || ((![go.string] "namespace") =⟨go.string⟩ (![go.string] (StructFieldRef KKey "Namespace"%go "key"))))
+        (if: Convert go.untyped_bool go.bool (((![go.string] "namespace") =⟨go.string⟩ (Convert go.untyped_string go.string code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.NamespaceAll)) || ((![go.string] "namespace") =⟨go.string⟩ (![go.string] (StructFieldRef KKey "Namespace"%go "key"))))
         then
           let: "$r0" := (let: "$a0" := (![go.SliceType (go.InterfaceType [])] "items") in
           let: "$a1" := ((let: "$sl0" := (let: "$a0" := (![go.InterfaceType []] "val") in
@@ -261,8 +261,8 @@ Definition State__objListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
     let: "s" := (GoAlloc (go.PointerType State) "s") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "kind" := (GoAlloc go.string "kind") in
-    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
-    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
+    do:  ((MethodResolve (go.PointerType code.sync.sync.Mutex) "Lock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
+    do:  (let: "$f" := (MethodResolve (go.PointerType code.sync.sync.Mutex) "Unlock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
     "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
     (λ: <>,
       "$f" #();;
@@ -275,7 +275,7 @@ Definition State__objListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
 (* go: api_model.go:137:6 *)
 Definition filterByLabelSelectorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "items" "selector",
-    exception_do (let: "selector" := (GoAlloc labels.Selector "selector") in
+    exception_do (let: "selector" := (GoAlloc code.k8s_io.apimachinery.pkg.labels.labels.Selector "selector") in
     let: "items" := (GoAlloc (go.SliceType (go.InterfaceType [])) "items") in
     let: "filtered_items" := (GoAlloc (go.SliceType (go.InterfaceType [])) (GoZeroVal (go.SliceType (go.InterfaceType [])) #())) in
     let: "$range" := (![go.SliceType (go.InterfaceType [])] "items") in
@@ -284,18 +284,18 @@ Definition filterByLabelSelectorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
       do:  ("val" <-[go.InterfaceType []] "$value");;;
       do:  "$key";;;
       let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-      let: "metadata" := (GoAlloc apis_meta_v1.Object (GoZeroVal apis_meta_v1.Object #())) in
+      let: "metadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object #())) in
       let: ("$ret0", "$ret1") := (let: "$a0" := (![go.InterfaceType []] "val") in
-      (FuncResolve meta.Accessor [] #()) "$a0") in
+      (FuncResolve code.k8s_io.apimachinery.pkg.api.meta.meta.Accessor [] #()) "$a0") in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
-      do:  ("metadata" <-[apis_meta_v1.Object] "$r0");;;
+      do:  ("metadata" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "$r0");;;
       do:  ("err" <-[go.error] "$r1");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then return: (![go.SliceType (go.InterfaceType [])] "filtered_items", ![go.error] "err")
       else do:  #());;;
-      (if: let: "$a0" := (Convert labels.Set' labels.Labels ((MethodResolve apis_meta_v1.Object "GetLabels"%go (![apis_meta_v1.Object] "metadata")) #())) in
-      (MethodResolve labels.Selector "Matches"%go (![labels.Selector] "selector")) "$a0"
+      (if: let: "$a0" := (Convert code.k8s_io.apimachinery.pkg.labels.labels.Set' code.k8s_io.apimachinery.pkg.labels.labels.Labels ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetLabels"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #())) in
+      (MethodResolve code.k8s_io.apimachinery.pkg.labels.labels.Selector "Matches"%go (![code.k8s_io.apimachinery.pkg.labels.labels.Selector] "selector")) "$a0"
       then
         let: "$r0" := (let: "$a0" := (![go.SliceType (go.InterfaceType [])] "filtered_items") in
         let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "val") in
@@ -309,13 +309,13 @@ Definition filterByLabelSelectorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
 Definition State__objListBySelectorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "kind" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "selector" := (GoAlloc labels.Selector "selector") in
+    let: "selector" := (GoAlloc code.k8s_io.apimachinery.pkg.labels.labels.Selector "selector") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "kind" := (GoAlloc go.string "kind") in
     let: ("$ret0", "$ret1") := ((let: "$a0" := (let: "$a0" := (![go.string] "kind") in
     let: "$a1" := (![go.string] "namespace") in
     (MethodResolve (go.PointerType State) "objList"%go (![go.PointerType State] "s")) "$a0" "$a1") in
-    let: "$a1" := (![labels.Selector] "selector") in
+    let: "$a1" := (![code.k8s_io.apimachinery.pkg.labels.labels.Selector] "selector") in
     (FuncResolve filterByLabelSelector [] #()) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
@@ -327,47 +327,47 @@ Definition index_ofⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : 
     (if: Convert go.untyped_bool go.bool ((![go.string] "indexName") =⟨go.string⟩ #"podController"%go)
     then
       let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-      let: "pod" := (GoAlloc (go.PointerType api_core_v1.Pod) (GoZeroVal (go.PointerType api_core_v1.Pod) #())) in
-      let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_core_v1.Pod) (![go.InterfaceType []] "obj")) in
+      let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.Pod) #())) in
+      let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (![go.InterfaceType []] "obj")) in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
-      do:  ("pod" <-[go.PointerType api_core_v1.Pod] "$r0");;;
+      do:  ("pod" <-[go.PointerType code.k8s_io.api.core.v1.v1.Pod] "$r0");;;
       do:  ("ok" <-[go.bool] "$r1");;;
       (if: (⟨go.bool⟩! (![go.bool] "ok"))
       then return: (Convert go.untyped_nil (go.SliceType go.string) UntypedNil, Convert go.untyped_nil go.error UntypedNil)
       else do:  #());;;
-      return: (let: "$v0" := (let: "$a0" := (![go.string] (StructFieldRef apis_meta_v1.ObjectMeta "Namespace"%go (StructFieldRef api_core_v1.Pod "ObjectMeta"%go (![go.PointerType api_core_v1.Pod] "pod")))) in
-       let: "$a1" := (let: "$a0" := (Convert (go.PointerType api_core_v1.Pod) apis_meta_v1.Object (![go.PointerType api_core_v1.Pod] "pod")) in
-       (FuncResolve apis_meta_v1.GetControllerOf [] #()) "$a0") in
-       (FuncResolve controller.PodControllerIndexKey [] #()) "$a0" "$a1") in
+      return: (let: "$v0" := (let: "$a0" := (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Namespace"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Pod "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod")))) in
+       let: "$a1" := (let: "$a0" := (Convert (go.PointerType code.k8s_io.api.core.v1.v1.Pod) code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod")) in
+       (FuncResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.GetControllerOf [] #()) "$a0") in
+       (FuncResolve code.k8s_io.kubernetes.pkg.controller.controller.PodControllerIndexKey [] #()) "$a0" "$a1") in
        CompositeLiteral (go.SliceType go.string) (LiteralValue [KeyedElement None (ElementExpression go.string "$v0")]), Convert go.untyped_nil go.error UntypedNil)
     else
       (if: Convert go.untyped_bool go.bool ((![go.string] "indexName") =⟨go.string⟩ #"controllerUID"%go)
       then
         let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-        let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) (GoZeroVal (go.PointerType api_apps_v1.ReplicaSet) #())) in
-        let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.ReplicaSet) (![go.InterfaceType []] "obj")) in
+        let: "rs" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) #())) in
+        let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (![go.InterfaceType []] "obj")) in
         let: "$r0" := "$ret0" in
         let: "$r1" := "$ret1" in
-        do:  ("rs" <-[go.PointerType api_apps_v1.ReplicaSet] "$r0");;;
+        do:  ("rs" <-[go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "$r0");;;
         do:  ("ok" <-[go.bool] "$r1");;;
         (if: (⟨go.bool⟩! (![go.bool] "ok"))
         then return: (Convert go.untyped_nil (go.SliceType go.string) UntypedNil, Convert go.untyped_nil go.error UntypedNil)
         else do:  #());;;
-        let: "controllerRef" := (GoAlloc (go.PointerType apis_meta_v1.OwnerReference) (GoZeroVal (go.PointerType apis_meta_v1.OwnerReference) #())) in
-        let: "$r0" := (let: "$a0" := (Convert (go.PointerType api_apps_v1.ReplicaSet) apis_meta_v1.Object (![go.PointerType api_apps_v1.ReplicaSet] "rs")) in
-        (FuncResolve apis_meta_v1.GetControllerOf [] #()) "$a0") in
-        do:  ("controllerRef" <-[go.PointerType apis_meta_v1.OwnerReference] "$r0");;;
-        (if: Convert go.untyped_bool go.bool ((![go.PointerType apis_meta_v1.OwnerReference] "controllerRef") =⟨go.PointerType apis_meta_v1.OwnerReference⟩ (Convert go.untyped_nil (go.PointerType apis_meta_v1.OwnerReference) UntypedNil))
+        let: "controllerRef" := (GoAlloc (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.OwnerReference) (GoZeroVal (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.OwnerReference) #())) in
+        let: "$r0" := (let: "$a0" := (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "rs")) in
+        (FuncResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.GetControllerOf [] #()) "$a0") in
+        do:  ("controllerRef" <-[go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.OwnerReference] "$r0");;;
+        (if: Convert go.untyped_bool go.bool ((![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.OwnerReference] "controllerRef") =⟨go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.OwnerReference⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.OwnerReference) UntypedNil))
         then return: (Convert go.untyped_nil (go.SliceType go.string) UntypedNil, Convert go.untyped_nil go.error UntypedNil)
         else do:  #());;;
-        return: (let: "$v0" := (![types.UID] (StructFieldRef apis_meta_v1.OwnerReference "UID"%go (![go.PointerType apis_meta_v1.OwnerReference] "controllerRef"))) in
+        return: (let: "$v0" := (![code.k8s_io.apimachinery.pkg.types.types.UID] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.OwnerReference "UID"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.OwnerReference] "controllerRef"))) in
          CompositeLiteral (go.SliceType go.string) (LiteralValue [KeyedElement None (ElementExpression go.string "$v0")]), Convert go.untyped_nil go.error UntypedNil)
       else
         return: (Convert go.untyped_nil (go.SliceType go.string) UntypedNil, let: "$a0" := #"index %q does not exist"%go in
          let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "indexName")) in
          CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")))).
+         (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")))).
 
 (* Returned value must be treated as read-only.
 
@@ -378,8 +378,8 @@ Definition State__Indexⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext
     let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
     let: "indexName" := (GoAlloc go.string "indexName") in
     let: "kind" := (GoAlloc go.string "kind") in
-    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
-    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
+    do:  ((MethodResolve (go.PointerType code.sync.sync.Mutex) "Lock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
+    do:  (let: "$f" := (MethodResolve (go.PointerType code.sync.sync.Mutex) "Unlock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
     "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
     (λ: <>,
       "$f" #();;
@@ -426,7 +426,7 @@ Definition State__Indexⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext
       ])] "indexedValueSet") (![go.string] "v") "$r0")));;;
     let: "items" := (GoAlloc (go.SliceType (go.InterfaceType [])) (GoZeroVal (go.SliceType (go.InterfaceType [])) #())) in
     let: "$range" := (let: "$a0" := (![go.string] "kind") in
-    let: "$a1" := (Convert go.untyped_string go.string apis_meta_v1.NamespaceAll) in
+    let: "$a1" := (Convert go.untyped_string go.string code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.NamespaceAll) in
     (MethodResolve (go.PointerType State) "objListLocked"%go (![go.PointerType State] "s")) "$a0" "$a1") in
     (let: "val" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     slice.for_range (go.InterfaceType []) "$range" (λ: "$key" "$value",
@@ -479,8 +479,8 @@ Definition State__ByIndexⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
     let: "indexedValue" := (GoAlloc go.string "indexedValue") in
     let: "indexName" := (GoAlloc go.string "indexName") in
     let: "kind" := (GoAlloc go.string "kind") in
-    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
-    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
+    do:  ((MethodResolve (go.PointerType code.sync.sync.Mutex) "Lock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
+    do:  (let: "$f" := (MethodResolve (go.PointerType code.sync.sync.Mutex) "Unlock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
     "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
     (λ: <>,
       "$f" #();;
@@ -489,7 +489,7 @@ Definition State__ByIndexⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
     let: "items" := (GoAlloc (go.SliceType (go.InterfaceType [])) (GoZeroVal (go.SliceType (go.InterfaceType [])) #())) in
     let: "listed" := (GoAlloc (go.SliceType (go.InterfaceType [])) (GoZeroVal (go.SliceType (go.InterfaceType [])) #())) in
     let: "$r0" := (let: "$a0" := (![go.string] "kind") in
-    let: "$a1" := (Convert go.untyped_string go.string apis_meta_v1.NamespaceAll) in
+    let: "$a1" := (Convert go.untyped_string go.string code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.NamespaceAll) in
     (MethodResolve (go.PointerType State) "objListLocked"%go (![go.PointerType State] "s")) "$a0" "$a1") in
     do:  ("listed" <-[go.SliceType (go.InterfaceType [])] "$r0");;;
     let: "$range" := (![go.SliceType (go.InterfaceType [])] "listed") in
@@ -530,8 +530,8 @@ Definition State__getⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} 
   λ: "s" "key",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
     let: "key" := (GoAlloc KKey "key") in
-    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
-    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
+    do:  ((MethodResolve (go.PointerType code.sync.sync.Mutex) "Lock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
+    do:  (let: "$f" := (MethodResolve (go.PointerType code.sync.sync.Mutex) "Unlock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
     "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
     (λ: <>,
       "$f" #();;
@@ -549,20 +549,20 @@ Definition State__getⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} 
       return: (let: "$a0" := (![go.InterfaceType []] "item") in
        (FuncResolve deepCopy [] #()) "$a0", Convert go.untyped_nil go.error UntypedNil)
     else
-      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] (StructFieldRef KKey "Kind"%go "key")) in
-       CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
+      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] (StructFieldRef KKey "Kind"%go "key")) in
+       CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
        let: "$a1" := (![go.string] (StructFieldRef KKey "Name"%go "key")) in
-       (FuncResolve errors.NewNotFound [] #()) "$a0" "$a1")))).
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewNotFound [] #()) "$a0" "$a1")))).
 
 (* go: api_model.go:249:6 *)
 Definition randomSuffixⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "n",
     exception_do (let: "n" := (GoAlloc go.int "n") in
-    let: "nameRand" := (GoAlloc (go.PointerType rand.Rand) (GoZeroVal (go.PointerType rand.Rand) #())) in
-    let: "$r0" := (let: "$a0" := (let: "$a0" := ((MethodResolve time.Time "UnixNano"%go ((FuncResolve time.Now [] #()) #())) #()) in
-    (FuncResolve rand.NewSource [] #()) "$a0") in
-    (FuncResolve rand.New [] #()) "$a0") in
-    do:  ("nameRand" <-[go.PointerType rand.Rand] "$r0");;;
+    let: "nameRand" := (GoAlloc (go.PointerType code.math.rand.rand.Rand) (GoZeroVal (go.PointerType code.math.rand.rand.Rand) #())) in
+    let: "$r0" := (let: "$a0" := (let: "$a0" := ((MethodResolve code.time.time.Time "UnixNano"%go ((FuncResolve code.time.time.Now [] #()) #())) #()) in
+    (FuncResolve code.math.rand.rand.NewSource [] #()) "$a0") in
+    (FuncResolve code.math.rand.rand.New [] #()) "$a0") in
+    do:  ("nameRand" <-[go.PointerType code.math.rand.rand.Rand] "$r0");;;
     let: "randomSuffixChars" := (GoAlloc (go.SliceType go.byte) (GoZeroVal (go.SliceType go.byte) #())) in
     let: "$r0" := (Convert go.string (go.SliceType go.byte) #"bcdfghjklmnpqrstvwxz2456789"%go) in
     do:  ("randomSuffixChars" <-[go.SliceType go.byte] "$r0");;;
@@ -575,7 +575,7 @@ Definition randomSuffixⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext
       do:  ("i" <-[go.int] "$key");;;
       let: "$r0" := (![go.byte] (IndexRef (go.SliceType go.byte) (![go.SliceType go.byte] "randomSuffixChars", let: "$a0" := (let: "$a0" := (![go.SliceType go.byte] "randomSuffixChars") in
        (FuncResolve go.len [go.SliceType go.byte] #()) "$a0") in
-       (MethodResolve (go.PointerType rand.Rand) "Intn"%go (![go.PointerType rand.Rand] "nameRand")) "$a0"))) in
+       (MethodResolve (go.PointerType code.math.rand.rand.Rand) "Intn"%go (![go.PointerType code.math.rand.rand.Rand] "nameRand")) "$a0"))) in
       do:  ((IndexRef (go.SliceType go.byte) (![go.SliceType go.byte] "b", ![go.int] "i")) <-[go.byte] "$r0")));;;
     return: (Convert (go.SliceType go.byte) go.string (![go.SliceType go.byte] "b"))).
 
@@ -612,15 +612,15 @@ Definition State__generateNewUIDAndUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx
   λ: "s" <>,
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
     (for: (λ: <>, #true); (λ: <>, #()) := λ: <>,
-      let: "uid" := (GoAlloc types.UID (GoZeroVal types.UID #())) in
-      let: "$r0" := ((FuncResolve uuid.NewUUID [] #()) #()) in
-      do:  ("uid" <-[types.UID] "$r0");;;
+      let: "uid" := (GoAlloc code.k8s_io.apimachinery.pkg.types.types.UID (GoZeroVal code.k8s_io.apimachinery.pkg.types.types.UID #())) in
+      let: "$r0" := ((FuncResolve code.k8s_io.apimachinery.pkg.util.uuid.uuid.NewUUID [] #()) #()) in
+      do:  ("uid" <-[code.k8s_io.apimachinery.pkg.types.types.UID] "$r0");;;
       (let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-      let: ("$ret0", "$ret1") := (map.lookup2 types.UID (go.StructType [
+      let: ("$ret0", "$ret1") := (map.lookup2 code.k8s_io.apimachinery.pkg.types.types.UID (go.StructType [
 
-      ]) (![go.MapType types.UID (go.StructType [
+      ]) (![go.MapType code.k8s_io.apimachinery.pkg.types.types.UID (go.StructType [
 
-      ])] (StructFieldRef State "usedUID"%go (![go.PointerType State] "s"))) (![types.UID] "uid")) in
+      ])] (StructFieldRef State "usedUID"%go (![go.PointerType State] "s"))) (![code.k8s_io.apimachinery.pkg.types.types.UID] "uid")) in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
       do:  "$r0";;;
@@ -630,10 +630,10 @@ Definition State__generateNewUIDAndUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx
         let: "$r0" := (CompositeLiteral (go.StructType [
 
         ]) (LiteralValue [])) in
-        do:  (map.insert types.UID (![go.MapType types.UID (go.StructType [
+        do:  (map.insert code.k8s_io.apimachinery.pkg.types.types.UID (![go.MapType code.k8s_io.apimachinery.pkg.types.types.UID (go.StructType [
 
-        ])] (StructFieldRef State "usedUID"%go (![go.PointerType State] "s"))) (![types.UID] "uid") "$r0");;;
-        return: (![types.UID] "uid")
+        ])] (StructFieldRef State "usedUID"%go (![go.PointerType State] "s"))) (![code.k8s_io.apimachinery.pkg.types.types.UID] "uid") "$r0");;;
+        return: (![code.k8s_io.apimachinery.pkg.types.types.UID] "uid")
       else do:  #())))).
 
 (* go: api_model.go:283:17 *)
@@ -642,9 +642,9 @@ Definition State__generateNewRVAndUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx 
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
     (for: (λ: <>, #true); (λ: <>, #()) := λ: <>,
       let: "rv" := (GoAlloc go.string (GoZeroVal go.string #())) in
-      let: "$r0" := (let: "$a0" := ((FuncResolve rand.Int63 [] #()) #()) in
+      let: "$r0" := (let: "$a0" := ((FuncResolve code.math.rand.rand.Int63 [] #()) #()) in
       let: "$a1" := #(W64 10) in
-      (FuncResolve strconv.FormatInt [] #()) "$a0" "$a1") in
+      (FuncResolve code.strconv.strconv.FormatInt [] #()) "$a0" "$a1") in
       do:  ("rv" <-[go.string] "$r0");;;
       (let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
       let: ("$ret0", "$ret1") := (map.lookup2 go.string (go.StructType [
@@ -674,27 +674,27 @@ Definition State__generateNewRVAndUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx 
 Definition validateObjectMetaⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "metadata" "kind",
     exception_do (let: "kind" := (GoAlloc go.string "kind") in
-    let: "metadata" := (GoAlloc apis_meta_v1.Object "metadata") in
+    let: "metadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "metadata") in
     let: "requiresNamespace" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
     let: "$r0" := ((![go.string] "kind") ≠⟨go.string⟩ #"ClusterRole"%go) in
     do:  ("requiresNamespace" <-[go.bool] "$r0");;;
-    (let: "errs" := (GoAlloc field.ErrorList (GoZeroVal field.ErrorList #())) in
-    let: "$r0" := (let: "$a0" := (![apis_meta_v1.Object] "metadata") in
+    (let: "errs" := (GoAlloc code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList (GoZeroVal code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList #())) in
+    let: "$r0" := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata") in
     let: "$a1" := (![go.bool] "requiresNamespace") in
-    let: "$a2" := (FuncResolve api_validation.NameIsDNSSubdomain [] #()) in
+    let: "$a2" := (FuncResolve code.k8s_io.apimachinery.pkg.api.validation.validation.NameIsDNSSubdomain [] #()) in
     let: "$a3" := (let: "$a0" := #"metadata"%go in
     let: "$a1" := #slice.nil in
-    (FuncResolve field.NewPath [] #()) "$a0" "$a1") in
-    (FuncResolve api_validation.ValidateObjectMetaAccessor [] #()) "$a0" "$a1" "$a2" "$a3") in
-    do:  ("errs" <-[field.ErrorList] "$r0");;;
-    (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![field.ErrorList] "errs") in
-    (FuncResolve go.len [field.ErrorList] #()) "$a0") >⟨go.int⟩ #(W64 0))
+    (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.NewPath [] #()) "$a0" "$a1") in
+    (FuncResolve code.k8s_io.apimachinery.pkg.api.validation.validation.ValidateObjectMetaAccessor [] #()) "$a0" "$a1" "$a2" "$a3") in
+    do:  ("errs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0");;;
+    (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "errs") in
+    (FuncResolve go.len [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0") >⟨go.int⟩ #(W64 0))
     then
-      return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
-       CompositeLiteral schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v0")])) in
-       let: "$a1" := ((MethodResolve apis_meta_v1.Object "GetName"%go (![apis_meta_v1.Object] "metadata")) #()) in
-       let: "$a2" := (![field.ErrorList] "errs") in
-       (FuncResolve errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
+      return: (Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+       CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v0")])) in
+       let: "$a1" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetName"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
+       let: "$a2" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "errs") in
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
     else do:  #()));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
@@ -706,27 +706,27 @@ Definition validateObjectMetaⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalC
    go: api_model.go:321:6 *)
 Definition applyDefaultTolerationSecondsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "pod",
-    exception_do (let: "pod" := (GoAlloc (go.PointerType core.Pod) "pod") in
+    exception_do (let: "pod" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) "pod") in
     let: "defaultNotReadyTolerationSeconds" := (GoAlloc go.int64 (GoZeroVal go.int64 #())) in
     let: "$r0" := #(W64 300) in
     do:  ("defaultNotReadyTolerationSeconds" <-[go.int64] "$r0");;;
     let: "defaultUnreachableTolerationSeconds" := (GoAlloc go.int64 (GoZeroVal go.int64 #())) in
     let: "$r0" := #(W64 300) in
     do:  ("defaultUnreachableTolerationSeconds" <-[go.int64] "$r0");;;
-    let: "tolerations" := (GoAlloc (go.SliceType core.Toleration) (GoZeroVal (go.SliceType core.Toleration) #())) in
-    let: "$r0" := (![go.SliceType core.Toleration] (StructFieldRef core.PodSpec "Tolerations"%go (StructFieldRef core.Pod "Spec"%go (![go.PointerType core.Pod] "pod")))) in
-    do:  ("tolerations" <-[go.SliceType core.Toleration] "$r0");;;
+    let: "tolerations" := (GoAlloc (go.SliceType code.k8s_io.kubernetes.pkg.apis.core.core.Toleration) (GoZeroVal (go.SliceType code.k8s_io.kubernetes.pkg.apis.core.core.Toleration) #())) in
+    let: "$r0" := (![go.SliceType code.k8s_io.kubernetes.pkg.apis.core.core.Toleration] (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PodSpec "Tolerations"%go (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Pod "Spec"%go (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "pod")))) in
+    do:  ("tolerations" <-[go.SliceType code.k8s_io.kubernetes.pkg.apis.core.core.Toleration] "$r0");;;
     let: "toleratesNodeNotReady" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
     let: "$r0" := #false in
     do:  ("toleratesNodeNotReady" <-[go.bool] "$r0");;;
-    let: "$range" := (![go.SliceType core.Toleration] "tolerations") in
-    (let: "toleration" := (GoAlloc core.Toleration (GoZeroVal core.Toleration #())) in
-    slice.for_range core.Toleration "$range" (λ: "$key" "$value",
-      do:  ("toleration" <-[core.Toleration] "$value");;;
+    let: "$range" := (![go.SliceType code.k8s_io.kubernetes.pkg.apis.core.core.Toleration] "tolerations") in
+    (let: "toleration" := (GoAlloc code.k8s_io.kubernetes.pkg.apis.core.core.Toleration (GoZeroVal code.k8s_io.kubernetes.pkg.apis.core.core.Toleration #())) in
+    slice.for_range code.k8s_io.kubernetes.pkg.apis.core.core.Toleration "$range" (λ: "$key" "$value",
+      do:  ("toleration" <-[code.k8s_io.kubernetes.pkg.apis.core.core.Toleration] "$value");;;
       do:  "$key";;;
-      (if: Convert go.untyped_bool go.bool ((((![go.string] (StructFieldRef core.Toleration "Key"%go "toleration")) =⟨go.string⟩ (Convert go.untyped_string go.string api_core_v1.TaintNodeNotReady)) || ((let: "$a0" := (![go.string] (StructFieldRef core.Toleration "Key"%go "toleration")) in
-      (FuncResolve go.len [go.string] #()) "$a0") =⟨go.int⟩ #(W64 0))) && (((![core.TaintEffect] (StructFieldRef core.Toleration "Effect"%go "toleration")) =⟨core.TaintEffect⟩ core.TaintEffectNoExecute) || ((let: "$a0" := (![core.TaintEffect] (StructFieldRef core.Toleration "Effect"%go "toleration")) in
-      (FuncResolve go.len [core.TaintEffect] #()) "$a0") =⟨go.int⟩ #(W64 0))))
+      (if: Convert go.untyped_bool go.bool ((((![go.string] (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Toleration "Key"%go "toleration")) =⟨go.string⟩ (Convert go.untyped_string go.string code.k8s_io.api.core.v1.v1.TaintNodeNotReady)) || ((let: "$a0" := (![go.string] (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Toleration "Key"%go "toleration")) in
+      (FuncResolve go.len [go.string] #()) "$a0") =⟨go.int⟩ #(W64 0))) && (((![code.k8s_io.kubernetes.pkg.apis.core.core.TaintEffect] (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Toleration "Effect"%go "toleration")) =⟨code.k8s_io.kubernetes.pkg.apis.core.core.TaintEffect⟩ code.k8s_io.kubernetes.pkg.apis.core.core.TaintEffectNoExecute) || ((let: "$a0" := (![code.k8s_io.kubernetes.pkg.apis.core.core.TaintEffect] (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Toleration "Effect"%go "toleration")) in
+      (FuncResolve go.len [code.k8s_io.kubernetes.pkg.apis.core.core.TaintEffect] #()) "$a0") =⟨go.int⟩ #(W64 0))))
       then
         let: "$r0" := #true in
         do:  ("toleratesNodeNotReady" <-[go.bool] "$r0");;;
@@ -735,14 +735,14 @@ Definition applyDefaultTolerationSecondsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx 
     let: "toleratesNodeUnreachable" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
     let: "$r0" := #false in
     do:  ("toleratesNodeUnreachable" <-[go.bool] "$r0");;;
-    let: "$range" := (![go.SliceType core.Toleration] "tolerations") in
-    (let: "toleration" := (GoAlloc core.Toleration (GoZeroVal core.Toleration #())) in
-    slice.for_range core.Toleration "$range" (λ: "$key" "$value",
-      do:  ("toleration" <-[core.Toleration] "$value");;;
+    let: "$range" := (![go.SliceType code.k8s_io.kubernetes.pkg.apis.core.core.Toleration] "tolerations") in
+    (let: "toleration" := (GoAlloc code.k8s_io.kubernetes.pkg.apis.core.core.Toleration (GoZeroVal code.k8s_io.kubernetes.pkg.apis.core.core.Toleration #())) in
+    slice.for_range code.k8s_io.kubernetes.pkg.apis.core.core.Toleration "$range" (λ: "$key" "$value",
+      do:  ("toleration" <-[code.k8s_io.kubernetes.pkg.apis.core.core.Toleration] "$value");;;
       do:  "$key";;;
-      (if: Convert go.untyped_bool go.bool ((((![go.string] (StructFieldRef core.Toleration "Key"%go "toleration")) =⟨go.string⟩ (Convert go.untyped_string go.string api_core_v1.TaintNodeUnreachable)) || ((let: "$a0" := (![go.string] (StructFieldRef core.Toleration "Key"%go "toleration")) in
-      (FuncResolve go.len [go.string] #()) "$a0") =⟨go.int⟩ #(W64 0))) && (((![core.TaintEffect] (StructFieldRef core.Toleration "Effect"%go "toleration")) =⟨core.TaintEffect⟩ core.TaintEffectNoExecute) || ((let: "$a0" := (![core.TaintEffect] (StructFieldRef core.Toleration "Effect"%go "toleration")) in
-      (FuncResolve go.len [core.TaintEffect] #()) "$a0") =⟨go.int⟩ #(W64 0))))
+      (if: Convert go.untyped_bool go.bool ((((![go.string] (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Toleration "Key"%go "toleration")) =⟨go.string⟩ (Convert go.untyped_string go.string code.k8s_io.api.core.v1.v1.TaintNodeUnreachable)) || ((let: "$a0" := (![go.string] (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Toleration "Key"%go "toleration")) in
+      (FuncResolve go.len [go.string] #()) "$a0") =⟨go.int⟩ #(W64 0))) && (((![code.k8s_io.kubernetes.pkg.apis.core.core.TaintEffect] (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Toleration "Effect"%go "toleration")) =⟨code.k8s_io.kubernetes.pkg.apis.core.core.TaintEffect⟩ code.k8s_io.kubernetes.pkg.apis.core.core.TaintEffectNoExecute) || ((let: "$a0" := (![code.k8s_io.kubernetes.pkg.apis.core.core.TaintEffect] (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Toleration "Effect"%go "toleration")) in
+      (FuncResolve go.len [code.k8s_io.kubernetes.pkg.apis.core.core.TaintEffect] #()) "$a0") =⟨go.int⟩ #(W64 0))))
       then
         let: "$r0" := #true in
         do:  ("toleratesNodeUnreachable" <-[go.bool] "$r0");;;
@@ -750,27 +750,27 @@ Definition applyDefaultTolerationSecondsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx 
       else do:  #())));;;
     (if: (⟨go.bool⟩! (![go.bool] "toleratesNodeNotReady"))
     then
-      let: "$r0" := (let: "$a0" := (![go.SliceType core.Toleration] (StructFieldRef core.PodSpec "Tolerations"%go (StructFieldRef core.Pod "Spec"%go (![go.PointerType core.Pod] "pod")))) in
-      let: "$a1" := ((let: "$sl0" := (let: "$v0" := (Convert go.untyped_string go.string api_core_v1.TaintNodeNotReady) in
-      let: "$v1" := core.TolerationOpExists in
-      let: "$v2" := core.TaintEffectNoExecute in
+      let: "$r0" := (let: "$a0" := (![go.SliceType code.k8s_io.kubernetes.pkg.apis.core.core.Toleration] (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PodSpec "Tolerations"%go (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Pod "Spec"%go (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "pod")))) in
+      let: "$a1" := ((let: "$sl0" := (let: "$v0" := (Convert go.untyped_string go.string code.k8s_io.api.core.v1.v1.TaintNodeNotReady) in
+      let: "$v1" := code.k8s_io.kubernetes.pkg.apis.core.core.TolerationOpExists in
+      let: "$v2" := code.k8s_io.kubernetes.pkg.apis.core.core.TaintEffectNoExecute in
       let: "$v3" := "defaultNotReadyTolerationSeconds" in
-      CompositeLiteral core.Toleration (LiteralValue [KeyedElement (Some (KeyField "Key"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Operator"%go)) (ElementExpression core.TolerationOperator "$v1"); KeyedElement (Some (KeyField "Effect"%go)) (ElementExpression core.TaintEffect "$v2"); KeyedElement (Some (KeyField "TolerationSeconds"%go)) (ElementExpression (go.PointerType go.int64) "$v3")])) in
-      CompositeLiteral (go.SliceType core.Toleration) (LiteralValue [KeyedElement None (ElementExpression core.Toleration "$sl0")]))) in
-      (FuncResolve go.append [go.SliceType core.Toleration] #()) "$a0" "$a1") in
-      do:  ((StructFieldRef core.PodSpec "Tolerations"%go (StructFieldRef core.Pod "Spec"%go (![go.PointerType core.Pod] "pod"))) <-[go.SliceType core.Toleration] "$r0")
+      CompositeLiteral code.k8s_io.kubernetes.pkg.apis.core.core.Toleration (LiteralValue [KeyedElement (Some (KeyField "Key"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Operator"%go)) (ElementExpression code.k8s_io.kubernetes.pkg.apis.core.core.TolerationOperator "$v1"); KeyedElement (Some (KeyField "Effect"%go)) (ElementExpression code.k8s_io.kubernetes.pkg.apis.core.core.TaintEffect "$v2"); KeyedElement (Some (KeyField "TolerationSeconds"%go)) (ElementExpression (go.PointerType go.int64) "$v3")])) in
+      CompositeLiteral (go.SliceType code.k8s_io.kubernetes.pkg.apis.core.core.Toleration) (LiteralValue [KeyedElement None (ElementExpression code.k8s_io.kubernetes.pkg.apis.core.core.Toleration "$sl0")]))) in
+      (FuncResolve go.append [go.SliceType code.k8s_io.kubernetes.pkg.apis.core.core.Toleration] #()) "$a0" "$a1") in
+      do:  ((StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PodSpec "Tolerations"%go (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Pod "Spec"%go (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "pod"))) <-[go.SliceType code.k8s_io.kubernetes.pkg.apis.core.core.Toleration] "$r0")
     else do:  #());;;
     (if: (⟨go.bool⟩! (![go.bool] "toleratesNodeUnreachable"))
     then
-      let: "$r0" := (let: "$a0" := (![go.SliceType core.Toleration] (StructFieldRef core.PodSpec "Tolerations"%go (StructFieldRef core.Pod "Spec"%go (![go.PointerType core.Pod] "pod")))) in
-      let: "$a1" := ((let: "$sl0" := (let: "$v0" := (Convert go.untyped_string go.string api_core_v1.TaintNodeUnreachable) in
-      let: "$v1" := core.TolerationOpExists in
-      let: "$v2" := core.TaintEffectNoExecute in
+      let: "$r0" := (let: "$a0" := (![go.SliceType code.k8s_io.kubernetes.pkg.apis.core.core.Toleration] (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PodSpec "Tolerations"%go (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Pod "Spec"%go (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "pod")))) in
+      let: "$a1" := ((let: "$sl0" := (let: "$v0" := (Convert go.untyped_string go.string code.k8s_io.api.core.v1.v1.TaintNodeUnreachable) in
+      let: "$v1" := code.k8s_io.kubernetes.pkg.apis.core.core.TolerationOpExists in
+      let: "$v2" := code.k8s_io.kubernetes.pkg.apis.core.core.TaintEffectNoExecute in
       let: "$v3" := "defaultUnreachableTolerationSeconds" in
-      CompositeLiteral core.Toleration (LiteralValue [KeyedElement (Some (KeyField "Key"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Operator"%go)) (ElementExpression core.TolerationOperator "$v1"); KeyedElement (Some (KeyField "Effect"%go)) (ElementExpression core.TaintEffect "$v2"); KeyedElement (Some (KeyField "TolerationSeconds"%go)) (ElementExpression (go.PointerType go.int64) "$v3")])) in
-      CompositeLiteral (go.SliceType core.Toleration) (LiteralValue [KeyedElement None (ElementExpression core.Toleration "$sl0")]))) in
-      (FuncResolve go.append [go.SliceType core.Toleration] #()) "$a0" "$a1") in
-      do:  ((StructFieldRef core.PodSpec "Tolerations"%go (StructFieldRef core.Pod "Spec"%go (![go.PointerType core.Pod] "pod"))) <-[go.SliceType core.Toleration] "$r0")
+      CompositeLiteral code.k8s_io.kubernetes.pkg.apis.core.core.Toleration (LiteralValue [KeyedElement (Some (KeyField "Key"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Operator"%go)) (ElementExpression code.k8s_io.kubernetes.pkg.apis.core.core.TolerationOperator "$v1"); KeyedElement (Some (KeyField "Effect"%go)) (ElementExpression code.k8s_io.kubernetes.pkg.apis.core.core.TaintEffect "$v2"); KeyedElement (Some (KeyField "TolerationSeconds"%go)) (ElementExpression (go.PointerType go.int64) "$v3")])) in
+      CompositeLiteral (go.SliceType code.k8s_io.kubernetes.pkg.apis.core.core.Toleration) (LiteralValue [KeyedElement None (ElementExpression code.k8s_io.kubernetes.pkg.apis.core.core.Toleration "$sl0")]))) in
+      (FuncResolve go.append [go.SliceType code.k8s_io.kubernetes.pkg.apis.core.core.Toleration] #()) "$a0" "$a1") in
+      do:  ((StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PodSpec "Tolerations"%go (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Pod "Spec"%go (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "pod"))) <-[go.SliceType code.k8s_io.kubernetes.pkg.apis.core.core.Toleration] "$r0")
     else do:  #());;;
     return: #()).
 
@@ -784,20 +784,20 @@ Definition applyDefaultTolerationSecondsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx 
    go: api_model.go:375:6 *)
 Definition applyPriorityAdmissionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "pod",
-    exception_do (let: "pod" := (GoAlloc (go.PointerType core.Pod) "pod") in
-    (if: Convert go.untyped_bool go.bool (((![go.PointerType go.int32] (StructFieldRef core.PodSpec "Priority"%go (StructFieldRef core.Pod "Spec"%go (![go.PointerType core.Pod] "pod")))) =⟨go.PointerType go.int32⟩ (Convert go.untyped_nil (go.PointerType go.int32) UntypedNil)) && ((let: "$a0" := (![go.string] (StructFieldRef core.PodSpec "PriorityClassName"%go (StructFieldRef core.Pod "Spec"%go (![go.PointerType core.Pod] "pod")))) in
+    exception_do (let: "pod" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) "pod") in
+    (if: Convert go.untyped_bool go.bool (((![go.PointerType go.int32] (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PodSpec "Priority"%go (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Pod "Spec"%go (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "pod")))) =⟨go.PointerType go.int32⟩ (Convert go.untyped_nil (go.PointerType go.int32) UntypedNil)) && ((let: "$a0" := (![go.string] (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PodSpec "PriorityClassName"%go (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Pod "Spec"%go (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "pod")))) in
     (FuncResolve go.len [go.string] #()) "$a0") =⟨go.int⟩ #(W64 0)))
     then
       let: "defaultPriority" := (GoAlloc go.int32 (GoZeroVal go.int32 #())) in
       let: "$r0" := #(W32 0) in
       do:  ("defaultPriority" <-[go.int32] "$r0");;;
       let: "$r0" := "defaultPriority" in
-      do:  ((StructFieldRef core.PodSpec "Priority"%go (StructFieldRef core.Pod "Spec"%go (![go.PointerType core.Pod] "pod"))) <-[go.PointerType go.int32] "$r0");;;
-      let: "defaultPreemptionPolicy" := (GoAlloc core.PreemptionPolicy (GoZeroVal core.PreemptionPolicy #())) in
-      let: "$r0" := core.PreemptLowerPriority in
-      do:  ("defaultPreemptionPolicy" <-[core.PreemptionPolicy] "$r0");;;
+      do:  ((StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PodSpec "Priority"%go (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Pod "Spec"%go (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "pod"))) <-[go.PointerType go.int32] "$r0");;;
+      let: "defaultPreemptionPolicy" := (GoAlloc code.k8s_io.kubernetes.pkg.apis.core.core.PreemptionPolicy (GoZeroVal code.k8s_io.kubernetes.pkg.apis.core.core.PreemptionPolicy #())) in
+      let: "$r0" := code.k8s_io.kubernetes.pkg.apis.core.core.PreemptLowerPriority in
+      do:  ("defaultPreemptionPolicy" <-[code.k8s_io.kubernetes.pkg.apis.core.core.PreemptionPolicy] "$r0");;;
       let: "$r0" := "defaultPreemptionPolicy" in
-      do:  ((StructFieldRef core.PodSpec "PreemptionPolicy"%go (StructFieldRef core.Pod "Spec"%go (![go.PointerType core.Pod] "pod"))) <-[go.PointerType core.PreemptionPolicy] "$r0")
+      do:  ((StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PodSpec "PreemptionPolicy"%go (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Pod "Spec"%go (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "pod"))) <-[go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PreemptionPolicy] "$r0")
     else do:  #());;;
     return: #()).
 
@@ -809,171 +809,171 @@ Definition convertVersionedToLegacyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
   λ: "obj",
     exception_do (let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
     let: "$y" := (![go.InterfaceType []] "obj") in
-    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_core_v1.Pod) "$y") in
+    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "$y") in
     (if: "$ok"
     then
-      let: "typed" := (GoAlloc (go.PointerType api_core_v1.Pod) "$x") in
-      let: "internalPod" := (GoAlloc (go.PointerType core.Pod) (GoZeroVal (go.PointerType core.Pod) #())) in
-      let: "$r0" := (GoAlloc core.Pod (CompositeLiteral core.Pod (LiteralValue []))) in
-      do:  ("internalPod" <-[go.PointerType core.Pod] "$r0");;;
+      let: "typed" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "$x") in
+      let: "internalPod" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) (GoZeroVal (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) #())) in
+      let: "$r0" := (GoAlloc code.k8s_io.kubernetes.pkg.apis.core.core.Pod (CompositeLiteral code.k8s_io.kubernetes.pkg.apis.core.core.Pod (LiteralValue []))) in
+      do:  ("internalPod" <-[go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "$r0");;;
       (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-      let: "$r0" := (let: "$a0" := (Convert (go.PointerType api_core_v1.Pod) (go.InterfaceType []) (![go.PointerType api_core_v1.Pod] "typed")) in
-      let: "$a1" := (Convert (go.PointerType core.Pod) (go.InterfaceType []) (![go.PointerType core.Pod] "internalPod")) in
+      let: "$r0" := (let: "$a0" := (Convert (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "typed")) in
+      let: "$a1" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) (go.InterfaceType []) (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "internalPod")) in
       let: "$a2" := (Convert go.untyped_nil (go.InterfaceType []) UntypedNil) in
-      (MethodResolve (go.PointerType runtime.Scheme) "Convert"%go (![go.PointerType runtime.Scheme] (GlobalVarAddr legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
+      (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme) "Convert"%go (![go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme] (GlobalVarAddr code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
       do:  ("err" <-[go.error] "$r0");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then
-        return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert v1.Pod to internal Pod: %v"%go in
+        return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert v1.Pod to internal Pod: %v"%go in
          let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
          CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-         (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1") in
-         (FuncResolve errors.NewBadRequest [] #()) "$a0"))
+         (FuncResolve code.fmt.fmt.Sprintf [] #()) "$a0" "$a1") in
+         (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewBadRequest [] #()) "$a0"))
       else do:  #()));;;
-      return: (Convert (go.PointerType core.Pod) (go.InterfaceType []) (![go.PointerType core.Pod] "internalPod"), Convert go.untyped_nil go.error UntypedNil)
+      return: (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) (go.InterfaceType []) (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "internalPod"), Convert go.untyped_nil go.error UntypedNil)
     else
-      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_core_v1.PersistentVolumeClaim) "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) "$y") in
       (if: "$ok"
       then
-        let: "typed" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) "$x") in
-        let: "internalPVC" := (GoAlloc (go.PointerType core.PersistentVolumeClaim) (GoZeroVal (go.PointerType core.PersistentVolumeClaim) #())) in
-        let: "$r0" := (GoAlloc core.PersistentVolumeClaim (CompositeLiteral core.PersistentVolumeClaim (LiteralValue []))) in
-        do:  ("internalPVC" <-[go.PointerType core.PersistentVolumeClaim] "$r0");;;
+        let: "typed" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) "$x") in
+        let: "internalPVC" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim) (GoZeroVal (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim) #())) in
+        let: "$r0" := (GoAlloc code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim (CompositeLiteral code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim (LiteralValue []))) in
+        do:  ("internalPVC" <-[go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim] "$r0");;;
         (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-        let: "$r0" := (let: "$a0" := (Convert (go.PointerType api_core_v1.PersistentVolumeClaim) (go.InterfaceType []) (![go.PointerType api_core_v1.PersistentVolumeClaim] "typed")) in
-        let: "$a1" := (Convert (go.PointerType core.PersistentVolumeClaim) (go.InterfaceType []) (![go.PointerType core.PersistentVolumeClaim] "internalPVC")) in
+        let: "$r0" := (let: "$a0" := (Convert (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim] "typed")) in
+        let: "$a1" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim) (go.InterfaceType []) (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim] "internalPVC")) in
         let: "$a2" := (Convert go.untyped_nil (go.InterfaceType []) UntypedNil) in
-        (MethodResolve (go.PointerType runtime.Scheme) "Convert"%go (![go.PointerType runtime.Scheme] (GlobalVarAddr legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
+        (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme) "Convert"%go (![go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme] (GlobalVarAddr code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
         do:  ("err" <-[go.error] "$r0");;;
         (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
         then
-          return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert v1.PersistentVolumeClaim to internal PersistentVolumeClaim: %v"%go in
+          return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert v1.PersistentVolumeClaim to internal PersistentVolumeClaim: %v"%go in
            let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
            CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-           (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1") in
-           (FuncResolve errors.NewBadRequest [] #()) "$a0"))
+           (FuncResolve code.fmt.fmt.Sprintf [] #()) "$a0" "$a1") in
+           (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewBadRequest [] #()) "$a0"))
         else do:  #()));;;
-        return: (Convert (go.PointerType core.PersistentVolumeClaim) (go.InterfaceType []) (![go.PointerType core.PersistentVolumeClaim] "internalPVC"), Convert go.untyped_nil go.error UntypedNil)
+        return: (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim) (go.InterfaceType []) (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim] "internalPVC"), Convert go.untyped_nil go.error UntypedNil)
       else
-        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_core_v1.ServiceAccount) "$y") in
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount) "$y") in
         (if: "$ok"
         then
-          let: "typed" := (GoAlloc (go.PointerType api_core_v1.ServiceAccount) "$x") in
-          let: "internalServiceAccount" := (GoAlloc (go.PointerType core.ServiceAccount) (GoZeroVal (go.PointerType core.ServiceAccount) #())) in
-          let: "$r0" := (GoAlloc core.ServiceAccount (CompositeLiteral core.ServiceAccount (LiteralValue []))) in
-          do:  ("internalServiceAccount" <-[go.PointerType core.ServiceAccount] "$r0");;;
+          let: "typed" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount) "$x") in
+          let: "internalServiceAccount" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount) (GoZeroVal (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount) #())) in
+          let: "$r0" := (GoAlloc code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount (CompositeLiteral code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount (LiteralValue []))) in
+          do:  ("internalServiceAccount" <-[go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount] "$r0");;;
           (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-          let: "$r0" := (let: "$a0" := (Convert (go.PointerType api_core_v1.ServiceAccount) (go.InterfaceType []) (![go.PointerType api_core_v1.ServiceAccount] "typed")) in
-          let: "$a1" := (Convert (go.PointerType core.ServiceAccount) (go.InterfaceType []) (![go.PointerType core.ServiceAccount] "internalServiceAccount")) in
+          let: "$r0" := (let: "$a0" := (Convert (go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount] "typed")) in
+          let: "$a1" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount) (go.InterfaceType []) (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount] "internalServiceAccount")) in
           let: "$a2" := (Convert go.untyped_nil (go.InterfaceType []) UntypedNil) in
-          (MethodResolve (go.PointerType runtime.Scheme) "Convert"%go (![go.PointerType runtime.Scheme] (GlobalVarAddr legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
+          (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme) "Convert"%go (![go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme] (GlobalVarAddr code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
           do:  ("err" <-[go.error] "$r0");;;
           (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
           then
-            return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert v1.ServiceAccount to internal ServiceAccount: %v"%go in
+            return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert v1.ServiceAccount to internal ServiceAccount: %v"%go in
              let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
              CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-             (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1") in
-             (FuncResolve errors.NewBadRequest [] #()) "$a0"))
+             (FuncResolve code.fmt.fmt.Sprintf [] #()) "$a0" "$a1") in
+             (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewBadRequest [] #()) "$a0"))
           else do:  #()));;;
-          return: (Convert (go.PointerType core.ServiceAccount) (go.InterfaceType []) (![go.PointerType core.ServiceAccount] "internalServiceAccount"), Convert go.untyped_nil go.error UntypedNil)
+          return: (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount) (go.InterfaceType []) (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount] "internalServiceAccount"), Convert go.untyped_nil go.error UntypedNil)
         else
-          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_apps_v1.ReplicaSet) "$y") in
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) "$y") in
           (if: "$ok"
           then
-            let: "typed" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "$x") in
-            let: "internalRS" := (GoAlloc (go.PointerType apps.ReplicaSet) (GoZeroVal (go.PointerType apps.ReplicaSet) #())) in
-            let: "$r0" := (GoAlloc apps.ReplicaSet (CompositeLiteral apps.ReplicaSet (LiteralValue []))) in
-            do:  ("internalRS" <-[go.PointerType apps.ReplicaSet] "$r0");;;
+            let: "typed" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) "$x") in
+            let: "internalRS" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet) (GoZeroVal (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet) #())) in
+            let: "$r0" := (GoAlloc code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet (CompositeLiteral code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet (LiteralValue []))) in
+            do:  ("internalRS" <-[go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet] "$r0");;;
             (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-            let: "$r0" := (let: "$a0" := (Convert (go.PointerType api_apps_v1.ReplicaSet) (go.InterfaceType []) (![go.PointerType api_apps_v1.ReplicaSet] "typed")) in
-            let: "$a1" := (Convert (go.PointerType apps.ReplicaSet) (go.InterfaceType []) (![go.PointerType apps.ReplicaSet] "internalRS")) in
+            let: "$r0" := (let: "$a0" := (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "typed")) in
+            let: "$a1" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet) (go.InterfaceType []) (![go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet] "internalRS")) in
             let: "$a2" := (Convert go.untyped_nil (go.InterfaceType []) UntypedNil) in
-            (MethodResolve (go.PointerType runtime.Scheme) "Convert"%go (![go.PointerType runtime.Scheme] (GlobalVarAddr legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
+            (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme) "Convert"%go (![go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme] (GlobalVarAddr code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
             do:  ("err" <-[go.error] "$r0");;;
             (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
             then
-              return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert appsv1.ReplicaSet to internal ReplicaSet: %v"%go in
+              return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert appsv1.ReplicaSet to internal ReplicaSet: %v"%go in
                let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
                CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-               (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1") in
-               (FuncResolve errors.NewBadRequest [] #()) "$a0"))
+               (FuncResolve code.fmt.fmt.Sprintf [] #()) "$a0" "$a1") in
+               (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewBadRequest [] #()) "$a0"))
             else do:  #()));;;
-            return: (Convert (go.PointerType apps.ReplicaSet) (go.InterfaceType []) (![go.PointerType apps.ReplicaSet] "internalRS"), Convert go.untyped_nil go.error UntypedNil)
+            return: (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet) (go.InterfaceType []) (![go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet] "internalRS"), Convert go.untyped_nil go.error UntypedNil)
           else
-            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_apps_v1.StatefulSet) "$y") in
+            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) "$y") in
             (if: "$ok"
             then
-              let: "typed" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) "$x") in
-              let: "internalSTS" := (GoAlloc (go.PointerType apps.StatefulSet) (GoZeroVal (go.PointerType apps.StatefulSet) #())) in
-              let: "$r0" := (GoAlloc apps.StatefulSet (CompositeLiteral apps.StatefulSet (LiteralValue []))) in
-              do:  ("internalSTS" <-[go.PointerType apps.StatefulSet] "$r0");;;
+              let: "typed" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) "$x") in
+              let: "internalSTS" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet) (GoZeroVal (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet) #())) in
+              let: "$r0" := (GoAlloc code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet (CompositeLiteral code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet (LiteralValue []))) in
+              do:  ("internalSTS" <-[go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet] "$r0");;;
               (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-              let: "$r0" := (let: "$a0" := (Convert (go.PointerType api_apps_v1.StatefulSet) (go.InterfaceType []) (![go.PointerType api_apps_v1.StatefulSet] "typed")) in
-              let: "$a1" := (Convert (go.PointerType apps.StatefulSet) (go.InterfaceType []) (![go.PointerType apps.StatefulSet] "internalSTS")) in
+              let: "$r0" := (let: "$a0" := (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "typed")) in
+              let: "$a1" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet) (go.InterfaceType []) (![go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet] "internalSTS")) in
               let: "$a2" := (Convert go.untyped_nil (go.InterfaceType []) UntypedNil) in
-              (MethodResolve (go.PointerType runtime.Scheme) "Convert"%go (![go.PointerType runtime.Scheme] (GlobalVarAddr legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
+              (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme) "Convert"%go (![go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme] (GlobalVarAddr code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
               do:  ("err" <-[go.error] "$r0");;;
               (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
               then
-                return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert appsv1.StatefulSet to internal StatefulSet: %v"%go in
+                return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert appsv1.StatefulSet to internal StatefulSet: %v"%go in
                  let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
                  CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-                 (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1") in
-                 (FuncResolve errors.NewBadRequest [] #()) "$a0"))
+                 (FuncResolve code.fmt.fmt.Sprintf [] #()) "$a0" "$a1") in
+                 (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewBadRequest [] #()) "$a0"))
               else do:  #()));;;
-              return: (Convert (go.PointerType apps.StatefulSet) (go.InterfaceType []) (![go.PointerType apps.StatefulSet] "internalSTS"), Convert go.untyped_nil go.error UntypedNil)
+              return: (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet) (go.InterfaceType []) (![go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet] "internalSTS"), Convert go.untyped_nil go.error UntypedNil)
             else
-              let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_apps_v1.Deployment) "$y") in
+              let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) "$y") in
               (if: "$ok"
               then
-                let: "typed" := (GoAlloc (go.PointerType api_apps_v1.Deployment) "$x") in
-                let: "internalDeployment" := (GoAlloc (go.PointerType apps.Deployment) (GoZeroVal (go.PointerType apps.Deployment) #())) in
-                let: "$r0" := (GoAlloc apps.Deployment (CompositeLiteral apps.Deployment (LiteralValue []))) in
-                do:  ("internalDeployment" <-[go.PointerType apps.Deployment] "$r0");;;
+                let: "typed" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) "$x") in
+                let: "internalDeployment" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment) (GoZeroVal (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment) #())) in
+                let: "$r0" := (GoAlloc code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment (CompositeLiteral code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment (LiteralValue []))) in
+                do:  ("internalDeployment" <-[go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment] "$r0");;;
                 (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-                let: "$r0" := (let: "$a0" := (Convert (go.PointerType api_apps_v1.Deployment) (go.InterfaceType []) (![go.PointerType api_apps_v1.Deployment] "typed")) in
-                let: "$a1" := (Convert (go.PointerType apps.Deployment) (go.InterfaceType []) (![go.PointerType apps.Deployment] "internalDeployment")) in
+                let: "$r0" := (let: "$a0" := (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.apps.v1.v1.Deployment] "typed")) in
+                let: "$a1" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment) (go.InterfaceType []) (![go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment] "internalDeployment")) in
                 let: "$a2" := (Convert go.untyped_nil (go.InterfaceType []) UntypedNil) in
-                (MethodResolve (go.PointerType runtime.Scheme) "Convert"%go (![go.PointerType runtime.Scheme] (GlobalVarAddr legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
+                (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme) "Convert"%go (![go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme] (GlobalVarAddr code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
                 do:  ("err" <-[go.error] "$r0");;;
                 (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
                 then
-                  return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert appsv1.Deployment to internal Deployment: %v"%go in
+                  return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert appsv1.Deployment to internal Deployment: %v"%go in
                    let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
                    CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-                   (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1") in
-                   (FuncResolve errors.NewBadRequest [] #()) "$a0"))
+                   (FuncResolve code.fmt.fmt.Sprintf [] #()) "$a0" "$a1") in
+                   (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewBadRequest [] #()) "$a0"))
                 else do:  #()));;;
-                return: (Convert (go.PointerType apps.Deployment) (go.InterfaceType []) (![go.PointerType apps.Deployment] "internalDeployment"), Convert go.untyped_nil go.error UntypedNil)
+                return: (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment) (go.InterfaceType []) (![go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment] "internalDeployment"), Convert go.untyped_nil go.error UntypedNil)
               else
-                let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_rbac_v1.ClusterRole) "$y") in
+                let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) "$y") in
                 (if: "$ok"
                 then
-                  let: "typed" := (GoAlloc (go.PointerType api_rbac_v1.ClusterRole) "$x") in
-                  let: "internalClusterRole" := (GoAlloc (go.PointerType rbac.ClusterRole) (GoZeroVal (go.PointerType rbac.ClusterRole) #())) in
-                  let: "$r0" := (GoAlloc rbac.ClusterRole (CompositeLiteral rbac.ClusterRole (LiteralValue []))) in
-                  do:  ("internalClusterRole" <-[go.PointerType rbac.ClusterRole] "$r0");;;
+                  let: "typed" := (GoAlloc (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) "$x") in
+                  let: "internalClusterRole" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole) (GoZeroVal (go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole) #())) in
+                  let: "$r0" := (GoAlloc code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole (CompositeLiteral code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole (LiteralValue []))) in
+                  do:  ("internalClusterRole" <-[go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole] "$r0");;;
                   (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-                  let: "$r0" := (let: "$a0" := (Convert (go.PointerType api_rbac_v1.ClusterRole) (go.InterfaceType []) (![go.PointerType api_rbac_v1.ClusterRole] "typed")) in
-                  let: "$a1" := (Convert (go.PointerType rbac.ClusterRole) (go.InterfaceType []) (![go.PointerType rbac.ClusterRole] "internalClusterRole")) in
+                  let: "$r0" := (let: "$a0" := (Convert (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "typed")) in
+                  let: "$a1" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole) (go.InterfaceType []) (![go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole] "internalClusterRole")) in
                   let: "$a2" := (Convert go.untyped_nil (go.InterfaceType []) UntypedNil) in
-                  (MethodResolve (go.PointerType runtime.Scheme) "Convert"%go (![go.PointerType runtime.Scheme] (GlobalVarAddr legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
+                  (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme) "Convert"%go (![go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme] (GlobalVarAddr code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
                   do:  ("err" <-[go.error] "$r0");;;
                   (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
                   then
-                    return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert rbacv1.ClusterRole to internal ClusterRole: %v"%go in
+                    return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert rbacv1.ClusterRole to internal ClusterRole: %v"%go in
                      let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
                      CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-                     (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1") in
-                     (FuncResolve errors.NewBadRequest [] #()) "$a0"))
+                     (FuncResolve code.fmt.fmt.Sprintf [] #()) "$a0" "$a1") in
+                     (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewBadRequest [] #()) "$a0"))
                   else do:  #()));;;
-                  return: (Convert (go.PointerType rbac.ClusterRole) (go.InterfaceType []) (![go.PointerType rbac.ClusterRole] "internalClusterRole"), Convert go.untyped_nil go.error UntypedNil)
+                  return: (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole) (go.InterfaceType []) (![go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole] "internalClusterRole"), Convert go.untyped_nil go.error UntypedNil)
                 else
                   return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, let: "$a0" := #"unsupported versioned object type for conversion: %T"%go in
                    let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
                    CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-                   (FuncResolve fmt.Errorf [] #()) "$a0" "$a1"))))))))).
+                   (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1"))))))))).
 
 (* applySchemaDefaults applies schema-based defaults to the object.
    This matches the API server's defaulting behavior that happens during decoding.
@@ -984,127 +984,127 @@ Definition applySchemaDefaultsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
   λ: "obj",
     exception_do (let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
     let: "$y" := (![go.InterfaceType []] "obj") in
-    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_core_v1.Pod) "$y") in
+    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "$y") in
     (if: "$ok"
     then
-      let: "typed" := (GoAlloc (go.PointerType api_core_v1.Pod) "$x") in
-      do:  (let: "$a0" := (![go.PointerType api_core_v1.Pod] "typed") in
-      (FuncResolve apis_core_v1.SetObjectDefaults_Pod [] #()) "$a0")
+      let: "typed" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "$x") in
+      do:  (let: "$a0" := (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "typed") in
+      (FuncResolve code.k8s_io.kubernetes.pkg.apis.core.v1.v1.SetObjectDefaults_Pod [] #()) "$a0")
     else
-      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_core_v1.PersistentVolumeClaim) "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) "$y") in
       (if: "$ok"
       then
-        let: "typed" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) "$x") in
-        do:  (let: "$a0" := (![go.PointerType api_core_v1.PersistentVolumeClaim] "typed") in
-        (FuncResolve apis_core_v1.SetObjectDefaults_PersistentVolumeClaim [] #()) "$a0")
+        let: "typed" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) "$x") in
+        do:  (let: "$a0" := (![go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim] "typed") in
+        (FuncResolve code.k8s_io.kubernetes.pkg.apis.core.v1.v1.SetObjectDefaults_PersistentVolumeClaim [] #()) "$a0")
       else
-        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_core_v1.ServiceAccount) "$y") in
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount) "$y") in
         (if: "$ok"
         then
-          let: "typed" := (GoAlloc (go.PointerType api_core_v1.ServiceAccount) "$x") in
+          let: "typed" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount) "$x") in
           return: (Convert go.untyped_nil go.error UntypedNil)
         else
-          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_apps_v1.ReplicaSet) "$y") in
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) "$y") in
           (if: "$ok"
           then
-            let: "typed" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "$x") in
-            do:  (let: "$a0" := (![go.PointerType api_apps_v1.ReplicaSet] "typed") in
-            (FuncResolve apis_apps_v1.SetObjectDefaults_ReplicaSet [] #()) "$a0")
+            let: "typed" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) "$x") in
+            do:  (let: "$a0" := (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "typed") in
+            (FuncResolve code.k8s_io.kubernetes.pkg.apis.apps.v1.v1.SetObjectDefaults_ReplicaSet [] #()) "$a0")
           else
-            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_apps_v1.StatefulSet) "$y") in
+            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) "$y") in
             (if: "$ok"
             then
-              let: "typed" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) "$x") in
-              do:  (let: "$a0" := (![go.PointerType api_apps_v1.StatefulSet] "typed") in
-              (FuncResolve apis_apps_v1.SetObjectDefaults_StatefulSet [] #()) "$a0")
+              let: "typed" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) "$x") in
+              do:  (let: "$a0" := (![go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "typed") in
+              (FuncResolve code.k8s_io.kubernetes.pkg.apis.apps.v1.v1.SetObjectDefaults_StatefulSet [] #()) "$a0")
             else
-              let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_apps_v1.Deployment) "$y") in
+              let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) "$y") in
               (if: "$ok"
               then
-                let: "typed" := (GoAlloc (go.PointerType api_apps_v1.Deployment) "$x") in
-                do:  (let: "$a0" := (![go.PointerType api_apps_v1.Deployment] "typed") in
-                (FuncResolve apis_apps_v1.SetObjectDefaults_Deployment [] #()) "$a0")
+                let: "typed" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) "$x") in
+                do:  (let: "$a0" := (![go.PointerType code.k8s_io.api.apps.v1.v1.Deployment] "typed") in
+                (FuncResolve code.k8s_io.kubernetes.pkg.apis.apps.v1.v1.SetObjectDefaults_Deployment [] #()) "$a0")
               else
-                let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_rbac_v1.ClusterRole) "$y") in
+                let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) "$y") in
                 (if: "$ok"
                 then
-                  let: "typed" := (GoAlloc (go.PointerType api_rbac_v1.ClusterRole) "$x") in
+                  let: "typed" := (GoAlloc (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) "$x") in
                   do:  #()
                 else
                   return: (let: "$a0" := #"unsupported object type for schema defaults: %T"%go in
                    let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
                    CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-                   (FuncResolve fmt.Errorf [] #()) "$a0" "$a1"))))))));;;
+                   (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1"))))))));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:478:6 *)
 Definition applyStrategyPrepareForCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "obj",
     exception_do (let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
-    let: "ctx" := (GoAlloc context.Context (GoZeroVal context.Context #())) in
-    let: "$r0" := ((FuncResolve context.Background [] #()) #()) in
-    do:  ("ctx" <-[context.Context] "$r0");;;
+    let: "ctx" := (GoAlloc code.context.context.Context (GoZeroVal code.context.context.Context #())) in
+    let: "$r0" := ((FuncResolve code.context.context.Background [] #()) #()) in
+    do:  ("ctx" <-[code.context.context.Context] "$r0");;;
     let: "$y" := (![go.InterfaceType []] "obj") in
-    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.Pod) "$y") in
+    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) "$y") in
     (if: "$ok"
     then
-      let: "typed" := (GoAlloc (go.PointerType core.Pod) "$x") in
-      do:  (let: "$a0" := (![context.Context] "ctx") in
-      let: "$a1" := (Convert (go.PointerType core.Pod) runtime.Object (![go.PointerType core.Pod] "typed")) in
-      (MethodResolve (go.PointerType pod.podStrategy) "PrepareForCreate"%go (GlobalVarAddr pod.Strategy #())) "$a0" "$a1")
+      let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) "$x") in
+      do:  (let: "$a0" := (![code.context.context.Context] "ctx") in
+      let: "$a1" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "typed")) in
+      (MethodResolve (go.PointerType code.k8s_io.kubernetes.pkg.registry.core.pod.pod.podStrategy) "PrepareForCreate"%go (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.core.pod.pod.Strategy #())) "$a0" "$a1")
     else
-      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.PersistentVolumeClaim) "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim) "$y") in
       (if: "$ok"
       then
-        let: "typed" := (GoAlloc (go.PointerType core.PersistentVolumeClaim) "$x") in
-        do:  (let: "$a0" := (![context.Context] "ctx") in
-        let: "$a1" := (Convert (go.PointerType core.PersistentVolumeClaim) runtime.Object (![go.PointerType core.PersistentVolumeClaim] "typed")) in
-        (MethodResolve (go.PointerType persistentvolumeclaim.persistentvolumeclaimStrategy) "PrepareForCreate"%go (GlobalVarAddr persistentvolumeclaim.Strategy #())) "$a0" "$a1")
+        let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim) "$x") in
+        do:  (let: "$a0" := (![code.context.context.Context] "ctx") in
+        let: "$a1" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim) code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim] "typed")) in
+        (MethodResolve (go.PointerType code.k8s_io.kubernetes.pkg.registry.core.persistentvolumeclaim.persistentvolumeclaim.persistentvolumeclaimStrategy) "PrepareForCreate"%go (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.core.persistentvolumeclaim.persistentvolumeclaim.Strategy #())) "$a0" "$a1")
       else
-        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.ServiceAccount) "$y") in
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount) "$y") in
         (if: "$ok"
         then
-          let: "typed" := (GoAlloc (go.PointerType core.ServiceAccount) "$x") in
-          do:  (let: "$a0" := (![context.Context] "ctx") in
-          let: "$a1" := (Convert (go.PointerType core.ServiceAccount) runtime.Object (![go.PointerType core.ServiceAccount] "typed")) in
-          (MethodResolve (go.PointerType serviceaccount.strategy) "PrepareForCreate"%go (GlobalVarAddr serviceaccount.Strategy #())) "$a0" "$a1")
+          let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount) "$x") in
+          do:  (let: "$a0" := (![code.context.context.Context] "ctx") in
+          let: "$a1" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount) code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount] "typed")) in
+          (MethodResolve (go.PointerType code.k8s_io.kubernetes.pkg.registry.core.serviceaccount.serviceaccount.strategy) "PrepareForCreate"%go (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.core.serviceaccount.serviceaccount.Strategy #())) "$a0" "$a1")
         else
-          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet) "$y") in
           (if: "$ok"
           then
-            let: "typed" := (GoAlloc (go.PointerType apps.ReplicaSet) "$x") in
-            do:  (let: "$a0" := (![context.Context] "ctx") in
-            let: "$a1" := (Convert (go.PointerType apps.ReplicaSet) runtime.Object (![go.PointerType apps.ReplicaSet] "typed")) in
-            (MethodResolve (go.PointerType replicaset.rsStrategy) "PrepareForCreate"%go (GlobalVarAddr replicaset.Strategy #())) "$a0" "$a1")
+            let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet) "$x") in
+            do:  (let: "$a0" := (![code.context.context.Context] "ctx") in
+            let: "$a1" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet) code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet] "typed")) in
+            (MethodResolve (go.PointerType code.k8s_io.kubernetes.pkg.registry.apps.replicaset.replicaset.rsStrategy) "PrepareForCreate"%go (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.apps.replicaset.replicaset.Strategy #())) "$a0" "$a1")
           else
-            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.StatefulSet) "$y") in
+            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet) "$y") in
             (if: "$ok"
             then
-              let: "typed" := (GoAlloc (go.PointerType apps.StatefulSet) "$x") in
-              do:  (let: "$a0" := (![context.Context] "ctx") in
-              let: "$a1" := (Convert (go.PointerType apps.StatefulSet) runtime.Object (![go.PointerType apps.StatefulSet] "typed")) in
-              (MethodResolve (go.PointerType statefulset.statefulSetStrategy) "PrepareForCreate"%go (GlobalVarAddr statefulset.Strategy #())) "$a0" "$a1")
+              let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet) "$x") in
+              do:  (let: "$a0" := (![code.context.context.Context] "ctx") in
+              let: "$a1" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet) code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet] "typed")) in
+              (MethodResolve (go.PointerType code.k8s_io.kubernetes.pkg.registry.apps.statefulset.statefulset.statefulSetStrategy) "PrepareForCreate"%go (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.apps.statefulset.statefulset.Strategy #())) "$a0" "$a1")
             else
-              let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.Deployment) "$y") in
+              let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment) "$y") in
               (if: "$ok"
               then
-                let: "typed" := (GoAlloc (go.PointerType apps.Deployment) "$x") in
-                do:  (let: "$a0" := (![context.Context] "ctx") in
-                let: "$a1" := (Convert (go.PointerType apps.Deployment) runtime.Object (![go.PointerType apps.Deployment] "typed")) in
-                (MethodResolve (go.PointerType deployment.deploymentStrategy) "PrepareForCreate"%go (GlobalVarAddr deployment.Strategy #())) "$a0" "$a1")
+                let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment) "$x") in
+                do:  (let: "$a0" := (![code.context.context.Context] "ctx") in
+                let: "$a1" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment) code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment] "typed")) in
+                (MethodResolve (go.PointerType code.k8s_io.kubernetes.pkg.registry.apps.deployment.deployment.deploymentStrategy) "PrepareForCreate"%go (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.apps.deployment.deployment.Strategy #())) "$a0" "$a1")
               else
-                let: ("$x", "$ok") := (TypeAssert2 (go.PointerType rbac.ClusterRole) "$y") in
+                let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole) "$y") in
                 (if: "$ok"
                 then
-                  let: "typed" := (GoAlloc (go.PointerType rbac.ClusterRole) "$x") in
-                  do:  (let: "$a0" := (![context.Context] "ctx") in
-                  let: "$a1" := (Convert (go.PointerType rbac.ClusterRole) runtime.Object (![go.PointerType rbac.ClusterRole] "typed")) in
-                  (MethodResolve (go.PointerType clusterrole.strategy) "PrepareForCreate"%go (GlobalVarAddr clusterrole.Strategy #())) "$a0" "$a1")
+                  let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole) "$x") in
+                  do:  (let: "$a0" := (![code.context.context.Context] "ctx") in
+                  let: "$a1" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole) code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole] "typed")) in
+                  (MethodResolve (go.PointerType code.k8s_io.kubernetes.pkg.registry.rbac.clusterrole.clusterrole.strategy) "PrepareForCreate"%go (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.rbac.clusterrole.clusterrole.Strategy #())) "$a0" "$a1")
                 else
                   return: (let: "$a0" := #"unsupported object type for strategy and validation: %T"%go in
                    let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
                    CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-                   (FuncResolve fmt.Errorf [] #()) "$a0" "$a1"))))))));;;
+                   (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1"))))))));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:501:6 *)
@@ -1112,56 +1112,56 @@ Definition applyAdmissionMutateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
   λ: "obj",
     exception_do (let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
     let: "$y" := (![go.InterfaceType []] "obj") in
-    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.Pod) "$y") in
+    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) "$y") in
     (if: "$ok"
     then
-      let: "typed" := (GoAlloc (go.PointerType core.Pod) "$x") in
-      do:  (let: "$a0" := (![go.PointerType core.Pod] "typed") in
+      let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) "$x") in
+      do:  (let: "$a0" := (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "typed") in
       (FuncResolve applyDefaultTolerationSeconds [] #()) "$a0");;;
-      do:  (let: "$a0" := (![go.PointerType core.Pod] "typed") in
+      do:  (let: "$a0" := (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "typed") in
       (FuncResolve applyPriorityAdmission [] #()) "$a0")
     else
-      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.PersistentVolumeClaim) "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim) "$y") in
       (if: "$ok"
       then
-        let: "typed" := (GoAlloc (go.PointerType core.PersistentVolumeClaim) "$x") in
-        do:  (let: "$a0" := (![go.PointerType core.PersistentVolumeClaim] "typed") in
+        let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim) "$x") in
+        do:  (let: "$a0" := (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim] "typed") in
         (FuncResolve applyPersistentVolumeClaimProtectionAdmission [] #()) "$a0")
       else
-        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.ServiceAccount) "$y") in
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount) "$y") in
         (if: "$ok"
         then
-          let: "typed" := (GoAlloc (go.PointerType core.ServiceAccount) "$x") in
+          let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount) "$x") in
           return: (Convert go.untyped_nil go.error UntypedNil)
         else
-          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet) "$y") in
           (if: "$ok"
           then
-            let: "typed" := (GoAlloc (go.PointerType apps.ReplicaSet) "$x") in
+            let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet) "$x") in
             return: (Convert go.untyped_nil go.error UntypedNil)
           else
-            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.StatefulSet) "$y") in
+            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet) "$y") in
             (if: "$ok"
             then
-              let: "typed" := (GoAlloc (go.PointerType apps.StatefulSet) "$x") in
+              let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet) "$x") in
               return: (Convert go.untyped_nil go.error UntypedNil)
             else
-              let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.Deployment) "$y") in
+              let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment) "$y") in
               (if: "$ok"
               then
-                let: "typed" := (GoAlloc (go.PointerType apps.Deployment) "$x") in
+                let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment) "$x") in
                 return: (Convert go.untyped_nil go.error UntypedNil)
               else
-                let: ("$x", "$ok") := (TypeAssert2 (go.PointerType rbac.ClusterRole) "$y") in
+                let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole) "$y") in
                 (if: "$ok"
                 then
-                  let: "typed" := (GoAlloc (go.PointerType rbac.ClusterRole) "$x") in
+                  let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole) "$x") in
                   return: (Convert go.untyped_nil go.error UntypedNil)
                 else
                   return: (let: "$a0" := #"unsupported object type for strategy and validation: %T"%go in
                    let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
                    CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-                   (FuncResolve fmt.Errorf [] #()) "$a0" "$a1"))))))));;;
+                   (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1"))))))));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
 (* applyPersistentVolumeClaimProtectionAdmission mirrors the built-in
@@ -1172,9 +1172,9 @@ Definition applyAdmissionMutateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
    go: api_model.go:531:6 *)
 Definition applyPersistentVolumeClaimProtectionAdmissionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "pvc",
-    exception_do (let: "pvc" := (GoAlloc (go.PointerType core.PersistentVolumeClaim) "pvc") in
+    exception_do (let: "pvc" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim) "pvc") in
     let pvcProtectionFinalizer := #"kubernetes.io/pvc-protection"%go in
-    let: "$range" := (![go.SliceType go.string] (StructFieldRef apis_meta_v1.ObjectMeta "Finalizers"%go (StructFieldRef core.PersistentVolumeClaim "ObjectMeta"%go (![go.PointerType core.PersistentVolumeClaim] "pvc")))) in
+    let: "$range" := (![go.SliceType go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Finalizers"%go (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim "ObjectMeta"%go (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim] "pvc")))) in
     (let: "finalizer" := (GoAlloc go.string (GoZeroVal go.string #())) in
     slice.for_range go.string "$range" (λ: "$key" "$value",
       do:  ("finalizer" <-[go.string] "$value");;;
@@ -1182,11 +1182,11 @@ Definition applyPersistentVolumeClaimProtectionAdmissionⁱᵐᵖˡ {ext : ffi_s
       (if: Convert go.untyped_bool go.bool ((![go.string] "finalizer") =⟨go.string⟩ (Convert go.untyped_string go.string pvcProtectionFinalizer))
       then return: (#())
       else do:  #())));;;
-    let: "$r0" := (let: "$a0" := (![go.SliceType go.string] (StructFieldRef apis_meta_v1.ObjectMeta "Finalizers"%go (StructFieldRef core.PersistentVolumeClaim "ObjectMeta"%go (![go.PointerType core.PersistentVolumeClaim] "pvc")))) in
+    let: "$r0" := (let: "$a0" := (![go.SliceType go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Finalizers"%go (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim "ObjectMeta"%go (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim] "pvc")))) in
     let: "$a1" := ((let: "$sl0" := (Convert go.untyped_string go.string pvcProtectionFinalizer) in
     CompositeLiteral (go.SliceType go.string) (LiteralValue [KeyedElement None (ElementExpression go.string "$sl0")]))) in
     (FuncResolve go.append [go.SliceType go.string] #()) "$a0" "$a1") in
-    do:  ((StructFieldRef apis_meta_v1.ObjectMeta "Finalizers"%go (StructFieldRef core.PersistentVolumeClaim "ObjectMeta"%go (![go.PointerType core.PersistentVolumeClaim] "pvc"))) <-[go.SliceType go.string] "$r0");;;
+    do:  ((StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Finalizers"%go (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim "ObjectMeta"%go (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim] "pvc"))) <-[go.SliceType go.string] "$r0");;;
     return: #()).
 
 (* applyPostPrepareCreateDefaults restores server-owned create defaults that are
@@ -1199,56 +1199,56 @@ Definition applyPostPrepareCreateDefaultsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx
   λ: "obj",
     exception_do (let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
     let: "$y" := (![go.InterfaceType []] "obj") in
-    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.Pod) "$y") in
+    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) "$y") in
     (if: "$ok"
     then
-      let: "typed" := (GoAlloc (go.PointerType core.Pod) "$x") in
+      let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) "$x") in
       return: (Convert go.untyped_nil go.error UntypedNil)
     else
-      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.PersistentVolumeClaim) "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim) "$y") in
       (if: "$ok"
       then
-        let: "typed" := (GoAlloc (go.PointerType core.PersistentVolumeClaim) "$x") in
-        (if: Convert go.untyped_bool go.bool ((![core.PersistentVolumeClaimPhase] (StructFieldRef core.PersistentVolumeClaimStatus "Phase"%go (StructFieldRef core.PersistentVolumeClaim "Status"%go (![go.PointerType core.PersistentVolumeClaim] "typed")))) =⟨core.PersistentVolumeClaimPhase⟩ #""%go)
+        let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim) "$x") in
+        (if: Convert go.untyped_bool go.bool ((![code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaimPhase] (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaimStatus "Phase"%go (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim "Status"%go (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim] "typed")))) =⟨code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaimPhase⟩ #""%go)
         then
-          let: "$r0" := core.ClaimPending in
-          do:  ((StructFieldRef core.PersistentVolumeClaimStatus "Phase"%go (StructFieldRef core.PersistentVolumeClaim "Status"%go (![go.PointerType core.PersistentVolumeClaim] "typed"))) <-[core.PersistentVolumeClaimPhase] "$r0")
+          let: "$r0" := code.k8s_io.kubernetes.pkg.apis.core.core.ClaimPending in
+          do:  ((StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaimStatus "Phase"%go (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim "Status"%go (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim] "typed"))) <-[code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaimPhase] "$r0")
         else do:  #())
       else
-        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.ServiceAccount) "$y") in
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount) "$y") in
         (if: "$ok"
         then
-          let: "typed" := (GoAlloc (go.PointerType core.ServiceAccount) "$x") in
+          let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount) "$x") in
           return: (Convert go.untyped_nil go.error UntypedNil)
         else
-          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet) "$y") in
           (if: "$ok"
           then
-            let: "typed" := (GoAlloc (go.PointerType apps.ReplicaSet) "$x") in
+            let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet) "$x") in
             return: (Convert go.untyped_nil go.error UntypedNil)
           else
-            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.StatefulSet) "$y") in
+            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet) "$y") in
             (if: "$ok"
             then
-              let: "typed" := (GoAlloc (go.PointerType apps.StatefulSet) "$x") in
+              let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet) "$x") in
               return: (Convert go.untyped_nil go.error UntypedNil)
             else
-              let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.Deployment) "$y") in
+              let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment) "$y") in
               (if: "$ok"
               then
-                let: "typed" := (GoAlloc (go.PointerType apps.Deployment) "$x") in
+                let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment) "$x") in
                 return: (Convert go.untyped_nil go.error UntypedNil)
               else
-                let: ("$x", "$ok") := (TypeAssert2 (go.PointerType rbac.ClusterRole) "$y") in
+                let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole) "$y") in
                 (if: "$ok"
                 then
-                  let: "typed" := (GoAlloc (go.PointerType rbac.ClusterRole) "$x") in
+                  let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole) "$x") in
                   return: (Convert go.untyped_nil go.error UntypedNil)
                 else
                   return: (let: "$a0" := #"unsupported object type for post-prepare create defaults: %T"%go in
                    let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
                    CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-                   (FuncResolve fmt.Errorf [] #()) "$a0" "$a1"))))))));;;
+                   (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1"))))))));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
 (* normalizeVersionedObject removes conversion artifacts after converting an
@@ -1261,16 +1261,16 @@ Definition normalizeVersionedObjectⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
   λ: "obj",
     exception_do (let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
     let: "$y" := (![go.InterfaceType []] "obj") in
-    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_apps_v1.StatefulSet) "$y") in
+    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) "$y") in
     (if: "$ok"
     then
-      let: "typed" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) "$x") in
-      let: "$range" := (![go.SliceType api_core_v1.PersistentVolumeClaim] (StructFieldRef api_apps_v1.StatefulSetSpec "VolumeClaimTemplates"%go (StructFieldRef api_apps_v1.StatefulSet "Spec"%go (![go.PointerType api_apps_v1.StatefulSet] "typed")))) in
+      let: "typed" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) "$x") in
+      let: "$range" := (![go.SliceType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim] (StructFieldRef code.k8s_io.api.apps.v1.v1.StatefulSetSpec "VolumeClaimTemplates"%go (StructFieldRef code.k8s_io.api.apps.v1.v1.StatefulSet "Spec"%go (![go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "typed")))) in
       (let: "i" := (GoAlloc go.int (GoZeroVal go.int #())) in
-      slice.for_range api_core_v1.PersistentVolumeClaim "$range" (λ: "$key" "$value",
+      slice.for_range code.k8s_io.api.core.v1.v1.PersistentVolumeClaim "$range" (λ: "$key" "$value",
         do:  ("i" <-[go.int] "$key");;;
-        let: "$r0" := (CompositeLiteral apis_meta_v1.TypeMeta (LiteralValue [])) in
-        do:  ((StructFieldRef api_core_v1.PersistentVolumeClaim "TypeMeta"%go (IndexRef (go.SliceType api_core_v1.PersistentVolumeClaim) (![go.SliceType api_core_v1.PersistentVolumeClaim] (StructFieldRef api_apps_v1.StatefulSetSpec "VolumeClaimTemplates"%go (StructFieldRef api_apps_v1.StatefulSet "Spec"%go (![go.PointerType api_apps_v1.StatefulSet] "typed"))), ![go.int] "i"))) <-[apis_meta_v1.TypeMeta] "$r0")))
+        let: "$r0" := (CompositeLiteral code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.TypeMeta (LiteralValue [])) in
+        do:  ((StructFieldRef code.k8s_io.api.core.v1.v1.PersistentVolumeClaim "TypeMeta"%go (IndexRef (go.SliceType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) (![go.SliceType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim] (StructFieldRef code.k8s_io.api.apps.v1.v1.StatefulSetSpec "VolumeClaimTemplates"%go (StructFieldRef code.k8s_io.api.apps.v1.v1.StatefulSet "Spec"%go (![go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "typed"))), ![go.int] "i"))) <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.TypeMeta] "$r0")))
     else do:  #());;;
     return: #()).
 
@@ -1287,78 +1287,78 @@ Definition applyAdmissionMutateForUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx 
     exception_do (let: "oldObj" := (GoAlloc (go.InterfaceType []) "oldObj") in
     let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
     let: "$y" := (![go.InterfaceType []] "obj") in
-    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.Pod) "$y") in
+    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) "$y") in
     (if: "$ok"
     then
-      let: "typed" := (GoAlloc (go.PointerType core.Pod) "$x") in
+      let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) "$x") in
       let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-      let: "oldPod" := (GoAlloc (go.PointerType core.Pod) (GoZeroVal (go.PointerType core.Pod) #())) in
-      let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType core.Pod) (![go.InterfaceType []] "oldObj")) in
+      let: "oldPod" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) (GoZeroVal (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) #())) in
+      let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) (![go.InterfaceType []] "oldObj")) in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
-      do:  ("oldPod" <-[go.PointerType core.Pod] "$r0");;;
+      do:  ("oldPod" <-[go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "$r0");;;
       do:  ("ok" <-[go.bool] "$r1");;;
       (if: (⟨go.bool⟩! (![go.bool] "ok"))
       then
         return: (let: "$a0" := #"expected *core.Pod for old object, got %T"%go in
          let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "oldObj") in
          CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+         (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
       else do:  #());;;
-      do:  (let: "$a0" := (![go.PointerType core.Pod] "typed") in
+      do:  (let: "$a0" := (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "typed") in
       (FuncResolve applyDefaultTolerationSeconds [] #()) "$a0");;;
-      (if: Convert go.untyped_bool go.bool (((![go.PointerType go.int32] (StructFieldRef core.PodSpec "Priority"%go (StructFieldRef core.Pod "Spec"%go (![go.PointerType core.Pod] "typed")))) =⟨go.PointerType go.int32⟩ (Convert go.untyped_nil (go.PointerType go.int32) UntypedNil)) && ((![go.PointerType go.int32] (StructFieldRef core.PodSpec "Priority"%go (StructFieldRef core.Pod "Spec"%go (![go.PointerType core.Pod] "oldPod")))) ≠⟨go.PointerType go.int32⟩ (Convert go.untyped_nil (go.PointerType go.int32) UntypedNil)))
+      (if: Convert go.untyped_bool go.bool (((![go.PointerType go.int32] (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PodSpec "Priority"%go (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Pod "Spec"%go (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "typed")))) =⟨go.PointerType go.int32⟩ (Convert go.untyped_nil (go.PointerType go.int32) UntypedNil)) && ((![go.PointerType go.int32] (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PodSpec "Priority"%go (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Pod "Spec"%go (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "oldPod")))) ≠⟨go.PointerType go.int32⟩ (Convert go.untyped_nil (go.PointerType go.int32) UntypedNil)))
       then
         let: "priority" := (GoAlloc go.int32 (GoZeroVal go.int32 #())) in
-        let: "$r0" := (![go.int32] (![go.PointerType go.int32] (StructFieldRef core.PodSpec "Priority"%go (StructFieldRef core.Pod "Spec"%go (![go.PointerType core.Pod] "oldPod"))))) in
+        let: "$r0" := (![go.int32] (![go.PointerType go.int32] (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PodSpec "Priority"%go (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Pod "Spec"%go (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "oldPod"))))) in
         do:  ("priority" <-[go.int32] "$r0");;;
         let: "$r0" := "priority" in
-        do:  ((StructFieldRef core.PodSpec "Priority"%go (StructFieldRef core.Pod "Spec"%go (![go.PointerType core.Pod] "typed"))) <-[go.PointerType go.int32] "$r0")
+        do:  ((StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PodSpec "Priority"%go (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Pod "Spec"%go (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "typed"))) <-[go.PointerType go.int32] "$r0")
       else do:  #());;;
-      (if: Convert go.untyped_bool go.bool (((![go.PointerType core.PreemptionPolicy] (StructFieldRef core.PodSpec "PreemptionPolicy"%go (StructFieldRef core.Pod "Spec"%go (![go.PointerType core.Pod] "typed")))) =⟨go.PointerType core.PreemptionPolicy⟩ (Convert go.untyped_nil (go.PointerType core.PreemptionPolicy) UntypedNil)) && ((![go.PointerType core.PreemptionPolicy] (StructFieldRef core.PodSpec "PreemptionPolicy"%go (StructFieldRef core.Pod "Spec"%go (![go.PointerType core.Pod] "oldPod")))) ≠⟨go.PointerType core.PreemptionPolicy⟩ (Convert go.untyped_nil (go.PointerType core.PreemptionPolicy) UntypedNil)))
+      (if: Convert go.untyped_bool go.bool (((![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PreemptionPolicy] (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PodSpec "PreemptionPolicy"%go (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Pod "Spec"%go (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "typed")))) =⟨go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PreemptionPolicy⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PreemptionPolicy) UntypedNil)) && ((![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PreemptionPolicy] (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PodSpec "PreemptionPolicy"%go (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Pod "Spec"%go (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "oldPod")))) ≠⟨go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PreemptionPolicy⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PreemptionPolicy) UntypedNil)))
       then
-        let: "policy" := (GoAlloc core.PreemptionPolicy (GoZeroVal core.PreemptionPolicy #())) in
-        let: "$r0" := (![core.PreemptionPolicy] (![go.PointerType core.PreemptionPolicy] (StructFieldRef core.PodSpec "PreemptionPolicy"%go (StructFieldRef core.Pod "Spec"%go (![go.PointerType core.Pod] "oldPod"))))) in
-        do:  ("policy" <-[core.PreemptionPolicy] "$r0");;;
+        let: "policy" := (GoAlloc code.k8s_io.kubernetes.pkg.apis.core.core.PreemptionPolicy (GoZeroVal code.k8s_io.kubernetes.pkg.apis.core.core.PreemptionPolicy #())) in
+        let: "$r0" := (![code.k8s_io.kubernetes.pkg.apis.core.core.PreemptionPolicy] (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PreemptionPolicy] (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PodSpec "PreemptionPolicy"%go (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Pod "Spec"%go (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "oldPod"))))) in
+        do:  ("policy" <-[code.k8s_io.kubernetes.pkg.apis.core.core.PreemptionPolicy] "$r0");;;
         let: "$r0" := "policy" in
-        do:  ((StructFieldRef core.PodSpec "PreemptionPolicy"%go (StructFieldRef core.Pod "Spec"%go (![go.PointerType core.Pod] "typed"))) <-[go.PointerType core.PreemptionPolicy] "$r0")
+        do:  ((StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.PodSpec "PreemptionPolicy"%go (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Pod "Spec"%go (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "typed"))) <-[go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PreemptionPolicy] "$r0")
       else do:  #())
     else
-      let: "$ok" := ((Snd (TypeAssert2 (go.PointerType core.PersistentVolumeClaim) "$y")) || (Snd (TypeAssert2 (go.PointerType core.PersistentVolumeClaim) "$y"))) in
+      let: "$ok" := ((Snd (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim) "$y")) || (Snd (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim) "$y"))) in
       let: "$x" := "$y" in
       (if: "$ok"
       then
         let: "typed" := (GoAlloc (go.InterfaceType []) "$x") in
         return: (Convert go.untyped_nil go.error UntypedNil)
       else
-        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet) "$y") in
         (if: "$ok"
         then
-          let: "typed" := (GoAlloc (go.PointerType apps.ReplicaSet) "$x") in
+          let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet) "$x") in
           return: (Convert go.untyped_nil go.error UntypedNil)
         else
-          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.StatefulSet) "$y") in
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet) "$y") in
           (if: "$ok"
           then
-            let: "typed" := (GoAlloc (go.PointerType apps.StatefulSet) "$x") in
+            let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet) "$x") in
             return: (Convert go.untyped_nil go.error UntypedNil)
           else
-            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.Deployment) "$y") in
+            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment) "$y") in
             (if: "$ok"
             then
-              let: "typed" := (GoAlloc (go.PointerType apps.Deployment) "$x") in
+              let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment) "$x") in
               return: (Convert go.untyped_nil go.error UntypedNil)
             else
-              let: ("$x", "$ok") := (TypeAssert2 (go.PointerType rbac.ClusterRole) "$y") in
+              let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole) "$y") in
               (if: "$ok"
               then
-                let: "typed" := (GoAlloc (go.PointerType rbac.ClusterRole) "$x") in
+                let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole) "$x") in
                 return: (Convert go.untyped_nil go.error UntypedNil)
               else
                 return: (let: "$a0" := #"unsupported object type for update admission mutation: %T"%go in
                  let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
                  CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-                 (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")))))));;;
+                 (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")))))));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:623:6 *)
@@ -1366,38 +1366,38 @@ Definition applyAdmissionValidateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
   λ: "obj",
     exception_do (let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
     let: "$y" := (![go.InterfaceType []] "obj") in
-    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.Pod) "$y") in
+    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) "$y") in
     (if: "$ok"
     then return: (Convert go.untyped_nil go.error UntypedNil)
     else
-      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.PersistentVolumeClaim) "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim) "$y") in
       (if: "$ok"
       then return: (Convert go.untyped_nil go.error UntypedNil)
       else
-        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.ServiceAccount) "$y") in
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount) "$y") in
         (if: "$ok"
         then return: (Convert go.untyped_nil go.error UntypedNil)
         else
-          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet) "$y") in
           (if: "$ok"
           then return: (Convert go.untyped_nil go.error UntypedNil)
           else
-            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.StatefulSet) "$y") in
+            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet) "$y") in
             (if: "$ok"
             then return: (Convert go.untyped_nil go.error UntypedNil)
             else
-              let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.Deployment) "$y") in
+              let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment) "$y") in
               (if: "$ok"
               then return: (Convert go.untyped_nil go.error UntypedNil)
               else
-                let: ("$x", "$ok") := (TypeAssert2 (go.PointerType rbac.ClusterRole) "$y") in
+                let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole) "$y") in
                 (if: "$ok"
                 then return: (Convert go.untyped_nil go.error UntypedNil)
                 else
                   return: (let: "$a0" := #"unsupported object type for admission validation: %T"%go in
                    let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
                    CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-                   (FuncResolve fmt.Errorf [] #()) "$a0" "$a1"))))))))).
+                   (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1"))))))))).
 
 (* go: api_model.go:654:6 *)
 Definition allowUnconditionalUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
@@ -1410,17 +1410,17 @@ Definition allowUnconditionalUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
       return: (#false, let: "$a0" := #"unsupported kind for update: %s"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "kind")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1"))).
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1"))).
 
 (* go: api_model.go:671:6 *)
 Definition malformedUpdateResourceVersionErrorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "err",
     exception_do (let: "err" := (GoAlloc go.error "err") in
-    return: (Convert (go.PointerType errors.StatusError) go.error (GoAlloc errors.StatusError (let: "$v0" := (let: "$v0" := (Convert go.untyped_string go.string apis_meta_v1.StatusFailure) in
+    return: (Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (GoAlloc code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError (let: "$v0" := (let: "$v0" := (Convert go.untyped_string go.string code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.StatusFailure) in
      let: "$v1" := #(W32 500) in
      let: "$v2" := ((MethodResolve go.error "Error"%go (![go.error] "err")) #()) in
-     CompositeLiteral apis_meta_v1.Status (LiteralValue [KeyedElement (Some (KeyField "Status"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Code"%go)) (ElementExpression go.int32 "$v1"); KeyedElement (Some (KeyField "Message"%go)) (ElementExpression go.string "$v2")])) in
-     CompositeLiteral errors.StatusError (LiteralValue [KeyedElement (Some (KeyField "ErrStatus"%go)) (ElementExpression apis_meta_v1.Status "$v0")]))))).
+     CompositeLiteral code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Status (LiteralValue [KeyedElement (Some (KeyField "Status"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Code"%go)) (ElementExpression go.int32 "$v1"); KeyedElement (Some (KeyField "Message"%go)) (ElementExpression go.string "$v2")])) in
+     CompositeLiteral code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError (LiteralValue [KeyedElement (Some (KeyField "ErrStatus"%go)) (ElementExpression code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Status "$v0")]))))).
 
 (* go: api_model.go:679:6 *)
 Definition parseResourceVersionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
@@ -1429,7 +1429,7 @@ Definition parseResourceVersionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
     let: ("$ret0", "$ret1") := ((let: "$a0" := (![go.string] "resourceVersion") in
     let: "$a1" := #(W64 10) in
     let: "$a2" := #(W64 64) in
-    (FuncResolve strconv.ParseUint [] #()) "$a0" "$a1" "$a2")) in
+    (FuncResolve code.strconv.strconv.ParseUint [] #()) "$a0" "$a1" "$a2")) in
     return: ("$ret0", "$ret1")).
 
 (* go: api_model.go:683:6 *)
@@ -1437,222 +1437,222 @@ Definition updateStrategyForLegacyObjectⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx 
   λ: "obj",
     exception_do (let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
     let: "$y" := (![go.InterfaceType []] "obj") in
-    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.ServiceAccount) "$y") in
+    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount) "$y") in
     (if: "$ok"
-    then return: (Convert serviceaccount.strategy rest.RESTUpdateStrategy (![serviceaccount.strategy] (GlobalVarAddr serviceaccount.Strategy #())), Convert go.untyped_nil go.error UntypedNil)
+    then return: (Convert code.k8s_io.kubernetes.pkg.registry.core.serviceaccount.serviceaccount.strategy code.k8s_io.apiserver.pkg.registry.rest.rest.RESTUpdateStrategy (![code.k8s_io.kubernetes.pkg.registry.core.serviceaccount.serviceaccount.strategy] (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.core.serviceaccount.serviceaccount.Strategy #())), Convert go.untyped_nil go.error UntypedNil)
     else
-      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.Pod) "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) "$y") in
       (if: "$ok"
-      then return: (Convert pod.podStrategy rest.RESTUpdateStrategy (![pod.podStrategy] (GlobalVarAddr pod.Strategy #())), Convert go.untyped_nil go.error UntypedNil)
+      then return: (Convert code.k8s_io.kubernetes.pkg.registry.core.pod.pod.podStrategy code.k8s_io.apiserver.pkg.registry.rest.rest.RESTUpdateStrategy (![code.k8s_io.kubernetes.pkg.registry.core.pod.pod.podStrategy] (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.core.pod.pod.Strategy #())), Convert go.untyped_nil go.error UntypedNil)
       else
-        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.PersistentVolumeClaim) "$y") in
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim) "$y") in
         (if: "$ok"
-        then return: (Convert persistentvolumeclaim.persistentvolumeclaimStrategy rest.RESTUpdateStrategy (![persistentvolumeclaim.persistentvolumeclaimStrategy] (GlobalVarAddr persistentvolumeclaim.Strategy #())), Convert go.untyped_nil go.error UntypedNil)
+        then return: (Convert code.k8s_io.kubernetes.pkg.registry.core.persistentvolumeclaim.persistentvolumeclaim.persistentvolumeclaimStrategy code.k8s_io.apiserver.pkg.registry.rest.rest.RESTUpdateStrategy (![code.k8s_io.kubernetes.pkg.registry.core.persistentvolumeclaim.persistentvolumeclaim.persistentvolumeclaimStrategy] (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.core.persistentvolumeclaim.persistentvolumeclaim.Strategy #())), Convert go.untyped_nil go.error UntypedNil)
         else
-          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet) "$y") in
           (if: "$ok"
-          then return: (Convert replicaset.rsStrategy rest.RESTUpdateStrategy (![replicaset.rsStrategy] (GlobalVarAddr replicaset.Strategy #())), Convert go.untyped_nil go.error UntypedNil)
+          then return: (Convert code.k8s_io.kubernetes.pkg.registry.apps.replicaset.replicaset.rsStrategy code.k8s_io.apiserver.pkg.registry.rest.rest.RESTUpdateStrategy (![code.k8s_io.kubernetes.pkg.registry.apps.replicaset.replicaset.rsStrategy] (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.apps.replicaset.replicaset.Strategy #())), Convert go.untyped_nil go.error UntypedNil)
           else
-            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.StatefulSet) "$y") in
+            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet) "$y") in
             (if: "$ok"
-            then return: (Convert statefulset.statefulSetStrategy rest.RESTUpdateStrategy (![statefulset.statefulSetStrategy] (GlobalVarAddr statefulset.Strategy #())), Convert go.untyped_nil go.error UntypedNil)
+            then return: (Convert code.k8s_io.kubernetes.pkg.registry.apps.statefulset.statefulset.statefulSetStrategy code.k8s_io.apiserver.pkg.registry.rest.rest.RESTUpdateStrategy (![code.k8s_io.kubernetes.pkg.registry.apps.statefulset.statefulset.statefulSetStrategy] (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.apps.statefulset.statefulset.Strategy #())), Convert go.untyped_nil go.error UntypedNil)
             else
-              let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.Deployment) "$y") in
+              let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment) "$y") in
               (if: "$ok"
-              then return: (Convert deployment.deploymentStrategy rest.RESTUpdateStrategy (![deployment.deploymentStrategy] (GlobalVarAddr deployment.Strategy #())), Convert go.untyped_nil go.error UntypedNil)
+              then return: (Convert code.k8s_io.kubernetes.pkg.registry.apps.deployment.deployment.deploymentStrategy code.k8s_io.apiserver.pkg.registry.rest.rest.RESTUpdateStrategy (![code.k8s_io.kubernetes.pkg.registry.apps.deployment.deployment.deploymentStrategy] (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.apps.deployment.deployment.Strategy #())), Convert go.untyped_nil go.error UntypedNil)
               else
-                let: ("$x", "$ok") := (TypeAssert2 (go.PointerType rbac.ClusterRole) "$y") in
+                let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole) "$y") in
                 (if: "$ok"
-                then return: (Convert clusterrole.strategy rest.RESTUpdateStrategy (![clusterrole.strategy] (GlobalVarAddr clusterrole.Strategy #())), Convert go.untyped_nil go.error UntypedNil)
+                then return: (Convert code.k8s_io.kubernetes.pkg.registry.rbac.clusterrole.clusterrole.strategy code.k8s_io.apiserver.pkg.registry.rest.rest.RESTUpdateStrategy (![code.k8s_io.kubernetes.pkg.registry.rbac.clusterrole.clusterrole.strategy] (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.rbac.clusterrole.clusterrole.Strategy #())), Convert go.untyped_nil go.error UntypedNil)
                 else
-                  return: (Convert go.untyped_nil rest.RESTUpdateStrategy UntypedNil, let: "$a0" := #"unsupported object type for update strategy: %T"%go in
+                  return: (Convert go.untyped_nil code.k8s_io.apiserver.pkg.registry.rest.rest.RESTUpdateStrategy UntypedNil, let: "$a0" := #"unsupported object type for update strategy: %T"%go in
                    let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
                    CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-                   (FuncResolve fmt.Errorf [] #()) "$a0" "$a1"))))))))).
+                   (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1"))))))))).
 
 (* go: api_model.go:704:6 *)
 Definition statusUpdateStrategyForLegacyObjectⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "obj",
     exception_do (let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
     let: "$y" := (![go.InterfaceType []] "obj") in
-    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.Pod) "$y") in
+    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) "$y") in
     (if: "$ok"
-    then return: (Convert pod.podStatusStrategy rest.RESTUpdateStrategy (![pod.podStatusStrategy] (GlobalVarAddr pod.StatusStrategy #())), Convert go.untyped_nil go.error UntypedNil)
+    then return: (Convert code.k8s_io.kubernetes.pkg.registry.core.pod.pod.podStatusStrategy code.k8s_io.apiserver.pkg.registry.rest.rest.RESTUpdateStrategy (![code.k8s_io.kubernetes.pkg.registry.core.pod.pod.podStatusStrategy] (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.core.pod.pod.StatusStrategy #())), Convert go.untyped_nil go.error UntypedNil)
     else
-      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.PersistentVolumeClaim) "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim) "$y") in
       (if: "$ok"
-      then return: (Convert persistentvolumeclaim.persistentvolumeclaimStatusStrategy rest.RESTUpdateStrategy (![persistentvolumeclaim.persistentvolumeclaimStatusStrategy] (GlobalVarAddr persistentvolumeclaim.StatusStrategy #())), Convert go.untyped_nil go.error UntypedNil)
+      then return: (Convert code.k8s_io.kubernetes.pkg.registry.core.persistentvolumeclaim.persistentvolumeclaim.persistentvolumeclaimStatusStrategy code.k8s_io.apiserver.pkg.registry.rest.rest.RESTUpdateStrategy (![code.k8s_io.kubernetes.pkg.registry.core.persistentvolumeclaim.persistentvolumeclaim.persistentvolumeclaimStatusStrategy] (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.core.persistentvolumeclaim.persistentvolumeclaim.StatusStrategy #())), Convert go.untyped_nil go.error UntypedNil)
       else
-        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet) "$y") in
         (if: "$ok"
-        then return: (Convert replicaset.rsStatusStrategy rest.RESTUpdateStrategy (![replicaset.rsStatusStrategy] (GlobalVarAddr replicaset.StatusStrategy #())), Convert go.untyped_nil go.error UntypedNil)
+        then return: (Convert code.k8s_io.kubernetes.pkg.registry.apps.replicaset.replicaset.rsStatusStrategy code.k8s_io.apiserver.pkg.registry.rest.rest.RESTUpdateStrategy (![code.k8s_io.kubernetes.pkg.registry.apps.replicaset.replicaset.rsStatusStrategy] (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.apps.replicaset.replicaset.StatusStrategy #())), Convert go.untyped_nil go.error UntypedNil)
         else
-          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.StatefulSet) "$y") in
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet) "$y") in
           (if: "$ok"
-          then return: (Convert statefulset.statefulSetStatusStrategy rest.RESTUpdateStrategy (![statefulset.statefulSetStatusStrategy] (GlobalVarAddr statefulset.StatusStrategy #())), Convert go.untyped_nil go.error UntypedNil)
+          then return: (Convert code.k8s_io.kubernetes.pkg.registry.apps.statefulset.statefulset.statefulSetStatusStrategy code.k8s_io.apiserver.pkg.registry.rest.rest.RESTUpdateStrategy (![code.k8s_io.kubernetes.pkg.registry.apps.statefulset.statefulset.statefulSetStatusStrategy] (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.apps.statefulset.statefulset.StatusStrategy #())), Convert go.untyped_nil go.error UntypedNil)
           else
-            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.Deployment) "$y") in
+            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment) "$y") in
             (if: "$ok"
-            then return: (Convert deployment.deploymentStatusStrategy rest.RESTUpdateStrategy (![deployment.deploymentStatusStrategy] (GlobalVarAddr deployment.StatusStrategy #())), Convert go.untyped_nil go.error UntypedNil)
+            then return: (Convert code.k8s_io.kubernetes.pkg.registry.apps.deployment.deployment.deploymentStatusStrategy code.k8s_io.apiserver.pkg.registry.rest.rest.RESTUpdateStrategy (![code.k8s_io.kubernetes.pkg.registry.apps.deployment.deployment.deploymentStatusStrategy] (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.apps.deployment.deployment.StatusStrategy #())), Convert go.untyped_nil go.error UntypedNil)
             else
-              return: (Convert go.untyped_nil rest.RESTUpdateStrategy UntypedNil, let: "$a0" := #"unsupported object type for status update strategy: %T"%go in
+              return: (Convert go.untyped_nil code.k8s_io.apiserver.pkg.registry.rest.rest.RESTUpdateStrategy UntypedNil, let: "$a0" := #"unsupported object type for status update strategy: %T"%go in
                let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
                CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-               (FuncResolve fmt.Errorf [] #()) "$a0" "$a1"))))))).
+               (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1"))))))).
 
 (* go: api_model.go:721:6 *)
 Definition applyStrategyValidateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "obj" "name",
     exception_do (let: "name" := (GoAlloc go.string "name") in
     let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
-    let: "ctx" := (GoAlloc context.Context (GoZeroVal context.Context #())) in
-    let: "$r0" := ((FuncResolve context.Background [] #()) #()) in
-    do:  ("ctx" <-[context.Context] "$r0");;;
+    let: "ctx" := (GoAlloc code.context.context.Context (GoZeroVal code.context.context.Context #())) in
+    let: "$r0" := ((FuncResolve code.context.context.Background [] #()) #()) in
+    do:  ("ctx" <-[code.context.context.Context] "$r0");;;
     let: "$y" := (![go.InterfaceType []] "obj") in
-    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.Pod) "$y") in
+    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) "$y") in
     (if: "$ok"
     then
-      let: "typed" := (GoAlloc (go.PointerType core.Pod) "$x") in
-      (let: "errs" := (GoAlloc field.ErrorList (GoZeroVal field.ErrorList #())) in
-      let: "$r0" := (let: "$a0" := (![context.Context] "ctx") in
-      let: "$a1" := (Convert (go.PointerType core.Pod) runtime.Object (![go.PointerType core.Pod] "typed")) in
-      (MethodResolve (go.PointerType pod.podStrategy) "Validate"%go (GlobalVarAddr pod.Strategy #())) "$a0" "$a1") in
-      do:  ("errs" <-[field.ErrorList] "$r0");;;
-      (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![field.ErrorList] "errs") in
-      (FuncResolve go.len [field.ErrorList] #()) "$a0") >⟨go.int⟩ #(W64 0))
+      let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) "$x") in
+      (let: "errs" := (GoAlloc code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList (GoZeroVal code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList #())) in
+      let: "$r0" := (let: "$a0" := (![code.context.context.Context] "ctx") in
+      let: "$a1" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "typed")) in
+      (MethodResolve (go.PointerType code.k8s_io.kubernetes.pkg.registry.core.pod.pod.podStrategy) "Validate"%go (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.core.pod.pod.Strategy #())) "$a0" "$a1") in
+      do:  ("errs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0");;;
+      (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "errs") in
+      (FuncResolve go.len [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0") >⟨go.int⟩ #(W64 0))
       then
-        return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := #""%go in
+        return: (Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := #""%go in
          let: "$v1" := #"Pod"%go in
-         CompositeLiteral schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Group"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v1")])) in
+         CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Group"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v1")])) in
          let: "$a1" := (![go.string] "name") in
-         let: "$a2" := (![field.ErrorList] "errs") in
-         (FuncResolve errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
+         let: "$a2" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "errs") in
+         (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
       else do:  #()))
     else
-      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.PersistentVolumeClaim) "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim) "$y") in
       (if: "$ok"
       then
-        let: "typed" := (GoAlloc (go.PointerType core.PersistentVolumeClaim) "$x") in
-        (let: "errs" := (GoAlloc field.ErrorList (GoZeroVal field.ErrorList #())) in
-        let: "$r0" := (let: "$a0" := (![context.Context] "ctx") in
-        let: "$a1" := (Convert (go.PointerType core.PersistentVolumeClaim) runtime.Object (![go.PointerType core.PersistentVolumeClaim] "typed")) in
-        (MethodResolve (go.PointerType persistentvolumeclaim.persistentvolumeclaimStrategy) "Validate"%go (GlobalVarAddr persistentvolumeclaim.Strategy #())) "$a0" "$a1") in
-        do:  ("errs" <-[field.ErrorList] "$r0");;;
-        (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![field.ErrorList] "errs") in
-        (FuncResolve go.len [field.ErrorList] #()) "$a0") >⟨go.int⟩ #(W64 0))
+        let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim) "$x") in
+        (let: "errs" := (GoAlloc code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList (GoZeroVal code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList #())) in
+        let: "$r0" := (let: "$a0" := (![code.context.context.Context] "ctx") in
+        let: "$a1" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim) code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim] "typed")) in
+        (MethodResolve (go.PointerType code.k8s_io.kubernetes.pkg.registry.core.persistentvolumeclaim.persistentvolumeclaim.persistentvolumeclaimStrategy) "Validate"%go (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.core.persistentvolumeclaim.persistentvolumeclaim.Strategy #())) "$a0" "$a1") in
+        do:  ("errs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0");;;
+        (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "errs") in
+        (FuncResolve go.len [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0") >⟨go.int⟩ #(W64 0))
         then
-          return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := #""%go in
+          return: (Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := #""%go in
            let: "$v1" := #"PersistentVolumeClaim"%go in
-           CompositeLiteral schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Group"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v1")])) in
+           CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Group"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v1")])) in
            let: "$a1" := (![go.string] "name") in
-           let: "$a2" := (![field.ErrorList] "errs") in
-           (FuncResolve errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
+           let: "$a2" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "errs") in
+           (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
         else do:  #()))
       else
-        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.ServiceAccount) "$y") in
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount) "$y") in
         (if: "$ok"
         then
-          let: "typed" := (GoAlloc (go.PointerType core.ServiceAccount) "$x") in
-          (let: "errs" := (GoAlloc field.ErrorList (GoZeroVal field.ErrorList #())) in
-          let: "$r0" := (let: "$a0" := (![context.Context] "ctx") in
-          let: "$a1" := (Convert (go.PointerType core.ServiceAccount) runtime.Object (![go.PointerType core.ServiceAccount] "typed")) in
-          (MethodResolve (go.PointerType serviceaccount.strategy) "Validate"%go (GlobalVarAddr serviceaccount.Strategy #())) "$a0" "$a1") in
-          do:  ("errs" <-[field.ErrorList] "$r0");;;
-          (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![field.ErrorList] "errs") in
-          (FuncResolve go.len [field.ErrorList] #()) "$a0") >⟨go.int⟩ #(W64 0))
+          let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount) "$x") in
+          (let: "errs" := (GoAlloc code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList (GoZeroVal code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList #())) in
+          let: "$r0" := (let: "$a0" := (![code.context.context.Context] "ctx") in
+          let: "$a1" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount) code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount] "typed")) in
+          (MethodResolve (go.PointerType code.k8s_io.kubernetes.pkg.registry.core.serviceaccount.serviceaccount.strategy) "Validate"%go (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.core.serviceaccount.serviceaccount.Strategy #())) "$a0" "$a1") in
+          do:  ("errs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0");;;
+          (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "errs") in
+          (FuncResolve go.len [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0") >⟨go.int⟩ #(W64 0))
           then
-            return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := #""%go in
+            return: (Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := #""%go in
              let: "$v1" := #"ServiceAccount"%go in
-             CompositeLiteral schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Group"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v1")])) in
+             CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Group"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v1")])) in
              let: "$a1" := (![go.string] "name") in
-             let: "$a2" := (![field.ErrorList] "errs") in
-             (FuncResolve errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
+             let: "$a2" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "errs") in
+             (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
           else do:  #()))
         else
-          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet) "$y") in
           (if: "$ok"
           then
-            let: "typed" := (GoAlloc (go.PointerType apps.ReplicaSet) "$x") in
-            (let: "errs" := (GoAlloc field.ErrorList (GoZeroVal field.ErrorList #())) in
-            let: "$r0" := (let: "$a0" := (![context.Context] "ctx") in
-            let: "$a1" := (Convert (go.PointerType apps.ReplicaSet) runtime.Object (![go.PointerType apps.ReplicaSet] "typed")) in
-            (MethodResolve (go.PointerType replicaset.rsStrategy) "Validate"%go (GlobalVarAddr replicaset.Strategy #())) "$a0" "$a1") in
-            do:  ("errs" <-[field.ErrorList] "$r0");;;
-            (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![field.ErrorList] "errs") in
-            (FuncResolve go.len [field.ErrorList] #()) "$a0") >⟨go.int⟩ #(W64 0))
+            let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet) "$x") in
+            (let: "errs" := (GoAlloc code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList (GoZeroVal code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList #())) in
+            let: "$r0" := (let: "$a0" := (![code.context.context.Context] "ctx") in
+            let: "$a1" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet) code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet] "typed")) in
+            (MethodResolve (go.PointerType code.k8s_io.kubernetes.pkg.registry.apps.replicaset.replicaset.rsStrategy) "Validate"%go (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.apps.replicaset.replicaset.Strategy #())) "$a0" "$a1") in
+            do:  ("errs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0");;;
+            (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "errs") in
+            (FuncResolve go.len [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0") >⟨go.int⟩ #(W64 0))
             then
-              return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := #"apps"%go in
+              return: (Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := #"apps"%go in
                let: "$v1" := #"ReplicaSet"%go in
-               CompositeLiteral schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Group"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v1")])) in
+               CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Group"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v1")])) in
                let: "$a1" := (![go.string] "name") in
-               let: "$a2" := (![field.ErrorList] "errs") in
-               (FuncResolve errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
+               let: "$a2" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "errs") in
+               (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
             else do:  #()))
           else
-            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.StatefulSet) "$y") in
+            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet) "$y") in
             (if: "$ok"
             then
-              let: "typed" := (GoAlloc (go.PointerType apps.StatefulSet) "$x") in
-              (let: "errs" := (GoAlloc field.ErrorList (GoZeroVal field.ErrorList #())) in
-              let: "$r0" := (let: "$a0" := (![context.Context] "ctx") in
-              let: "$a1" := (Convert (go.PointerType apps.StatefulSet) runtime.Object (![go.PointerType apps.StatefulSet] "typed")) in
-              (MethodResolve (go.PointerType statefulset.statefulSetStrategy) "Validate"%go (GlobalVarAddr statefulset.Strategy #())) "$a0" "$a1") in
-              do:  ("errs" <-[field.ErrorList] "$r0");;;
-              (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![field.ErrorList] "errs") in
-              (FuncResolve go.len [field.ErrorList] #()) "$a0") >⟨go.int⟩ #(W64 0))
+              let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet) "$x") in
+              (let: "errs" := (GoAlloc code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList (GoZeroVal code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList #())) in
+              let: "$r0" := (let: "$a0" := (![code.context.context.Context] "ctx") in
+              let: "$a1" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet) code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet] "typed")) in
+              (MethodResolve (go.PointerType code.k8s_io.kubernetes.pkg.registry.apps.statefulset.statefulset.statefulSetStrategy) "Validate"%go (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.apps.statefulset.statefulset.Strategy #())) "$a0" "$a1") in
+              do:  ("errs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0");;;
+              (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "errs") in
+              (FuncResolve go.len [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0") >⟨go.int⟩ #(W64 0))
               then
-                return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := #"apps"%go in
+                return: (Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := #"apps"%go in
                  let: "$v1" := #"StatefulSet"%go in
-                 CompositeLiteral schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Group"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v1")])) in
+                 CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Group"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v1")])) in
                  let: "$a1" := (![go.string] "name") in
-                 let: "$a2" := (![field.ErrorList] "errs") in
-                 (FuncResolve errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
+                 let: "$a2" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "errs") in
+                 (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
               else do:  #()))
             else
-              let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.Deployment) "$y") in
+              let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment) "$y") in
               (if: "$ok"
               then
-                let: "typed" := (GoAlloc (go.PointerType apps.Deployment) "$x") in
-                (let: "errs" := (GoAlloc field.ErrorList (GoZeroVal field.ErrorList #())) in
-                let: "$r0" := (let: "$a0" := (![context.Context] "ctx") in
-                let: "$a1" := (Convert (go.PointerType apps.Deployment) runtime.Object (![go.PointerType apps.Deployment] "typed")) in
-                (MethodResolve (go.PointerType deployment.deploymentStrategy) "Validate"%go (GlobalVarAddr deployment.Strategy #())) "$a0" "$a1") in
-                do:  ("errs" <-[field.ErrorList] "$r0");;;
-                (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![field.ErrorList] "errs") in
-                (FuncResolve go.len [field.ErrorList] #()) "$a0") >⟨go.int⟩ #(W64 0))
+                let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment) "$x") in
+                (let: "errs" := (GoAlloc code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList (GoZeroVal code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList #())) in
+                let: "$r0" := (let: "$a0" := (![code.context.context.Context] "ctx") in
+                let: "$a1" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment) code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment] "typed")) in
+                (MethodResolve (go.PointerType code.k8s_io.kubernetes.pkg.registry.apps.deployment.deployment.deploymentStrategy) "Validate"%go (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.apps.deployment.deployment.Strategy #())) "$a0" "$a1") in
+                do:  ("errs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0");;;
+                (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "errs") in
+                (FuncResolve go.len [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0") >⟨go.int⟩ #(W64 0))
                 then
-                  return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := #"apps"%go in
+                  return: (Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := #"apps"%go in
                    let: "$v1" := #"Deployment"%go in
-                   CompositeLiteral schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Group"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v1")])) in
+                   CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Group"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v1")])) in
                    let: "$a1" := (![go.string] "name") in
-                   let: "$a2" := (![field.ErrorList] "errs") in
-                   (FuncResolve errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
+                   let: "$a2" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "errs") in
+                   (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
                 else do:  #()))
               else
-                let: ("$x", "$ok") := (TypeAssert2 (go.PointerType rbac.ClusterRole) "$y") in
+                let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole) "$y") in
                 (if: "$ok"
                 then
-                  let: "typed" := (GoAlloc (go.PointerType rbac.ClusterRole) "$x") in
-                  (let: "errs" := (GoAlloc field.ErrorList (GoZeroVal field.ErrorList #())) in
-                  let: "$r0" := (let: "$a0" := (![context.Context] "ctx") in
-                  let: "$a1" := (Convert (go.PointerType rbac.ClusterRole) runtime.Object (![go.PointerType rbac.ClusterRole] "typed")) in
-                  (MethodResolve (go.PointerType clusterrole.strategy) "Validate"%go (GlobalVarAddr clusterrole.Strategy #())) "$a0" "$a1") in
-                  do:  ("errs" <-[field.ErrorList] "$r0");;;
-                  (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![field.ErrorList] "errs") in
-                  (FuncResolve go.len [field.ErrorList] #()) "$a0") >⟨go.int⟩ #(W64 0))
+                  let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole) "$x") in
+                  (let: "errs" := (GoAlloc code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList (GoZeroVal code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList #())) in
+                  let: "$r0" := (let: "$a0" := (![code.context.context.Context] "ctx") in
+                  let: "$a1" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole) code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole] "typed")) in
+                  (MethodResolve (go.PointerType code.k8s_io.kubernetes.pkg.registry.rbac.clusterrole.clusterrole.strategy) "Validate"%go (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.rbac.clusterrole.clusterrole.Strategy #())) "$a0" "$a1") in
+                  do:  ("errs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0");;;
+                  (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "errs") in
+                  (FuncResolve go.len [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0") >⟨go.int⟩ #(W64 0))
                   then
-                    return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := #"rbac.authorization.k8s.io"%go in
+                    return: (Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := #"rbac.authorization.k8s.io"%go in
                      let: "$v1" := #"ClusterRole"%go in
-                     CompositeLiteral schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Group"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v1")])) in
+                     CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Group"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v1")])) in
                      let: "$a1" := (![go.string] "name") in
-                     let: "$a2" := (![field.ErrorList] "errs") in
-                     (FuncResolve errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
+                     let: "$a2" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "errs") in
+                     (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
                   else do:  #()))
                 else
                   return: (let: "$a0" := #"unsupported object type for strategy and validation: %T"%go in
                    let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
                    CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-                   (FuncResolve fmt.Errorf [] #()) "$a0" "$a1"))))))));;;
+                   (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1"))))))));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:758:6 *)
@@ -1660,59 +1660,59 @@ Definition applyStrategyCanonicalizeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : Go
   λ: "obj",
     exception_do (let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
     let: "$y" := (![go.InterfaceType []] "obj") in
-    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.Pod) "$y") in
+    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) "$y") in
     (if: "$ok"
     then
-      let: "typed" := (GoAlloc (go.PointerType core.Pod) "$x") in
-      do:  (let: "$a0" := (Convert (go.PointerType core.Pod) runtime.Object (![go.PointerType core.Pod] "typed")) in
-      (MethodResolve (go.PointerType pod.podStrategy) "Canonicalize"%go (GlobalVarAddr pod.Strategy #())) "$a0")
+      let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) "$x") in
+      do:  (let: "$a0" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "typed")) in
+      (MethodResolve (go.PointerType code.k8s_io.kubernetes.pkg.registry.core.pod.pod.podStrategy) "Canonicalize"%go (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.core.pod.pod.Strategy #())) "$a0")
     else
-      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.PersistentVolumeClaim) "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim) "$y") in
       (if: "$ok"
       then
-        let: "typed" := (GoAlloc (go.PointerType core.PersistentVolumeClaim) "$x") in
-        do:  (let: "$a0" := (Convert (go.PointerType core.PersistentVolumeClaim) runtime.Object (![go.PointerType core.PersistentVolumeClaim] "typed")) in
-        (MethodResolve (go.PointerType persistentvolumeclaim.persistentvolumeclaimStrategy) "Canonicalize"%go (GlobalVarAddr persistentvolumeclaim.Strategy #())) "$a0")
+        let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim) "$x") in
+        do:  (let: "$a0" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim) code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.PersistentVolumeClaim] "typed")) in
+        (MethodResolve (go.PointerType code.k8s_io.kubernetes.pkg.registry.core.persistentvolumeclaim.persistentvolumeclaim.persistentvolumeclaimStrategy) "Canonicalize"%go (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.core.persistentvolumeclaim.persistentvolumeclaim.Strategy #())) "$a0")
       else
-        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType core.ServiceAccount) "$y") in
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount) "$y") in
         (if: "$ok"
         then
-          let: "typed" := (GoAlloc (go.PointerType core.ServiceAccount) "$x") in
-          do:  (let: "$a0" := (Convert (go.PointerType core.ServiceAccount) runtime.Object (![go.PointerType core.ServiceAccount] "typed")) in
-          (MethodResolve (go.PointerType serviceaccount.strategy) "Canonicalize"%go (GlobalVarAddr serviceaccount.Strategy #())) "$a0")
+          let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount) "$x") in
+          do:  (let: "$a0" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount) code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.ServiceAccount] "typed")) in
+          (MethodResolve (go.PointerType code.k8s_io.kubernetes.pkg.registry.core.serviceaccount.serviceaccount.strategy) "Canonicalize"%go (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.core.serviceaccount.serviceaccount.Strategy #())) "$a0")
         else
-          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.ReplicaSet) "$y") in
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet) "$y") in
           (if: "$ok"
           then
-            let: "typed" := (GoAlloc (go.PointerType apps.ReplicaSet) "$x") in
-            do:  (let: "$a0" := (Convert (go.PointerType apps.ReplicaSet) runtime.Object (![go.PointerType apps.ReplicaSet] "typed")) in
-            (MethodResolve (go.PointerType replicaset.rsStrategy) "Canonicalize"%go (GlobalVarAddr replicaset.Strategy #())) "$a0")
+            let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet) "$x") in
+            do:  (let: "$a0" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet) code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.ReplicaSet] "typed")) in
+            (MethodResolve (go.PointerType code.k8s_io.kubernetes.pkg.registry.apps.replicaset.replicaset.rsStrategy) "Canonicalize"%go (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.apps.replicaset.replicaset.Strategy #())) "$a0")
           else
-            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.StatefulSet) "$y") in
+            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet) "$y") in
             (if: "$ok"
             then
-              let: "typed" := (GoAlloc (go.PointerType apps.StatefulSet) "$x") in
-              do:  (let: "$a0" := (Convert (go.PointerType apps.StatefulSet) runtime.Object (![go.PointerType apps.StatefulSet] "typed")) in
-              (MethodResolve (go.PointerType statefulset.statefulSetStrategy) "Canonicalize"%go (GlobalVarAddr statefulset.Strategy #())) "$a0")
+              let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet) "$x") in
+              do:  (let: "$a0" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet) code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.StatefulSet] "typed")) in
+              (MethodResolve (go.PointerType code.k8s_io.kubernetes.pkg.registry.apps.statefulset.statefulset.statefulSetStrategy) "Canonicalize"%go (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.apps.statefulset.statefulset.Strategy #())) "$a0")
             else
-              let: ("$x", "$ok") := (TypeAssert2 (go.PointerType apps.Deployment) "$y") in
+              let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment) "$y") in
               (if: "$ok"
               then
-                let: "typed" := (GoAlloc (go.PointerType apps.Deployment) "$x") in
-                do:  (let: "$a0" := (Convert (go.PointerType apps.Deployment) runtime.Object (![go.PointerType apps.Deployment] "typed")) in
-                (MethodResolve (go.PointerType deployment.deploymentStrategy) "Canonicalize"%go (GlobalVarAddr deployment.Strategy #())) "$a0")
+                let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment) "$x") in
+                do:  (let: "$a0" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment) code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.PointerType code.k8s_io.kubernetes.pkg.apis.apps.apps.Deployment] "typed")) in
+                (MethodResolve (go.PointerType code.k8s_io.kubernetes.pkg.registry.apps.deployment.deployment.deploymentStrategy) "Canonicalize"%go (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.apps.deployment.deployment.Strategy #())) "$a0")
               else
-                let: ("$x", "$ok") := (TypeAssert2 (go.PointerType rbac.ClusterRole) "$y") in
+                let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole) "$y") in
                 (if: "$ok"
                 then
-                  let: "typed" := (GoAlloc (go.PointerType rbac.ClusterRole) "$x") in
-                  do:  (let: "$a0" := (Convert (go.PointerType rbac.ClusterRole) runtime.Object (![go.PointerType rbac.ClusterRole] "typed")) in
-                  (MethodResolve (go.PointerType clusterrole.strategy) "Canonicalize"%go (GlobalVarAddr clusterrole.Strategy #())) "$a0")
+                  let: "typed" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole) "$x") in
+                  do:  (let: "$a0" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole) code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.PointerType code.k8s_io.kubernetes.pkg.apis.rbac.rbac.ClusterRole] "typed")) in
+                  (MethodResolve (go.PointerType code.k8s_io.kubernetes.pkg.registry.rbac.clusterrole.clusterrole.strategy) "Canonicalize"%go (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.rbac.clusterrole.clusterrole.Strategy #())) "$a0")
                 else
                   return: (let: "$a0" := #"unsupported object type for strategy and validation: %T"%go in
                    let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
                    CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-                   (FuncResolve fmt.Errorf [] #()) "$a0" "$a1"))))))));;;
+                   (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1"))))))));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
 (* applyValidationAndDefaultingOnUpdate models the decode/defaulting/admission/storage
@@ -1765,53 +1765,53 @@ Definition applyValidationAndDefaultingOnUpdateⁱᵐᵖˡ {ext : ffi_syntax} {g
     then return: (![go.error] "err")
     else do:  #()));;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "newRuntimeObj" := (GoAlloc runtime.Object (GoZeroVal runtime.Object #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 runtime.Object (![go.InterfaceType []] "legacyNewObj")) in
+    let: "newRuntimeObj" := (GoAlloc code.k8s_io.apimachinery.pkg.runtime.runtime.Object (GoZeroVal code.k8s_io.apimachinery.pkg.runtime.runtime.Object #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.InterfaceType []] "legacyNewObj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("newRuntimeObj" <-[runtime.Object] "$r0");;;
+    do:  ("newRuntimeObj" <-[code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
       return: (let: "$a0" := #"updated object does not implement runtime.Object: %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "legacyNewObj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    let: "oldRuntimeObj" := (GoAlloc runtime.Object (GoZeroVal runtime.Object #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 runtime.Object (![go.InterfaceType []] "legacyOldObj")) in
+    let: "oldRuntimeObj" := (GoAlloc code.k8s_io.apimachinery.pkg.runtime.runtime.Object (GoZeroVal code.k8s_io.apimachinery.pkg.runtime.runtime.Object #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.InterfaceType []] "legacyOldObj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("oldRuntimeObj" <-[runtime.Object] "$r0");;;
+    do:  ("oldRuntimeObj" <-[code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
       return: (let: "$a0" := #"existing object does not implement runtime.Object: %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "legacyOldObj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    let: "strategy" := (GoAlloc rest.RESTUpdateStrategy (GoZeroVal rest.RESTUpdateStrategy #())) in
+    let: "strategy" := (GoAlloc code.k8s_io.apiserver.pkg.registry.rest.rest.RESTUpdateStrategy (GoZeroVal code.k8s_io.apiserver.pkg.registry.rest.rest.RESTUpdateStrategy #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![go.InterfaceType []] "legacyNewObj") in
     (FuncResolve updateStrategyForLegacyObject [] #()) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("strategy" <-[rest.RESTUpdateStrategy] "$r0");;;
+    do:  ("strategy" <-[code.k8s_io.apiserver.pkg.registry.rest.rest.RESTUpdateStrategy] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then return: (![go.error] "err")
     else do:  #());;;
-    let: "ctx" := (GoAlloc context.Context (GoZeroVal context.Context #())) in
-    let: "$r0" := (let: "$a0" := ((FuncResolve request.NewContext [] #()) #()) in
+    let: "ctx" := (GoAlloc code.context.context.Context (GoZeroVal code.context.context.Context #())) in
+    let: "$r0" := (let: "$a0" := ((FuncResolve code.k8s_io.apiserver.pkg.endpoints.request.request.NewContext [] #()) #()) in
     let: "$a1" := (![go.string] "namespace") in
-    (FuncResolve request.WithNamespace [] #()) "$a0" "$a1") in
-    do:  ("ctx" <-[context.Context] "$r0");;;
+    (FuncResolve code.k8s_io.apiserver.pkg.endpoints.request.request.WithNamespace [] #()) "$a0" "$a1") in
+    do:  ("ctx" <-[code.context.context.Context] "$r0");;;
     (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-    let: "$r0" := (let: "$a0" := (![rest.RESTUpdateStrategy] "strategy") in
-    let: "$a1" := (![context.Context] "ctx") in
-    let: "$a2" := (![runtime.Object] "newRuntimeObj") in
-    let: "$a3" := (![runtime.Object] "oldRuntimeObj") in
-    (FuncResolve rest.BeforeUpdate [] #()) "$a0" "$a1" "$a2" "$a3") in
+    let: "$r0" := (let: "$a0" := (![code.k8s_io.apiserver.pkg.registry.rest.rest.RESTUpdateStrategy] "strategy") in
+    let: "$a1" := (![code.context.context.Context] "ctx") in
+    let: "$a2" := (![code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "newRuntimeObj") in
+    let: "$a3" := (![code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "oldRuntimeObj") in
+    (FuncResolve code.k8s_io.apiserver.pkg.registry.rest.rest.BeforeUpdate [] #()) "$a0" "$a1" "$a2" "$a3") in
     do:  ("err" <-[go.error] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then return: (![go.error] "err")
@@ -1827,15 +1827,15 @@ Definition applyValidationAndDefaultingOnUpdateⁱᵐᵖˡ {ext : ffi_syntax} {g
     let: "$r0" := (let: "$a0" := (![go.InterfaceType []] "legacyNewObj") in
     let: "$a1" := (![go.InterfaceType []] "newObj") in
     let: "$a2" := (Convert go.untyped_nil (go.InterfaceType []) UntypedNil) in
-    (MethodResolve (go.PointerType runtime.Scheme) "Convert"%go (![go.PointerType runtime.Scheme] (GlobalVarAddr legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
+    (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme) "Convert"%go (![go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme] (GlobalVarAddr code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
     do:  ("err" <-[go.error] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then
-      return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert internal updated object back to versioned object: %v"%go in
+      return: (Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert internal updated object back to versioned object: %v"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1") in
-       (FuncResolve errors.NewBadRequest [] #()) "$a0"))
+       (FuncResolve code.fmt.fmt.Sprintf [] #()) "$a0" "$a1") in
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewBadRequest [] #()) "$a0"))
     else do:  #()));;;
     do:  (let: "$a0" := (![go.InterfaceType []] "newObj") in
     (FuncResolve normalizeVersionedObject [] #()) "$a0");;;
@@ -1884,53 +1884,53 @@ Definition applyValidationAndDefaultingOnStatusUpdateⁱᵐᵖˡ {ext : ffi_synt
     then return: (![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "newRuntimeObj" := (GoAlloc runtime.Object (GoZeroVal runtime.Object #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 runtime.Object (![go.InterfaceType []] "legacyNewObj")) in
+    let: "newRuntimeObj" := (GoAlloc code.k8s_io.apimachinery.pkg.runtime.runtime.Object (GoZeroVal code.k8s_io.apimachinery.pkg.runtime.runtime.Object #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.InterfaceType []] "legacyNewObj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("newRuntimeObj" <-[runtime.Object] "$r0");;;
+    do:  ("newRuntimeObj" <-[code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
       return: (let: "$a0" := #"updated object does not implement runtime.Object: %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "legacyNewObj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    let: "oldRuntimeObj" := (GoAlloc runtime.Object (GoZeroVal runtime.Object #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 runtime.Object (![go.InterfaceType []] "legacyOldObj")) in
+    let: "oldRuntimeObj" := (GoAlloc code.k8s_io.apimachinery.pkg.runtime.runtime.Object (GoZeroVal code.k8s_io.apimachinery.pkg.runtime.runtime.Object #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.InterfaceType []] "legacyOldObj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("oldRuntimeObj" <-[runtime.Object] "$r0");;;
+    do:  ("oldRuntimeObj" <-[code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
       return: (let: "$a0" := #"existing object does not implement runtime.Object: %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "legacyOldObj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    let: "strategy" := (GoAlloc rest.RESTUpdateStrategy (GoZeroVal rest.RESTUpdateStrategy #())) in
+    let: "strategy" := (GoAlloc code.k8s_io.apiserver.pkg.registry.rest.rest.RESTUpdateStrategy (GoZeroVal code.k8s_io.apiserver.pkg.registry.rest.rest.RESTUpdateStrategy #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![go.InterfaceType []] "legacyNewObj") in
     (FuncResolve statusUpdateStrategyForLegacyObject [] #()) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("strategy" <-[rest.RESTUpdateStrategy] "$r0");;;
+    do:  ("strategy" <-[code.k8s_io.apiserver.pkg.registry.rest.rest.RESTUpdateStrategy] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then return: (![go.error] "err")
     else do:  #());;;
-    let: "ctx" := (GoAlloc context.Context (GoZeroVal context.Context #())) in
-    let: "$r0" := (let: "$a0" := ((FuncResolve request.NewContext [] #()) #()) in
+    let: "ctx" := (GoAlloc code.context.context.Context (GoZeroVal code.context.context.Context #())) in
+    let: "$r0" := (let: "$a0" := ((FuncResolve code.k8s_io.apiserver.pkg.endpoints.request.request.NewContext [] #()) #()) in
     let: "$a1" := (![go.string] "namespace") in
-    (FuncResolve request.WithNamespace [] #()) "$a0" "$a1") in
-    do:  ("ctx" <-[context.Context] "$r0");;;
+    (FuncResolve code.k8s_io.apiserver.pkg.endpoints.request.request.WithNamespace [] #()) "$a0" "$a1") in
+    do:  ("ctx" <-[code.context.context.Context] "$r0");;;
     (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-    let: "$r0" := (let: "$a0" := (![rest.RESTUpdateStrategy] "strategy") in
-    let: "$a1" := (![context.Context] "ctx") in
-    let: "$a2" := (![runtime.Object] "newRuntimeObj") in
-    let: "$a3" := (![runtime.Object] "oldRuntimeObj") in
-    (FuncResolve rest.BeforeUpdate [] #()) "$a0" "$a1" "$a2" "$a3") in
+    let: "$r0" := (let: "$a0" := (![code.k8s_io.apiserver.pkg.registry.rest.rest.RESTUpdateStrategy] "strategy") in
+    let: "$a1" := (![code.context.context.Context] "ctx") in
+    let: "$a2" := (![code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "newRuntimeObj") in
+    let: "$a3" := (![code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "oldRuntimeObj") in
+    (FuncResolve code.k8s_io.apiserver.pkg.registry.rest.rest.BeforeUpdate [] #()) "$a0" "$a1" "$a2" "$a3") in
     do:  ("err" <-[go.error] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then return: (![go.error] "err")
@@ -1946,15 +1946,15 @@ Definition applyValidationAndDefaultingOnStatusUpdateⁱᵐᵖˡ {ext : ffi_synt
     let: "$r0" := (let: "$a0" := (![go.InterfaceType []] "legacyNewObj") in
     let: "$a1" := (![go.InterfaceType []] "newObj") in
     let: "$a2" := (Convert go.untyped_nil (go.InterfaceType []) UntypedNil) in
-    (MethodResolve (go.PointerType runtime.Scheme) "Convert"%go (![go.PointerType runtime.Scheme] (GlobalVarAddr legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
+    (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme) "Convert"%go (![go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme] (GlobalVarAddr code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
     do:  ("err" <-[go.error] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then
-      return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert internal status-updated object back to versioned object: %v"%go in
+      return: (Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert internal status-updated object back to versioned object: %v"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1") in
-       (FuncResolve errors.NewBadRequest [] #()) "$a0"))
+       (FuncResolve code.fmt.fmt.Sprintf [] #()) "$a0" "$a1") in
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewBadRequest [] #()) "$a0"))
     else do:  #()));;;
     do:  (let: "$a0" := (![go.InterfaceType []] "newObj") in
     (FuncResolve normalizeVersionedObject [] #()) "$a0");;;
@@ -2030,15 +2030,15 @@ Definition applyValidationAndDefaultingⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx :
     let: "$r0" := (let: "$a0" := (![go.InterfaceType []] "legacyObj") in
     let: "$a1" := (![go.InterfaceType []] "obj") in
     let: "$a2" := (Convert go.untyped_nil (go.InterfaceType []) UntypedNil) in
-    (MethodResolve (go.PointerType runtime.Scheme) "Convert"%go (![go.PointerType runtime.Scheme] (GlobalVarAddr legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
+    (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme) "Convert"%go (![go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme] (GlobalVarAddr code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
     do:  ("err" <-[go.error] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then
-      return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert internal object back to versioned object: %v"%go in
+      return: (Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"failed to convert internal object back to versioned object: %v"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1") in
-       (FuncResolve errors.NewBadRequest [] #()) "$a0"))
+       (FuncResolve code.fmt.fmt.Sprintf [] #()) "$a0" "$a1") in
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewBadRequest [] #()) "$a0"))
     else do:  #()));;;
     do:  (let: "$a0" := (![go.InterfaceType []] "obj") in
     (FuncResolve normalizeVersionedObject [] #()) "$a0");;;
@@ -2051,8 +2051,8 @@ Definition State__createⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
     let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "kind" := (GoAlloc go.string "kind") in
-    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
-    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
+    do:  ((MethodResolve (go.PointerType code.sync.sync.Mutex) "Lock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
+    do:  (let: "$f" := (MethodResolve (go.PointerType code.sync.sync.Mutex) "Unlock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
     "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
     (λ: <>,
       "$f" #();;
@@ -2063,38 +2063,38 @@ Definition State__createⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
     (FuncResolve deepCopy [] #()) "$a0") in
     do:  ("objCopy" <-[go.InterfaceType []] "$r0");;;
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-    let: "metadata" := (GoAlloc apis_meta_v1.Object (GoZeroVal apis_meta_v1.Object #())) in
+    let: "metadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![go.InterfaceType []] "objCopy") in
-    (FuncResolve meta.Accessor [] #()) "$a0") in
+    (FuncResolve code.k8s_io.apimachinery.pkg.api.meta.meta.Accessor [] #()) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("metadata" <-[apis_meta_v1.Object] "$r0");;;
+    do:  ("metadata" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then
       return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, let: "$a0" := #"failed to access object metadata: %w"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    do:  (let: "$a0" := (![apis_meta_v1.Object] "metadata") in
-    (FuncResolve rest.WipeObjectMetaSystemFields [] #()) "$a0");;;
+    do:  (let: "$a0" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata") in
+    (FuncResolve code.k8s_io.apiserver.pkg.registry.rest.rest.WipeObjectMetaSystemFields [] #()) "$a0");;;
     (let: "$r0" := (let: "$a0" := (![go.string] "namespace") in
-    let: "$a1" := (![apis_meta_v1.Object] "metadata") in
-    (FuncResolve rest.EnsureObjectNamespaceMatchesRequestNamespace [] #()) "$a0" "$a1") in
+    let: "$a1" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata") in
+    (FuncResolve code.k8s_io.apiserver.pkg.registry.rest.rest.EnsureObjectNamespaceMatchesRequestNamespace [] #()) "$a0" "$a1") in
     do:  ("err" <-[go.error] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, ![go.error] "err")
     else do:  #()));;;
-    do:  (let: "$a0" := ((FuncResolve apis_meta_v1.Now [] #()) #()) in
-    (MethodResolve apis_meta_v1.Object "SetCreationTimestamp"%go (![apis_meta_v1.Object] "metadata")) "$a0");;;
+    do:  (let: "$a0" := ((FuncResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Now [] #()) #()) in
+    (MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "SetCreationTimestamp"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) "$a0");;;
     do:  (let: "$a0" := ((MethodResolve (go.PointerType State) "generateNewUIDAndUpdate"%go (![go.PointerType State] "s")) #()) in
-    (MethodResolve apis_meta_v1.Object "SetUID"%go (![apis_meta_v1.Object] "metadata")) "$a0");;;
+    (MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "SetUID"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) "$a0");;;
     let: "name" := (GoAlloc go.string (GoZeroVal go.string #())) in
-    let: "$r0" := ((MethodResolve apis_meta_v1.Object "GetName"%go (![apis_meta_v1.Object] "metadata")) #()) in
+    let: "$r0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetName"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
     do:  ("name" <-[go.string] "$r0");;;
     let: "generateName" := (GoAlloc go.string (GoZeroVal go.string #())) in
-    let: "$r0" := ((MethodResolve apis_meta_v1.Object "GetGenerateName"%go (![apis_meta_v1.Object] "metadata")) #()) in
+    let: "$r0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetGenerateName"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
     do:  ("generateName" <-[go.string] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((![go.string] "name") =⟨go.string⟩ #""%go)
     then
@@ -2103,7 +2103,7 @@ Definition State__createⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
         return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, let: "$a0" := #"object of kind %q must specify a name or generateName"%go in
          let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "kind")) in
          CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+         (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
       else do:  #());;;
       let: "$r0" := (let: "$a0" := (![go.string] "kind") in
       let: "$a1" := (![go.string] "namespace") in
@@ -2111,7 +2111,7 @@ Definition State__createⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
       (MethodResolve (go.PointerType State) "generateNewName"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
       do:  ("name" <-[go.string] "$r0");;;
       do:  (let: "$a0" := (![go.string] "name") in
-      (MethodResolve apis_meta_v1.Object "SetName"%go (![apis_meta_v1.Object] "metadata")) "$a0")
+      (MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "SetName"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) "$a0")
     else do:  #());;;
     (let: "$r0" := (let: "$a0" := (![go.InterfaceType []] "objCopy") in
     let: "$a1" := (![go.string] "name") in
@@ -2120,7 +2120,7 @@ Definition State__createⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, ![go.error] "err")
     else do:  #()));;;
-    (let: "$r0" := (let: "$a0" := (![apis_meta_v1.Object] "metadata") in
+    (let: "$r0" := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata") in
     let: "$a1" := (![go.string] "kind") in
     (FuncResolve validateObjectMeta [] #()) "$a0" "$a1") in
     do:  ("err" <-[go.error] "$r0");;;
@@ -2141,13 +2141,13 @@ Definition State__createⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
     do:  ("exists" <-[go.bool] "$r1");;;
     (if: ![go.bool] "exists"
     then
-      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
-       CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
+      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+       CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
        let: "$a1" := (![go.string] "name") in
-       (FuncResolve errors.NewAlreadyExists [] #()) "$a0" "$a1"))
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewAlreadyExists [] #()) "$a0" "$a1"))
     else do:  #()));;;
     do:  (let: "$a0" := ((MethodResolve (go.PointerType State) "generateNewRVAndUpdate"%go (![go.PointerType State] "s")) #()) in
-    (MethodResolve apis_meta_v1.Object "SetResourceVersion"%go (![apis_meta_v1.Object] "metadata")) "$a0");;;
+    (MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "SetResourceVersion"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) "$a0");;;
     let: "$r0" := (![go.InterfaceType []] "objCopy") in
     do:  (map.insert KKey (![go.MapType KKey (go.InterfaceType [])] (StructFieldRef State "m"%go (![go.PointerType State] "s"))) (![KKey] "key") "$r0");;;
     return: (let: "$a0" := (![go.InterfaceType []] "objCopy") in
@@ -2166,8 +2166,8 @@ Definition State__updateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
     let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "kind" := (GoAlloc go.string "kind") in
-    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
-    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
+    do:  ((MethodResolve (go.PointerType code.sync.sync.Mutex) "Lock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
+    do:  (let: "$f" := (MethodResolve (go.PointerType code.sync.sync.Mutex) "Unlock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
     "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
     (λ: <>,
       "$f" #();;
@@ -2195,37 +2195,37 @@ Definition State__updateLockedⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
     (FuncResolve deepCopy [] #()) "$a0") in
     do:  ("objCopy" <-[go.InterfaceType []] "$r0");;;
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-    let: "metadata" := (GoAlloc apis_meta_v1.Object (GoZeroVal apis_meta_v1.Object #())) in
+    let: "metadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![go.InterfaceType []] "objCopy") in
-    (FuncResolve meta.Accessor [] #()) "$a0") in
+    (FuncResolve code.k8s_io.apimachinery.pkg.api.meta.meta.Accessor [] #()) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("metadata" <-[apis_meta_v1.Object] "$r0");;;
+    do:  ("metadata" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then
       return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, let: "$a0" := #"failed to access object metadata: %w"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
     (let: "$r0" := (let: "$a0" := (![go.string] "namespace") in
-    let: "$a1" := (![apis_meta_v1.Object] "metadata") in
-    (FuncResolve rest.EnsureObjectNamespaceMatchesRequestNamespace [] #()) "$a0" "$a1") in
+    let: "$a1" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata") in
+    (FuncResolve code.k8s_io.apiserver.pkg.registry.rest.rest.EnsureObjectNamespaceMatchesRequestNamespace [] #()) "$a0" "$a1") in
     do:  ("err" <-[go.error] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, ![go.error] "err")
     else do:  #()));;;
     let: "name" := (GoAlloc go.string (GoZeroVal go.string #())) in
-    let: "$r0" := ((MethodResolve apis_meta_v1.Object "GetName"%go (![apis_meta_v1.Object] "metadata")) #()) in
+    let: "$r0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetName"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
     do:  ("name" <-[go.string] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((![go.string] "name") =⟨go.string⟩ #""%go)
     then
-      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"object of kind %q must specify a name for update"%go in
+      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"object of kind %q must specify a name for update"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "kind")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1") in
-       (FuncResolve errors.NewBadRequest [] #()) "$a0"))
+       (FuncResolve code.fmt.fmt.Sprintf [] #()) "$a0" "$a1") in
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewBadRequest [] #()) "$a0"))
     else do:  #());;;
     let: "key" := (GoAlloc KKey (GoZeroVal KKey #())) in
     let: "$r0" := (let: "$v0" := (![go.string] "kind") in
@@ -2242,49 +2242,49 @@ Definition State__updateLockedⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
     do:  ("exists" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "exists"))
     then
-      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
-       CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
+      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+       CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
        let: "$a1" := (![go.string] "name") in
-       (FuncResolve errors.NewNotFound [] #()) "$a0" "$a1"))
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewNotFound [] #()) "$a0" "$a1"))
     else do:  #());;;
     let: "existingObjCopy" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: "$r0" := (let: "$a0" := (![go.InterfaceType []] "existingObj") in
     (FuncResolve deepCopy [] #()) "$a0") in
     do:  ("existingObjCopy" <-[go.InterfaceType []] "$r0");;;
-    let: "existingMetadata" := (GoAlloc apis_meta_v1.Object (GoZeroVal apis_meta_v1.Object #())) in
+    let: "existingMetadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![go.InterfaceType []] "existingObjCopy") in
-    (FuncResolve meta.Accessor [] #()) "$a0") in
+    (FuncResolve code.k8s_io.apimachinery.pkg.api.meta.meta.Accessor [] #()) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("existingMetadata" <-[apis_meta_v1.Object] "$r0");;;
+    do:  ("existingMetadata" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then
       return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, let: "$a0" := #"failed to access existing object metadata: %w"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    (let: "uid" := (GoAlloc types.UID (GoZeroVal types.UID #())) in
-    let: "$r0" := ((MethodResolve apis_meta_v1.Object "GetUID"%go (![apis_meta_v1.Object] "metadata")) #()) in
-    do:  ("uid" <-[types.UID] "$r0");;;
-    (if: ((![go.bool] "uidPrecondition") && ((![types.UID] "uid") ≠⟨types.UID⟩ #""%go)) && ((![types.UID] "uid") ≠⟨types.UID⟩ ((MethodResolve apis_meta_v1.Object "GetUID"%go (![apis_meta_v1.Object] "existingMetadata")) #()))
+    (let: "uid" := (GoAlloc code.k8s_io.apimachinery.pkg.types.types.UID (GoZeroVal code.k8s_io.apimachinery.pkg.types.types.UID #())) in
+    let: "$r0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetUID"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
+    do:  ("uid" <-[code.k8s_io.apimachinery.pkg.types.types.UID] "$r0");;;
+    (if: ((![go.bool] "uidPrecondition") && ((![code.k8s_io.apimachinery.pkg.types.types.UID] "uid") ≠⟨code.k8s_io.apimachinery.pkg.types.types.UID⟩ #""%go)) && ((![code.k8s_io.apimachinery.pkg.types.types.UID] "uid") ≠⟨code.k8s_io.apimachinery.pkg.types.types.UID⟩ ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetUID"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "existingMetadata")) #()))
     then
-      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
-       CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
+      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+       CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
        let: "$a1" := (![go.string] "name") in
        let: "$a2" := (let: "$a0" := #"UID mismatch: expected %q, got %q"%go in
-       let: "$a1" := ((let: "$sl0" := (Convert types.UID go.any ((MethodResolve apis_meta_v1.Object "GetUID"%go (![apis_meta_v1.Object] "existingMetadata")) #())) in
-       let: "$sl1" := (Convert types.UID go.any (![types.UID] "uid")) in
+       let: "$a1" := ((let: "$sl0" := (Convert code.k8s_io.apimachinery.pkg.types.types.UID go.any ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetUID"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "existingMetadata")) #())) in
+       let: "$sl1" := (Convert code.k8s_io.apimachinery.pkg.types.types.UID go.any (![code.k8s_io.apimachinery.pkg.types.types.UID] "uid")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1") in
-       (FuncResolve errors.NewConflict [] #()) "$a0" "$a1" "$a2"))
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1") in
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewConflict [] #()) "$a0" "$a1" "$a2"))
     else do:  #()));;;
     let: "rv" := (GoAlloc go.string (GoZeroVal go.string #())) in
-    let: "$r0" := ((MethodResolve apis_meta_v1.Object "GetResourceVersion"%go (![apis_meta_v1.Object] "metadata")) #()) in
+    let: "$r0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetResourceVersion"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
     do:  ("rv" <-[go.string] "$r0");;;
     let: "existingRv" := (GoAlloc go.string (GoZeroVal go.string #())) in
-    let: "$r0" := ((MethodResolve apis_meta_v1.Object "GetResourceVersion"%go (![apis_meta_v1.Object] "existingMetadata")) #()) in
+    let: "$r0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetResourceVersion"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "existingMetadata")) #()) in
     do:  ("existingRv" <-[go.string] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((![go.string] "rv") =⟨go.string⟩ #""%go)
     then
@@ -2301,22 +2301,22 @@ Definition State__updateLockedⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
       else do:  #());;;
       (if: (⟨go.bool⟩! (![go.bool] "allowUnconditional"))
       then
-        return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
-         CompositeLiteral schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v0")])) in
+        return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+         CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v0")])) in
          let: "$a1" := (![go.string] "name") in
          let: "$a2" := (let: "$v0" := (let: "$a0" := (let: "$a0" := #"resourceVersion"%go in
          let: "$a1" := #slice.nil in
-         (MethodResolve (go.PointerType field.Path) "Child"%go (let: "$a0" := #"metadata"%go in
+         (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path) "Child"%go (let: "$a0" := #"metadata"%go in
          let: "$a1" := #slice.nil in
-         (FuncResolve field.NewPath [] #()) "$a0" "$a1")) "$a0" "$a1") in
+         (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.NewPath [] #()) "$a0" "$a1")) "$a0" "$a1") in
          let: "$a1" := (Convert go.string (go.InterfaceType []) (![go.string] "rv")) in
          let: "$a2" := #"must be specified for an update"%go in
-         (FuncResolve field.Invalid [] #()) "$a0" "$a1" "$a2") in
-         CompositeLiteral field.ErrorList (LiteralValue [KeyedElement None (ElementExpression (go.PointerType field.Error) "$v0")])) in
-         (FuncResolve errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
+         (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.Invalid [] #()) "$a0" "$a1" "$a2") in
+         CompositeLiteral code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) "$v0")])) in
+         (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
       else do:  #());;;
       do:  (let: "$a0" := (![go.string] "existingRv") in
-      (MethodResolve apis_meta_v1.Object "SetResourceVersion"%go (![apis_meta_v1.Object] "metadata")) "$a0")
+      (MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "SetResourceVersion"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) "$a0")
     else
       (let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] "rv") in
       (FuncResolve parseResourceVersion [] #()) "$a0") in
@@ -2329,19 +2329,19 @@ Definition State__updateLockedⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
         return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, let: "$a0" := (![go.error] "err") in
          (FuncResolve malformedUpdateResourceVersionError [] #()) "$a0")
       else do:  #())));;;
-    let: "$r0" := ((MethodResolve apis_meta_v1.Object "GetResourceVersion"%go (![apis_meta_v1.Object] "metadata")) #()) in
+    let: "$r0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetResourceVersion"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
     do:  ("rv" <-[go.string] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((![go.string] "rv") ≠⟨go.string⟩ (![go.string] "existingRv"))
     then
-      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
-       CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
+      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+       CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
        let: "$a1" := (![go.string] "name") in
        let: "$a2" := (let: "$a0" := #"resourceVersion mismatch: expected %q, got %q"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "existingRv")) in
        let: "$sl1" := (Convert go.string go.any (![go.string] "rv")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1") in
-       (FuncResolve errors.NewConflict [] #()) "$a0" "$a1" "$a2"))
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1") in
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewConflict [] #()) "$a0" "$a1" "$a2"))
     else do:  #());;;
     (let: "$r0" := (let: "$a0" := (![go.InterfaceType []] "objCopy") in
     let: "$a1" := (![go.InterfaceType []] "existingObjCopy") in
@@ -2366,7 +2366,7 @@ Definition State__updateLockedⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
     then return: (![go.InterfaceType []] "existingObjCopy", Convert go.untyped_nil go.error UntypedNil)
     else do:  #());;;
     do:  (let: "$a0" := ((MethodResolve (go.PointerType State) "generateNewRVAndUpdate"%go (![go.PointerType State] "s")) #()) in
-    (MethodResolve apis_meta_v1.Object "SetResourceVersion"%go (![apis_meta_v1.Object] "metadata")) "$a0");;;
+    (MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "SetResourceVersion"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) "$a0");;;
     let: "$r0" := (![go.InterfaceType []] "objCopy") in
     do:  (map.insert KKey (![go.MapType KKey (go.InterfaceType [])] (StructFieldRef State "m"%go (![go.PointerType State] "s"))) (![KKey] "key") "$r0");;;
     return: (let: "$a0" := (![go.InterfaceType []] "objCopy") in
@@ -2379,8 +2379,8 @@ Definition State__updateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
     let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "kind" := (GoAlloc go.string "kind") in
-    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
-    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
+    do:  ((MethodResolve (go.PointerType code.sync.sync.Mutex) "Lock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
+    do:  (let: "$f" := (MethodResolve (go.PointerType code.sync.sync.Mutex) "Unlock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
     "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
     (λ: <>,
       "$f" #();;
@@ -2408,37 +2408,37 @@ Definition State__updateStatusLockedⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : Go
     (FuncResolve deepCopy [] #()) "$a0") in
     do:  ("objCopy" <-[go.InterfaceType []] "$r0");;;
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-    let: "metadata" := (GoAlloc apis_meta_v1.Object (GoZeroVal apis_meta_v1.Object #())) in
+    let: "metadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![go.InterfaceType []] "objCopy") in
-    (FuncResolve meta.Accessor [] #()) "$a0") in
+    (FuncResolve code.k8s_io.apimachinery.pkg.api.meta.meta.Accessor [] #()) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("metadata" <-[apis_meta_v1.Object] "$r0");;;
+    do:  ("metadata" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then
       return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, let: "$a0" := #"failed to access object metadata: %w"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
     (let: "$r0" := (let: "$a0" := (![go.string] "namespace") in
-    let: "$a1" := (![apis_meta_v1.Object] "metadata") in
-    (FuncResolve rest.EnsureObjectNamespaceMatchesRequestNamespace [] #()) "$a0" "$a1") in
+    let: "$a1" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata") in
+    (FuncResolve code.k8s_io.apiserver.pkg.registry.rest.rest.EnsureObjectNamespaceMatchesRequestNamespace [] #()) "$a0" "$a1") in
     do:  ("err" <-[go.error] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, ![go.error] "err")
     else do:  #()));;;
     let: "name" := (GoAlloc go.string (GoZeroVal go.string #())) in
-    let: "$r0" := ((MethodResolve apis_meta_v1.Object "GetName"%go (![apis_meta_v1.Object] "metadata")) #()) in
+    let: "$r0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetName"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
     do:  ("name" <-[go.string] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((![go.string] "name") =⟨go.string⟩ #""%go)
     then
-      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"object of kind %q must specify a name for status update"%go in
+      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"object of kind %q must specify a name for status update"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "kind")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1") in
-       (FuncResolve errors.NewBadRequest [] #()) "$a0"))
+       (FuncResolve code.fmt.fmt.Sprintf [] #()) "$a0" "$a1") in
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewBadRequest [] #()) "$a0"))
     else do:  #());;;
     let: "key" := (GoAlloc KKey (GoZeroVal KKey #())) in
     let: "$r0" := (let: "$v0" := (![go.string] "kind") in
@@ -2455,49 +2455,49 @@ Definition State__updateStatusLockedⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : Go
     do:  ("exists" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "exists"))
     then
-      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
-       CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
+      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+       CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
        let: "$a1" := (![go.string] "name") in
-       (FuncResolve errors.NewNotFound [] #()) "$a0" "$a1"))
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewNotFound [] #()) "$a0" "$a1"))
     else do:  #());;;
     let: "existingObjCopy" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: "$r0" := (let: "$a0" := (![go.InterfaceType []] "existingObj") in
     (FuncResolve deepCopy [] #()) "$a0") in
     do:  ("existingObjCopy" <-[go.InterfaceType []] "$r0");;;
-    let: "existingMetadata" := (GoAlloc apis_meta_v1.Object (GoZeroVal apis_meta_v1.Object #())) in
+    let: "existingMetadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![go.InterfaceType []] "existingObjCopy") in
-    (FuncResolve meta.Accessor [] #()) "$a0") in
+    (FuncResolve code.k8s_io.apimachinery.pkg.api.meta.meta.Accessor [] #()) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("existingMetadata" <-[apis_meta_v1.Object] "$r0");;;
+    do:  ("existingMetadata" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then
       return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, let: "$a0" := #"failed to access existing object metadata: %w"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    (let: "uid" := (GoAlloc types.UID (GoZeroVal types.UID #())) in
-    let: "$r0" := ((MethodResolve apis_meta_v1.Object "GetUID"%go (![apis_meta_v1.Object] "metadata")) #()) in
-    do:  ("uid" <-[types.UID] "$r0");;;
-    (if: ((![go.bool] "uidPrecondition") && ((![types.UID] "uid") ≠⟨types.UID⟩ #""%go)) && ((![types.UID] "uid") ≠⟨types.UID⟩ ((MethodResolve apis_meta_v1.Object "GetUID"%go (![apis_meta_v1.Object] "existingMetadata")) #()))
+    (let: "uid" := (GoAlloc code.k8s_io.apimachinery.pkg.types.types.UID (GoZeroVal code.k8s_io.apimachinery.pkg.types.types.UID #())) in
+    let: "$r0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetUID"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
+    do:  ("uid" <-[code.k8s_io.apimachinery.pkg.types.types.UID] "$r0");;;
+    (if: ((![go.bool] "uidPrecondition") && ((![code.k8s_io.apimachinery.pkg.types.types.UID] "uid") ≠⟨code.k8s_io.apimachinery.pkg.types.types.UID⟩ #""%go)) && ((![code.k8s_io.apimachinery.pkg.types.types.UID] "uid") ≠⟨code.k8s_io.apimachinery.pkg.types.types.UID⟩ ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetUID"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "existingMetadata")) #()))
     then
-      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
-       CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
+      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+       CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
        let: "$a1" := (![go.string] "name") in
        let: "$a2" := (let: "$a0" := #"UID mismatch: expected %q, got %q"%go in
-       let: "$a1" := ((let: "$sl0" := (Convert types.UID go.any ((MethodResolve apis_meta_v1.Object "GetUID"%go (![apis_meta_v1.Object] "existingMetadata")) #())) in
-       let: "$sl1" := (Convert types.UID go.any (![types.UID] "uid")) in
+       let: "$a1" := ((let: "$sl0" := (Convert code.k8s_io.apimachinery.pkg.types.types.UID go.any ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetUID"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "existingMetadata")) #())) in
+       let: "$sl1" := (Convert code.k8s_io.apimachinery.pkg.types.types.UID go.any (![code.k8s_io.apimachinery.pkg.types.types.UID] "uid")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1") in
-       (FuncResolve errors.NewConflict [] #()) "$a0" "$a1" "$a2"))
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1") in
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewConflict [] #()) "$a0" "$a1" "$a2"))
     else do:  #()));;;
     let: "rv" := (GoAlloc go.string (GoZeroVal go.string #())) in
-    let: "$r0" := ((MethodResolve apis_meta_v1.Object "GetResourceVersion"%go (![apis_meta_v1.Object] "metadata")) #()) in
+    let: "$r0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetResourceVersion"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
     do:  ("rv" <-[go.string] "$r0");;;
     let: "existingRv" := (GoAlloc go.string (GoZeroVal go.string #())) in
-    let: "$r0" := ((MethodResolve apis_meta_v1.Object "GetResourceVersion"%go (![apis_meta_v1.Object] "existingMetadata")) #()) in
+    let: "$r0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetResourceVersion"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "existingMetadata")) #()) in
     do:  ("existingRv" <-[go.string] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((![go.string] "rv") =⟨go.string⟩ #""%go)
     then
@@ -2514,22 +2514,22 @@ Definition State__updateStatusLockedⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : Go
       else do:  #());;;
       (if: (⟨go.bool⟩! (![go.bool] "allowUnconditional"))
       then
-        return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
-         CompositeLiteral schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v0")])) in
+        return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+         CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v0")])) in
          let: "$a1" := (![go.string] "name") in
          let: "$a2" := (let: "$v0" := (let: "$a0" := (let: "$a0" := #"resourceVersion"%go in
          let: "$a1" := #slice.nil in
-         (MethodResolve (go.PointerType field.Path) "Child"%go (let: "$a0" := #"metadata"%go in
+         (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path) "Child"%go (let: "$a0" := #"metadata"%go in
          let: "$a1" := #slice.nil in
-         (FuncResolve field.NewPath [] #()) "$a0" "$a1")) "$a0" "$a1") in
+         (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.NewPath [] #()) "$a0" "$a1")) "$a0" "$a1") in
          let: "$a1" := (Convert go.string (go.InterfaceType []) (![go.string] "rv")) in
          let: "$a2" := #"must be specified for an update"%go in
-         (FuncResolve field.Invalid [] #()) "$a0" "$a1" "$a2") in
-         CompositeLiteral field.ErrorList (LiteralValue [KeyedElement None (ElementExpression (go.PointerType field.Error) "$v0")])) in
-         (FuncResolve errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
+         (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.Invalid [] #()) "$a0" "$a1" "$a2") in
+         CompositeLiteral code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) "$v0")])) in
+         (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
       else do:  #());;;
       do:  (let: "$a0" := (![go.string] "existingRv") in
-      (MethodResolve apis_meta_v1.Object "SetResourceVersion"%go (![apis_meta_v1.Object] "metadata")) "$a0")
+      (MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "SetResourceVersion"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) "$a0")
     else
       (let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] "rv") in
       (FuncResolve parseResourceVersion [] #()) "$a0") in
@@ -2542,19 +2542,19 @@ Definition State__updateStatusLockedⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : Go
         return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, let: "$a0" := (![go.error] "err") in
          (FuncResolve malformedUpdateResourceVersionError [] #()) "$a0")
       else do:  #())));;;
-    let: "$r0" := ((MethodResolve apis_meta_v1.Object "GetResourceVersion"%go (![apis_meta_v1.Object] "metadata")) #()) in
+    let: "$r0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetResourceVersion"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
     do:  ("rv" <-[go.string] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((![go.string] "rv") ≠⟨go.string⟩ (![go.string] "existingRv"))
     then
-      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
-       CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
+      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+       CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
        let: "$a1" := (![go.string] "name") in
        let: "$a2" := (let: "$a0" := #"resourceVersion mismatch: expected %q, got %q"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "existingRv")) in
        let: "$sl1" := (Convert go.string go.any (![go.string] "rv")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1") in
-       (FuncResolve errors.NewConflict [] #()) "$a0" "$a1" "$a2"))
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1") in
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewConflict [] #()) "$a0" "$a1" "$a2"))
     else do:  #());;;
     (let: "$r0" := (let: "$a0" := (![go.InterfaceType []] "objCopy") in
     let: "$a1" := (![go.InterfaceType []] "existingObjCopy") in
@@ -2579,7 +2579,7 @@ Definition State__updateStatusLockedⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : Go
     then return: (![go.InterfaceType []] "existingObjCopy", Convert go.untyped_nil go.error UntypedNil)
     else do:  #());;;
     do:  (let: "$a0" := ((MethodResolve (go.PointerType State) "generateNewRVAndUpdate"%go (![go.PointerType State] "s")) #()) in
-    (MethodResolve apis_meta_v1.Object "SetResourceVersion"%go (![apis_meta_v1.Object] "metadata")) "$a0");;;
+    (MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "SetResourceVersion"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) "$a0");;;
     let: "$r0" := (![go.InterfaceType []] "objCopy") in
     do:  (map.insert KKey (![go.MapType KKey (go.InterfaceType [])] (StructFieldRef State "m"%go (![go.PointerType State] "s"))) (![KKey] "key") "$r0");;;
     return: (let: "$a0" := (![go.InterfaceType []] "objCopy") in
@@ -2591,23 +2591,23 @@ Definition State__updateStatusLockedⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : Go
    go: api_model.go:1229:6 *)
 Definition shouldOrphanDependentsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "metadata" "options",
-    exception_do (let: "options" := (GoAlloc (go.PointerType apis_meta_v1.DeleteOptions) "options") in
-    let: "metadata" := (GoAlloc apis_meta_v1.Object "metadata") in
-    (if: Convert go.untyped_bool go.bool (((![go.PointerType apis_meta_v1.DeleteOptions] "options") ≠⟨go.PointerType apis_meta_v1.DeleteOptions⟩ (Convert go.untyped_nil (go.PointerType apis_meta_v1.DeleteOptions) UntypedNil)) && ((![go.PointerType go.bool] (StructFieldRef apis_meta_v1.DeleteOptions "OrphanDependents"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options"))) ≠⟨go.PointerType go.bool⟩ (Convert go.untyped_nil (go.PointerType go.bool) UntypedNil)))
-    then return: (![go.bool] (![go.PointerType go.bool] (StructFieldRef apis_meta_v1.DeleteOptions "OrphanDependents"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options"))))
+    exception_do (let: "options" := (GoAlloc (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions) "options") in
+    let: "metadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "metadata") in
+    (if: Convert go.untyped_bool go.bool (((![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options") ≠⟨go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions) UntypedNil)) && ((![go.PointerType go.bool] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "OrphanDependents"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options"))) ≠⟨go.PointerType go.bool⟩ (Convert go.untyped_nil (go.PointerType go.bool) UntypedNil)))
+    then return: (![go.bool] (![go.PointerType go.bool] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "OrphanDependents"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options"))))
     else do:  #());;;
-    (if: Convert go.untyped_bool go.bool (((![go.PointerType apis_meta_v1.DeleteOptions] "options") ≠⟨go.PointerType apis_meta_v1.DeleteOptions⟩ (Convert go.untyped_nil (go.PointerType apis_meta_v1.DeleteOptions) UntypedNil)) && ((![go.PointerType apis_meta_v1.DeletionPropagation] (StructFieldRef apis_meta_v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options"))) ≠⟨go.PointerType apis_meta_v1.DeletionPropagation⟩ (Convert go.untyped_nil (go.PointerType apis_meta_v1.DeletionPropagation) UntypedNil)))
+    (if: Convert go.untyped_bool go.bool (((![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options") ≠⟨go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions) UntypedNil)) && ((![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options"))) ≠⟨go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation) UntypedNil)))
     then
-      let: "$sw" := (![apis_meta_v1.DeletionPropagation] (![go.PointerType apis_meta_v1.DeletionPropagation] (StructFieldRef apis_meta_v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options")))) in
-      (if: "$sw" =⟨apis_meta_v1.DeletionPropagation⟩ apis_meta_v1.DeletePropagationOrphan
+      let: "$sw" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation] (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options")))) in
+      (if: "$sw" =⟨code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation⟩ code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletePropagationOrphan
       then return: (#true)
       else
-        (if: ("$sw" =⟨apis_meta_v1.DeletionPropagation⟩ apis_meta_v1.DeletePropagationForeground) || ("$sw" =⟨apis_meta_v1.DeletionPropagation⟩ apis_meta_v1.DeletePropagationBackground)
+        (if: ("$sw" =⟨code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation⟩ code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletePropagationForeground) || ("$sw" =⟨code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation⟩ code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletePropagationBackground)
         then return: (#false)
         else do:  #()))
     else do:  #());;;
     let: "finalizers" := (GoAlloc (go.SliceType go.string) (GoZeroVal (go.SliceType go.string) #())) in
-    let: "$r0" := ((MethodResolve apis_meta_v1.Object "GetFinalizers"%go (![apis_meta_v1.Object] "metadata")) #()) in
+    let: "$r0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetFinalizers"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
     do:  ("finalizers" <-[go.SliceType go.string] "$r0");;;
     let: "$range" := (![go.SliceType go.string] "finalizers") in
     (let: "f" := (GoAlloc go.string (GoZeroVal go.string #())) in
@@ -2615,10 +2615,10 @@ Definition shouldOrphanDependentsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
       do:  ("f" <-[go.string] "$value");;;
       do:  "$key";;;
       let: "$sw" := (![go.string] "f") in
-      (if: "$sw" =⟨go.string⟩ (Convert go.untyped_string go.string apis_meta_v1.FinalizerOrphanDependents)
+      (if: "$sw" =⟨go.string⟩ (Convert go.untyped_string go.string code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.FinalizerOrphanDependents)
       then return: (#true)
       else
-        (if: "$sw" =⟨go.string⟩ (Convert go.untyped_string go.string apis_meta_v1.FinalizerDeleteDependents)
+        (if: "$sw" =⟨go.string⟩ (Convert go.untyped_string go.string code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.FinalizerDeleteDependents)
         then return: (#false)
         else do:  #()))));;;
     return: (#false)).
@@ -2629,23 +2629,23 @@ Definition shouldOrphanDependentsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
    go: api_model.go:1263:6 *)
 Definition shouldDeleteDependentsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "metadata" "options",
-    exception_do (let: "options" := (GoAlloc (go.PointerType apis_meta_v1.DeleteOptions) "options") in
-    let: "metadata" := (GoAlloc apis_meta_v1.Object "metadata") in
-    (if: Convert go.untyped_bool go.bool (((![go.PointerType apis_meta_v1.DeleteOptions] "options") ≠⟨go.PointerType apis_meta_v1.DeleteOptions⟩ (Convert go.untyped_nil (go.PointerType apis_meta_v1.DeleteOptions) UntypedNil)) && ((![go.PointerType go.bool] (StructFieldRef apis_meta_v1.DeleteOptions "OrphanDependents"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options"))) ≠⟨go.PointerType go.bool⟩ (Convert go.untyped_nil (go.PointerType go.bool) UntypedNil)))
+    exception_do (let: "options" := (GoAlloc (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions) "options") in
+    let: "metadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "metadata") in
+    (if: Convert go.untyped_bool go.bool (((![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options") ≠⟨go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions) UntypedNil)) && ((![go.PointerType go.bool] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "OrphanDependents"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options"))) ≠⟨go.PointerType go.bool⟩ (Convert go.untyped_nil (go.PointerType go.bool) UntypedNil)))
     then return: (#false)
     else do:  #());;;
-    (if: Convert go.untyped_bool go.bool (((![go.PointerType apis_meta_v1.DeleteOptions] "options") ≠⟨go.PointerType apis_meta_v1.DeleteOptions⟩ (Convert go.untyped_nil (go.PointerType apis_meta_v1.DeleteOptions) UntypedNil)) && ((![go.PointerType apis_meta_v1.DeletionPropagation] (StructFieldRef apis_meta_v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options"))) ≠⟨go.PointerType apis_meta_v1.DeletionPropagation⟩ (Convert go.untyped_nil (go.PointerType apis_meta_v1.DeletionPropagation) UntypedNil)))
+    (if: Convert go.untyped_bool go.bool (((![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options") ≠⟨go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions) UntypedNil)) && ((![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options"))) ≠⟨go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation) UntypedNil)))
     then
-      let: "$sw" := (![apis_meta_v1.DeletionPropagation] (![go.PointerType apis_meta_v1.DeletionPropagation] (StructFieldRef apis_meta_v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options")))) in
-      (if: "$sw" =⟨apis_meta_v1.DeletionPropagation⟩ apis_meta_v1.DeletePropagationForeground
+      let: "$sw" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation] (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options")))) in
+      (if: "$sw" =⟨code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation⟩ code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletePropagationForeground
       then return: (#true)
       else
-        (if: ("$sw" =⟨apis_meta_v1.DeletionPropagation⟩ apis_meta_v1.DeletePropagationOrphan) || ("$sw" =⟨apis_meta_v1.DeletionPropagation⟩ apis_meta_v1.DeletePropagationBackground)
+        (if: ("$sw" =⟨code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation⟩ code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletePropagationOrphan) || ("$sw" =⟨code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation⟩ code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletePropagationBackground)
         then return: (#false)
         else do:  #()))
     else do:  #());;;
     let: "finalizers" := (GoAlloc (go.SliceType go.string) (GoZeroVal (go.SliceType go.string) #())) in
-    let: "$r0" := ((MethodResolve apis_meta_v1.Object "GetFinalizers"%go (![apis_meta_v1.Object] "metadata")) #()) in
+    let: "$r0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetFinalizers"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
     do:  ("finalizers" <-[go.SliceType go.string] "$r0");;;
     let: "$range" := (![go.SliceType go.string] "finalizers") in
     (let: "f" := (GoAlloc go.string (GoZeroVal go.string #())) in
@@ -2653,10 +2653,10 @@ Definition shouldDeleteDependentsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
       do:  ("f" <-[go.string] "$value");;;
       do:  "$key";;;
       let: "$sw" := (![go.string] "f") in
-      (if: "$sw" =⟨go.string⟩ (Convert go.untyped_string go.string apis_meta_v1.FinalizerDeleteDependents)
+      (if: "$sw" =⟨go.string⟩ (Convert go.untyped_string go.string code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.FinalizerDeleteDependents)
       then return: (#true)
       else
-        (if: "$sw" =⟨go.string⟩ (Convert go.untyped_string go.string apis_meta_v1.FinalizerOrphanDependents)
+        (if: "$sw" =⟨go.string⟩ (Convert go.untyped_string go.string code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.FinalizerOrphanDependents)
         then return: (#false)
         else do:  #()))));;;
     return: (#false)).
@@ -2668,27 +2668,27 @@ Definition shouldDeleteDependentsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
    go: api_model.go:1298:6 *)
 Definition deletionFinalizersForGarbageCollectionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "metadata" "options",
-    exception_do (let: "options" := (GoAlloc (go.PointerType apis_meta_v1.DeleteOptions) "options") in
-    let: "metadata" := (GoAlloc apis_meta_v1.Object "metadata") in
+    exception_do (let: "options" := (GoAlloc (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions) "options") in
+    let: "metadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "metadata") in
     let: "shouldOrphan" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "$r0" := (let: "$a0" := (![apis_meta_v1.Object] "metadata") in
-    let: "$a1" := (![go.PointerType apis_meta_v1.DeleteOptions] "options") in
+    let: "$r0" := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata") in
+    let: "$a1" := (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options") in
     (FuncResolve shouldOrphanDependents [] #()) "$a0" "$a1") in
     do:  ("shouldOrphan" <-[go.bool] "$r0");;;
     let: "shouldDeleteInForeground" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "$r0" := (let: "$a0" := (![apis_meta_v1.Object] "metadata") in
-    let: "$a1" := (![go.PointerType apis_meta_v1.DeleteOptions] "options") in
+    let: "$r0" := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata") in
+    let: "$a1" := (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options") in
     (FuncResolve shouldDeleteDependents [] #()) "$a0" "$a1") in
     do:  ("shouldDeleteInForeground" <-[go.bool] "$r0");;;
     let: "newFinalizers" := (GoAlloc (go.SliceType go.string) (GoZeroVal (go.SliceType go.string) #())) in
     let: "$r0" := (CompositeLiteral (go.SliceType go.string) (LiteralValue [])) in
     do:  ("newFinalizers" <-[go.SliceType go.string] "$r0");;;
-    let: "$range" := ((MethodResolve apis_meta_v1.Object "GetFinalizers"%go (![apis_meta_v1.Object] "metadata")) #()) in
+    let: "$range" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetFinalizers"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
     (let: "f" := (GoAlloc go.string (GoZeroVal go.string #())) in
     slice.for_range go.string "$range" (λ: "$key" "$value",
       do:  ("f" <-[go.string] "$value");;;
       do:  "$key";;;
-      (if: Convert go.untyped_bool go.bool (((![go.string] "f") =⟨go.string⟩ (Convert go.untyped_string go.string apis_meta_v1.FinalizerOrphanDependents)) || ((![go.string] "f") =⟨go.string⟩ (Convert go.untyped_string go.string apis_meta_v1.FinalizerDeleteDependents)))
+      (if: Convert go.untyped_bool go.bool (((![go.string] "f") =⟨go.string⟩ (Convert go.untyped_string go.string code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.FinalizerOrphanDependents)) || ((![go.string] "f") =⟨go.string⟩ (Convert go.untyped_string go.string code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.FinalizerDeleteDependents)))
       then continue: #()
       else do:  #());;;
       let: "$r0" := (let: "$a0" := (![go.SliceType go.string] "newFinalizers") in
@@ -2699,7 +2699,7 @@ Definition deletionFinalizersForGarbageCollectionⁱᵐᵖˡ {ext : ffi_syntax} 
     (if: ![go.bool] "shouldOrphan"
     then
       let: "$r0" := (let: "$a0" := (![go.SliceType go.string] "newFinalizers") in
-      let: "$a1" := ((let: "$sl0" := (Convert go.untyped_string go.string apis_meta_v1.FinalizerOrphanDependents) in
+      let: "$a1" := ((let: "$sl0" := (Convert go.untyped_string go.string code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.FinalizerOrphanDependents) in
       CompositeLiteral (go.SliceType go.string) (LiteralValue [KeyedElement None (ElementExpression go.string "$sl0")]))) in
       (FuncResolve go.append [go.SliceType go.string] #()) "$a0" "$a1") in
       do:  ("newFinalizers" <-[go.SliceType go.string] "$r0")
@@ -2707,13 +2707,13 @@ Definition deletionFinalizersForGarbageCollectionⁱᵐᵖˡ {ext : ffi_syntax} 
     (if: ![go.bool] "shouldDeleteInForeground"
     then
       let: "$r0" := (let: "$a0" := (![go.SliceType go.string] "newFinalizers") in
-      let: "$a1" := ((let: "$sl0" := (Convert go.untyped_string go.string apis_meta_v1.FinalizerDeleteDependents) in
+      let: "$a1" := ((let: "$sl0" := (Convert go.untyped_string go.string code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.FinalizerDeleteDependents) in
       CompositeLiteral (go.SliceType go.string) (LiteralValue [KeyedElement None (ElementExpression go.string "$sl0")]))) in
       (FuncResolve go.append [go.SliceType go.string] #()) "$a0" "$a1") in
       do:  ("newFinalizers" <-[go.SliceType go.string] "$r0")
     else do:  #());;;
     let: "oldFinalizers" := (GoAlloc (go.SliceType go.string) (GoZeroVal (go.SliceType go.string) #())) in
-    let: "$r0" := ((MethodResolve apis_meta_v1.Object "GetFinalizers"%go (![apis_meta_v1.Object] "metadata")) #()) in
+    let: "$r0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetFinalizers"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
     do:  ("oldFinalizers" <-[go.SliceType go.string] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![go.SliceType go.string] "oldFinalizers") in
     (FuncResolve go.len [go.SliceType go.string] #()) "$a0") ≠⟨go.int⟩ (let: "$a0" := (![go.SliceType go.string] "newFinalizers") in
@@ -2746,20 +2746,20 @@ Definition deletionFinalizersForGarbageCollectionⁱᵐᵖˡ {ext : ffi_syntax} 
    go: api_model.go:1344:6 *)
 Definition validateDeleteOptionsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "options",
-    exception_do (let: "options" := (GoAlloc (go.PointerType apis_meta_v1.DeleteOptions) "options") in
-    (let: "errs" := (GoAlloc field.ErrorList (GoZeroVal field.ErrorList #())) in
-    let: "$r0" := (let: "$a0" := (![go.PointerType apis_meta_v1.DeleteOptions] "options") in
-    (FuncResolve v1_validation.ValidateDeleteOptions [] #()) "$a0") in
-    do:  ("errs" <-[field.ErrorList] "$r0");;;
-    (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![field.ErrorList] "errs") in
-    (FuncResolve go.len [field.ErrorList] #()) "$a0") >⟨go.int⟩ #(W64 0))
+    exception_do (let: "options" := (GoAlloc (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions) "options") in
+    (let: "errs" := (GoAlloc code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList (GoZeroVal code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList #())) in
+    let: "$r0" := (let: "$a0" := (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options") in
+    (FuncResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.validation.validation.ValidateDeleteOptions [] #()) "$a0") in
+    do:  ("errs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0");;;
+    (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "errs") in
+    (FuncResolve go.len [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0") >⟨go.int⟩ #(W64 0))
     then
-      return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (Convert go.untyped_string go.string apis_meta_v1.GroupName) in
+      return: (Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (Convert go.untyped_string go.string code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.GroupName) in
        let: "$v1" := #"DeleteOptions"%go in
-       CompositeLiteral schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Group"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v1")])) in
+       CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupKind (LiteralValue [KeyedElement (Some (KeyField "Group"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v1")])) in
        let: "$a1" := #""%go in
-       let: "$a2" := (![field.ErrorList] "errs") in
-       (FuncResolve errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
+       let: "$a2" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "errs") in
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
     else do:  #()));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
@@ -2771,39 +2771,39 @@ Definition validateDeleteOptionsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
 Definition validateDeletePreconditionsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "metadata" "options" "kind",
     exception_do (let: "kind" := (GoAlloc go.string "kind") in
-    let: "options" := (GoAlloc (go.PointerType apis_meta_v1.DeleteOptions) "options") in
-    let: "metadata" := (GoAlloc apis_meta_v1.Object "metadata") in
-    (if: Convert go.untyped_bool go.bool ((![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options"))) =⟨go.PointerType apis_meta_v1.Preconditions⟩ (Convert go.untyped_nil (go.PointerType apis_meta_v1.Preconditions) UntypedNil))
+    let: "options" := (GoAlloc (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions) "options") in
+    let: "metadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "metadata") in
+    (if: Convert go.untyped_bool go.bool ((![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "Preconditions"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options"))) =⟨go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions) UntypedNil))
     then return: (Convert go.untyped_nil go.error UntypedNil)
     else do:  #());;;
-    (if: Convert go.untyped_bool go.bool ((![go.PointerType types.UID] (StructFieldRef apis_meta_v1.Preconditions "UID"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options"))))) ≠⟨go.PointerType types.UID⟩ (Convert go.untyped_nil (go.PointerType types.UID) UntypedNil))
+    (if: Convert go.untyped_bool go.bool ((![go.PointerType code.k8s_io.apimachinery.pkg.types.types.UID] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions "UID"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "Preconditions"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options"))))) ≠⟨go.PointerType code.k8s_io.apimachinery.pkg.types.types.UID⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.types.types.UID) UntypedNil))
     then
-      (if: Convert go.untyped_bool go.bool ((![types.UID] (![go.PointerType types.UID] (StructFieldRef apis_meta_v1.Preconditions "UID"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options")))))) ≠⟨types.UID⟩ ((MethodResolve apis_meta_v1.Object "GetUID"%go (![apis_meta_v1.Object] "metadata")) #()))
+      (if: Convert go.untyped_bool go.bool ((![code.k8s_io.apimachinery.pkg.types.types.UID] (![go.PointerType code.k8s_io.apimachinery.pkg.types.types.UID] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions "UID"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "Preconditions"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options")))))) ≠⟨code.k8s_io.apimachinery.pkg.types.types.UID⟩ ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetUID"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()))
       then
-        return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
-         CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
-         let: "$a1" := ((MethodResolve apis_meta_v1.Object "GetName"%go (![apis_meta_v1.Object] "metadata")) #()) in
+        return: (Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+         CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
+         let: "$a1" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetName"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
          let: "$a2" := (let: "$a0" := #"the UID in the precondition (%s) does not match the UID in record (%s). The object might have been deleted and then recreated"%go in
-         let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![types.UID] (![go.PointerType types.UID] (StructFieldRef apis_meta_v1.Preconditions "UID"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options"))))))) in
-         let: "$sl1" := (Convert go.string go.any ((MethodResolve apis_meta_v1.Object "GetUID"%go (![apis_meta_v1.Object] "metadata")) #())) in
+         let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![code.k8s_io.apimachinery.pkg.types.types.UID] (![go.PointerType code.k8s_io.apimachinery.pkg.types.types.UID] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions "UID"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "Preconditions"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options"))))))) in
+         let: "$sl1" := (Convert go.string go.any ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetUID"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #())) in
          CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1") in
-         (FuncResolve errors.NewConflict [] #()) "$a0" "$a1" "$a2"))
+         (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1") in
+         (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewConflict [] #()) "$a0" "$a1" "$a2"))
       else do:  #())
     else do:  #());;;
-    (if: Convert go.untyped_bool go.bool ((![go.PointerType go.string] (StructFieldRef apis_meta_v1.Preconditions "ResourceVersion"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options"))))) ≠⟨go.PointerType go.string⟩ (Convert go.untyped_nil (go.PointerType go.string) UntypedNil))
+    (if: Convert go.untyped_bool go.bool ((![go.PointerType go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions "ResourceVersion"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "Preconditions"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options"))))) ≠⟨go.PointerType go.string⟩ (Convert go.untyped_nil (go.PointerType go.string) UntypedNil))
     then
-      (if: Convert go.untyped_bool go.bool ((![go.string] (![go.PointerType go.string] (StructFieldRef apis_meta_v1.Preconditions "ResourceVersion"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options")))))) ≠⟨go.string⟩ ((MethodResolve apis_meta_v1.Object "GetResourceVersion"%go (![apis_meta_v1.Object] "metadata")) #()))
+      (if: Convert go.untyped_bool go.bool ((![go.string] (![go.PointerType go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions "ResourceVersion"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "Preconditions"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options")))))) ≠⟨go.string⟩ ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetResourceVersion"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()))
       then
-        return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
-         CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
-         let: "$a1" := ((MethodResolve apis_meta_v1.Object "GetName"%go (![apis_meta_v1.Object] "metadata")) #()) in
+        return: (Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+         CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
+         let: "$a1" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetName"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
          let: "$a2" := (let: "$a0" := #"the ResourceVersion in the precondition (%s) does not match the ResourceVersion in record (%s). The object might have been modified"%go in
-         let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] (![go.PointerType go.string] (StructFieldRef apis_meta_v1.Preconditions "ResourceVersion"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options"))))))) in
-         let: "$sl1" := (Convert go.string go.any ((MethodResolve apis_meta_v1.Object "GetResourceVersion"%go (![apis_meta_v1.Object] "metadata")) #())) in
+         let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] (![go.PointerType go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions "ResourceVersion"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "Preconditions"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options"))))))) in
+         let: "$sl1" := (Convert go.string go.any ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetResourceVersion"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #())) in
          CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1") in
-         (FuncResolve errors.NewConflict [] #()) "$a0" "$a1" "$a2"))
+         (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1") in
+         (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewConflict [] #()) "$a0" "$a1" "$a2"))
       else do:  #())
     else do:  #());;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
@@ -2815,36 +2815,36 @@ Definition validateDeletePreconditionsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
    go: api_model.go:1393:6 *)
 Definition checkGracefulDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "obj" "options",
-    exception_do (let: "options" := (GoAlloc (go.PointerType apis_meta_v1.DeleteOptions) "options") in
+    exception_do (let: "options" := (GoAlloc (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions) "options") in
     let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
-    let: "ctx" := (GoAlloc context.Context (GoZeroVal context.Context #())) in
-    let: "$r0" := ((FuncResolve context.Background [] #()) #()) in
-    do:  ("ctx" <-[context.Context] "$r0");;;
-    (if: Convert go.untyped_bool go.bool (((![go.PointerType go.int64] (StructFieldRef apis_meta_v1.DeleteOptions "GracePeriodSeconds"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options"))) ≠⟨go.PointerType go.int64⟩ (Convert go.untyped_nil (go.PointerType go.int64) UntypedNil)) && ((![go.int64] (![go.PointerType go.int64] (StructFieldRef apis_meta_v1.DeleteOptions "GracePeriodSeconds"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options")))) <⟨go.int64⟩ #(W64 0)))
+    let: "ctx" := (GoAlloc code.context.context.Context (GoZeroVal code.context.context.Context #())) in
+    let: "$r0" := ((FuncResolve code.context.context.Background [] #()) #()) in
+    do:  ("ctx" <-[code.context.context.Context] "$r0");;;
+    (if: Convert go.untyped_bool go.bool (((![go.PointerType go.int64] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "GracePeriodSeconds"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options"))) ≠⟨go.PointerType go.int64⟩ (Convert go.untyped_nil (go.PointerType go.int64) UntypedNil)) && ((![go.int64] (![go.PointerType go.int64] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "GracePeriodSeconds"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options")))) <⟨go.int64⟩ #(W64 0)))
     then
       let: "period" := (GoAlloc go.int64 (GoZeroVal go.int64 #())) in
       let: "$r0" := #(W64 1) in
       do:  ("period" <-[go.int64] "$r0");;;
       let: "$r0" := "period" in
-      do:  ((StructFieldRef apis_meta_v1.DeleteOptions "GracePeriodSeconds"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options")) <-[go.PointerType go.int64] "$r0")
+      do:  ((StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "GracePeriodSeconds"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options")) <-[go.PointerType go.int64] "$r0")
     else do:  #());;;
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-    let: "metadata" := (GoAlloc apis_meta_v1.Object (GoZeroVal apis_meta_v1.Object #())) in
+    let: "metadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![go.InterfaceType []] "obj") in
-    (FuncResolve meta.Accessor [] #()) "$a0") in
+    (FuncResolve code.k8s_io.apimachinery.pkg.api.meta.meta.Accessor [] #()) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("metadata" <-[apis_meta_v1.Object] "$r0");;;
+    do:  ("metadata" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then
       return: (#false, #false, let: "$a0" := #"failed to access object metadata: %w"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
     (let: "currentGracePeriod" := (GoAlloc (go.PointerType go.int64) (GoZeroVal (go.PointerType go.int64) #())) in
-    let: "$r0" := ((MethodResolve apis_meta_v1.Object "GetDeletionGracePeriodSeconds"%go (![apis_meta_v1.Object] "metadata")) #()) in
+    let: "$r0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetDeletionGracePeriodSeconds"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
     do:  ("currentGracePeriod" <-[go.PointerType go.int64] "$r0");;;
     (if: Convert go.untyped_bool go.bool (((![go.PointerType go.int64] "currentGracePeriod") ≠⟨go.PointerType go.int64⟩ (Convert go.untyped_nil (go.PointerType go.int64) UntypedNil)) && ((![go.int64] (![go.PointerType go.int64] "currentGracePeriod")) <⟨go.int64⟩ #(W64 0)))
     then
@@ -2852,38 +2852,38 @@ Definition checkGracefulDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
       let: "$r0" := #(W64 1) in
       do:  ("period" <-[go.int64] "$r0");;;
       do:  (let: "$a0" := "period" in
-      (MethodResolve apis_meta_v1.Object "SetDeletionGracePeriodSeconds"%go (![apis_meta_v1.Object] "metadata")) "$a0")
+      (MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "SetDeletionGracePeriodSeconds"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) "$a0")
     else do:  #()));;;
-    (if: Convert go.untyped_bool go.bool (((MethodResolve apis_meta_v1.Object "GetDeletionTimestamp"%go (![apis_meta_v1.Object] "metadata")) #()) ≠⟨go.PointerType apis_meta_v1.Time⟩ (Convert go.untyped_nil (go.PointerType apis_meta_v1.Time) UntypedNil))
+    (if: Convert go.untyped_bool go.bool (((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetDeletionTimestamp"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) ≠⟨go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time) UntypedNil))
     then
       let: "currentGracePeriod" := (GoAlloc (go.PointerType go.int64) (GoZeroVal (go.PointerType go.int64) #())) in
-      let: "$r0" := ((MethodResolve apis_meta_v1.Object "GetDeletionGracePeriodSeconds"%go (![apis_meta_v1.Object] "metadata")) #()) in
+      let: "$r0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetDeletionGracePeriodSeconds"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
       do:  ("currentGracePeriod" <-[go.PointerType go.int64] "$r0");;;
       (if: Convert go.untyped_bool go.bool (((![go.PointerType go.int64] "currentGracePeriod") =⟨go.PointerType go.int64⟩ (Convert go.untyped_nil (go.PointerType go.int64) UntypedNil)) || ((![go.int64] (![go.PointerType go.int64] "currentGracePeriod")) =⟨go.int64⟩ #(W64 0)))
       then return: (#false, #false, Convert go.untyped_nil go.error UntypedNil)
       else do:  #());;;
-      (if: Convert go.untyped_bool go.bool ((![go.PointerType go.int64] (StructFieldRef apis_meta_v1.DeleteOptions "GracePeriodSeconds"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options"))) ≠⟨go.PointerType go.int64⟩ (Convert go.untyped_nil (go.PointerType go.int64) UntypedNil))
+      (if: Convert go.untyped_bool go.bool ((![go.PointerType go.int64] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "GracePeriodSeconds"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options"))) ≠⟨go.PointerType go.int64⟩ (Convert go.untyped_nil (go.PointerType go.int64) UntypedNil))
       then
         let: "period" := (GoAlloc go.int64 (GoZeroVal go.int64 #())) in
-        let: "$r0" := (![go.int64] (![go.PointerType go.int64] (StructFieldRef apis_meta_v1.DeleteOptions "GracePeriodSeconds"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options")))) in
+        let: "$r0" := (![go.int64] (![go.PointerType go.int64] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "GracePeriodSeconds"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options")))) in
         do:  ("period" <-[go.int64] "$r0");;;
         (if: Convert go.untyped_bool go.bool ((![go.int64] "period") ≥⟨go.int64⟩ (![go.int64] (![go.PointerType go.int64] "currentGracePeriod")))
         then return: (#false, #true, Convert go.untyped_nil go.error UntypedNil)
         else do:  #());;;
-        let: "newDeletionTimestamp" := (GoAlloc apis_meta_v1.Time (GoZeroVal apis_meta_v1.Time #())) in
-        let: "$r0" := (let: "$a0" := (let: "$a0" := (time.Second *⟨time.Duration⟩ (![go.int64] "period")) in
-        (MethodResolve time.Time "Add"%go (let: "$a0" := (((Convert go.untyped_int time.Duration (⟨go.untyped_int⟩- #1)) *⟨time.Duration⟩ time.Second) *⟨time.Duration⟩ (![go.int64] (![go.PointerType go.int64] "currentGracePeriod"))) in
-        (MethodResolve (go.PointerType apis_meta_v1.Time) "Add"%go ((MethodResolve apis_meta_v1.Object "GetDeletionTimestamp"%go (![apis_meta_v1.Object] "metadata")) #())) "$a0")) "$a0") in
-        (FuncResolve apis_meta_v1.NewTime [] #()) "$a0") in
-        do:  ("newDeletionTimestamp" <-[apis_meta_v1.Time] "$r0");;;
-        let: "now" := (GoAlloc apis_meta_v1.Time (GoZeroVal apis_meta_v1.Time #())) in
-        let: "$r0" := ((FuncResolve apis_meta_v1.Now [] #()) #()) in
-        do:  ("now" <-[apis_meta_v1.Time] "$r0");;;
+        let: "newDeletionTimestamp" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time #())) in
+        let: "$r0" := (let: "$a0" := (let: "$a0" := (code.time.time.Second *⟨code.time.time.Duration⟩ (![go.int64] "period")) in
+        (MethodResolve code.time.time.Time "Add"%go (let: "$a0" := (((Convert go.untyped_int code.time.time.Duration (⟨go.untyped_int⟩- #1)) *⟨code.time.time.Duration⟩ code.time.time.Second) *⟨code.time.time.Duration⟩ (![go.int64] (![go.PointerType go.int64] "currentGracePeriod"))) in
+        (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time) "Add"%go ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetDeletionTimestamp"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #())) "$a0")) "$a0") in
+        (FuncResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.NewTime [] #()) "$a0") in
+        do:  ("newDeletionTimestamp" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time] "$r0");;;
+        let: "now" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time #())) in
+        let: "$r0" := ((FuncResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Now [] #()) #()) in
+        do:  ("now" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time] "$r0");;;
         (if: let: "$a0" := "now" in
-        (MethodResolve (go.PointerType apis_meta_v1.Time) "Before"%go "newDeletionTimestamp") "$a0"
+        (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time) "Before"%go "newDeletionTimestamp") "$a0"
         then
-          let: "$r0" := (![apis_meta_v1.Time] "now") in
-          do:  ("newDeletionTimestamp" <-[apis_meta_v1.Time] "$r0");;;
+          let: "$r0" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time] "now") in
+          do:  ("newDeletionTimestamp" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time] "$r0");;;
           (if: Convert go.untyped_bool go.bool ((![go.int64] "period") ≠⟨go.int64⟩ #(W64 0))
           then
             let: "$r0" := #(W64 1) in
@@ -2891,80 +2891,80 @@ Definition checkGracefulDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
           else do:  #())
         else do:  #());;;
         do:  (let: "$a0" := "newDeletionTimestamp" in
-        (MethodResolve apis_meta_v1.Object "SetDeletionTimestamp"%go (![apis_meta_v1.Object] "metadata")) "$a0");;;
+        (MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "SetDeletionTimestamp"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) "$a0");;;
         do:  (let: "$a0" := "period" in
-        (MethodResolve apis_meta_v1.Object "SetDeletionGracePeriodSeconds"%go (![apis_meta_v1.Object] "metadata")) "$a0");;;
+        (MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "SetDeletionGracePeriodSeconds"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) "$a0");;;
         return: (#true, #false, Convert go.untyped_nil go.error UntypedNil)
       else do:  #());;;
       let: "$r0" := (![go.PointerType go.int64] "currentGracePeriod") in
-      do:  ((StructFieldRef apis_meta_v1.DeleteOptions "GracePeriodSeconds"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options")) <-[go.PointerType go.int64] "$r0");;;
+      do:  ((StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "GracePeriodSeconds"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options")) <-[go.PointerType go.int64] "$r0");;;
       return: (#false, #true, Convert go.untyped_nil go.error UntypedNil)
     else do:  #());;;
     let: "$y" := (![go.InterfaceType []] "obj") in
-    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_core_v1.Pod) "$y") in
+    let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "$y") in
     (if: "$ok"
     then
-      let: "typed" := (GoAlloc (go.PointerType api_core_v1.Pod) "$x") in
-      let: "internalPod" := (GoAlloc (go.PointerType core.Pod) (GoZeroVal (go.PointerType core.Pod) #())) in
-      let: "$r0" := (GoAlloc core.Pod (CompositeLiteral core.Pod (LiteralValue []))) in
-      do:  ("internalPod" <-[go.PointerType core.Pod] "$r0");;;
+      let: "typed" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "$x") in
+      let: "internalPod" := (GoAlloc (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) (GoZeroVal (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) #())) in
+      let: "$r0" := (GoAlloc code.k8s_io.kubernetes.pkg.apis.core.core.Pod (CompositeLiteral code.k8s_io.kubernetes.pkg.apis.core.core.Pod (LiteralValue []))) in
+      do:  ("internalPod" <-[go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "$r0");;;
       (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-      let: "$r0" := (let: "$a0" := (Convert (go.PointerType api_core_v1.Pod) (go.InterfaceType []) (![go.PointerType api_core_v1.Pod] "typed")) in
-      let: "$a1" := (Convert (go.PointerType core.Pod) (go.InterfaceType []) (![go.PointerType core.Pod] "internalPod")) in
+      let: "$r0" := (let: "$a0" := (Convert (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "typed")) in
+      let: "$a1" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) (go.InterfaceType []) (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "internalPod")) in
       let: "$a2" := (Convert go.untyped_nil (go.InterfaceType []) UntypedNil) in
-      (MethodResolve (go.PointerType runtime.Scheme) "Convert"%go (![go.PointerType runtime.Scheme] (GlobalVarAddr legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
+      (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme) "Convert"%go (![go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme] (GlobalVarAddr code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
       do:  ("err" <-[go.error] "$r0");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then return: (#false, #false, ![go.error] "err")
       else do:  #()));;;
       let: "graceful" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-      let: "$r0" := (let: "$a0" := (![context.Context] "ctx") in
-      let: "$a1" := (Convert (go.PointerType core.Pod) runtime.Object (![go.PointerType core.Pod] "internalPod")) in
-      let: "$a2" := (![go.PointerType apis_meta_v1.DeleteOptions] "options") in
-      (MethodResolve (go.PointerType pod.podStrategy) "CheckGracefulDelete"%go (GlobalVarAddr pod.Strategy #())) "$a0" "$a1" "$a2") in
+      let: "$r0" := (let: "$a0" := (![code.context.context.Context] "ctx") in
+      let: "$a1" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "internalPod")) in
+      let: "$a2" := (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options") in
+      (MethodResolve (go.PointerType code.k8s_io.kubernetes.pkg.registry.core.pod.pod.podStrategy) "CheckGracefulDelete"%go (GlobalVarAddr code.k8s_io.kubernetes.pkg.registry.core.pod.pod.Strategy #())) "$a0" "$a1" "$a2") in
       do:  ("graceful" <-[go.bool] "$r0");;;
       let: "pendingGraceful" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-      let: "$r0" := ((![go.PointerType apis_meta_v1.Time] (StructFieldRef apis_meta_v1.ObjectMeta "DeletionTimestamp"%go (StructFieldRef core.Pod "ObjectMeta"%go (![go.PointerType core.Pod] "internalPod")))) ≠⟨go.PointerType apis_meta_v1.Time⟩ (Convert go.untyped_nil (go.PointerType apis_meta_v1.Time) UntypedNil)) in
+      let: "$r0" := ((![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "DeletionTimestamp"%go (StructFieldRef code.k8s_io.kubernetes.pkg.apis.core.core.Pod "ObjectMeta"%go (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "internalPod")))) ≠⟨go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time) UntypedNil)) in
       do:  ("pendingGraceful" <-[go.bool] "$r0");;;
       (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-      let: "$r0" := (let: "$a0" := (Convert (go.PointerType core.Pod) (go.InterfaceType []) (![go.PointerType core.Pod] "internalPod")) in
-      let: "$a1" := (Convert (go.PointerType api_core_v1.Pod) (go.InterfaceType []) (![go.PointerType api_core_v1.Pod] "typed")) in
+      let: "$r0" := (let: "$a0" := (Convert (go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod) (go.InterfaceType []) (![go.PointerType code.k8s_io.kubernetes.pkg.apis.core.core.Pod] "internalPod")) in
+      let: "$a1" := (Convert (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "typed")) in
       let: "$a2" := (Convert go.untyped_nil (go.InterfaceType []) UntypedNil) in
-      (MethodResolve (go.PointerType runtime.Scheme) "Convert"%go (![go.PointerType runtime.Scheme] (GlobalVarAddr legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
+      (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme) "Convert"%go (![go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme] (GlobalVarAddr code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme.Scheme #()))) "$a0" "$a1" "$a2") in
       do:  ("err" <-[go.error] "$r0");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then return: (#false, #false, ![go.error] "err")
       else do:  #()));;;
       return: (![go.bool] "graceful", ![go.bool] "pendingGraceful", Convert go.untyped_nil go.error UntypedNil)
     else
-      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_apps_v1.ReplicaSet) "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) "$y") in
       (if: "$ok"
       then
-        let: "typed" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "$x") in
+        let: "typed" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) "$x") in
         return: (#false, #false, Convert go.untyped_nil go.error UntypedNil)
       else
-        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_core_v1.PersistentVolumeClaim) "$y") in
+        let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) "$y") in
         (if: "$ok"
         then
-          let: "typed" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) "$x") in
+          let: "typed" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) "$x") in
           return: (#false, #false, Convert go.untyped_nil go.error UntypedNil)
         else
-          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_apps_v1.StatefulSet) "$y") in
+          let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) "$y") in
           (if: "$ok"
           then
-            let: "typed" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) "$x") in
+            let: "typed" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) "$x") in
             return: (#false, #false, Convert go.untyped_nil go.error UntypedNil)
           else
-            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType api_apps_v1.Deployment) "$y") in
+            let: ("$x", "$ok") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) "$y") in
             (if: "$ok"
             then
-              let: "typed" := (GoAlloc (go.PointerType api_apps_v1.Deployment) "$x") in
+              let: "typed" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) "$x") in
               return: (#false, #false, Convert go.untyped_nil go.error UntypedNil)
             else
               return: (#false, #false, let: "$a0" := #"unsupported object type for graceful delete: %T"%go in
                let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
                CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-               (FuncResolve fmt.Errorf [] #()) "$a0" "$a1"))))))).
+               (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1"))))))).
 
 (* storageObjectDeepEqual approximates upstream's "did the storage operation actually change the
    stored object?" check, but it is not exactly the same logic.
@@ -3000,34 +3000,34 @@ Definition storageObjectDeepEqualⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
       do:  ("obj" <-[go.InterfaceType []] "$value");;;
       do:  "$key";;;
       let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-      let: "metadata" := (GoAlloc apis_meta_v1.Object (GoZeroVal apis_meta_v1.Object #())) in
+      let: "metadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object #())) in
       let: ("$ret0", "$ret1") := (let: "$a0" := (![go.InterfaceType []] "obj") in
-      (FuncResolve meta.Accessor [] #()) "$a0") in
+      (FuncResolve code.k8s_io.apimachinery.pkg.api.meta.meta.Accessor [] #()) "$a0") in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
-      do:  ("metadata" <-[apis_meta_v1.Object] "$r0");;;
+      do:  ("metadata" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "$r0");;;
       do:  ("err" <-[go.error] "$r1");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then return: (#false)
       else do:  #());;;
       do:  (let: "$a0" := #""%go in
-      (MethodResolve apis_meta_v1.Object "SetResourceVersion"%go (![apis_meta_v1.Object] "metadata")) "$a0");;;
+      (MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "SetResourceVersion"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) "$a0");;;
       do:  (let: "$a0" := #""%go in
-      (MethodResolve apis_meta_v1.Object "SetSelfLink"%go (![apis_meta_v1.Object] "metadata")) "$a0")));;;
+      (MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "SetSelfLink"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) "$a0")));;;
     return: (let: "$a0" := (![go.InterfaceType []] "obj1Copy") in
      let: "$a1" := (![go.InterfaceType []] "obj2Copy") in
-     (FuncResolve reflect.DeepEqual [] #()) "$a0" "$a1")).
+     (FuncResolve code.reflect.reflect.DeepEqual [] #()) "$a0" "$a1")).
 
 (* go: api_model.go:1518:6 *)
 Definition shouldDeleteDuringUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "objCopy" "existingObjCopy",
     exception_do (let: "existingObjCopy" := (GoAlloc (go.InterfaceType []) "existingObjCopy") in
     let: "objCopy" := (GoAlloc (go.InterfaceType []) "objCopy") in
-    return: (let: "$a0" := ((FuncResolve context.Background [] #()) #()) in
+    return: (let: "$a0" := ((FuncResolve code.context.context.Background [] #()) #()) in
      let: "$a1" := #""%go in
-     let: "$a2" := (TypeAssert runtime.Object (![go.InterfaceType []] "objCopy")) in
-     let: "$a3" := (TypeAssert runtime.Object (![go.InterfaceType []] "existingObjCopy")) in
-     (FuncResolve registry.ShouldDeleteDuringUpdate [] #()) "$a0" "$a1" "$a2" "$a3")).
+     let: "$a2" := (TypeAssert code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.InterfaceType []] "objCopy")) in
+     let: "$a3" := (TypeAssert code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.InterfaceType []] "existingObjCopy")) in
+     (FuncResolve code.k8s_io.apiserver.pkg.registry.generic.registry.registry.ShouldDeleteDuringUpdate [] #()) "$a0" "$a1" "$a2" "$a3")).
 
 (* deletionTimestampForDelete computes the initial DeletionTimestamp written by the delete path.
    Graceful deletion uses now+gracePeriod; non-graceful deletion with finalizers uses "now",
@@ -3042,33 +3042,33 @@ Definition deletionTimestampForDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : G
     let: "graceful" := (GoAlloc go.bool "graceful") in
     (if: ![go.bool] "graceful"
     then
-      let: "requestedDeletionTimestamp" := (GoAlloc apis_meta_v1.Time (GoZeroVal apis_meta_v1.Time #())) in
-      let: "$r0" := (let: "$a0" := (let: "$a0" := (time.Second *⟨time.Duration⟩ (![go.int64] "gracePeriod")) in
-      (MethodResolve apis_meta_v1.Time "Add"%go ((FuncResolve apis_meta_v1.Now [] #()) #())) "$a0") in
-      (FuncResolve apis_meta_v1.NewTime [] #()) "$a0") in
-      do:  ("requestedDeletionTimestamp" <-[apis_meta_v1.Time] "$r0");;;
+      let: "requestedDeletionTimestamp" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time #())) in
+      let: "$r0" := (let: "$a0" := (let: "$a0" := (code.time.time.Second *⟨code.time.time.Duration⟩ (![go.int64] "gracePeriod")) in
+      (MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time "Add"%go ((FuncResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Now [] #()) #())) "$a0") in
+      (FuncResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.NewTime [] #()) "$a0") in
+      do:  ("requestedDeletionTimestamp" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time] "$r0");;;
       return: ("requestedDeletionTimestamp")
     else do:  #());;;
-    let: "now" := (GoAlloc apis_meta_v1.Time (GoZeroVal apis_meta_v1.Time #())) in
-    let: "$r0" := ((FuncResolve apis_meta_v1.Now [] #()) #()) in
-    do:  ("now" <-[apis_meta_v1.Time] "$r0");;;
+    let: "now" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time #())) in
+    let: "$r0" := ((FuncResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Now [] #()) #()) in
+    do:  ("now" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time] "$r0");;;
     return: ("now")).
 
 (* go: api_model.go:1539:17 *)
 Definition State__deleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "key" "options",
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "options" := (GoAlloc apis_meta_v1.DeleteOptions "options") in
+    let: "options" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "options") in
     let: "key" := (GoAlloc KKey "key") in
-    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
-    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
+    do:  ((MethodResolve (go.PointerType code.sync.sync.Mutex) "Lock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
+    do:  (let: "$f" := (MethodResolve (go.PointerType code.sync.sync.Mutex) "Unlock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
     "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
     (λ: <>,
       "$f" #();;
       "$oldf" #()
       )));;;
-    let: "$r0" := (![apis_meta_v1.DeleteOptions] ((MethodResolve (go.PointerType apis_meta_v1.DeleteOptions) "DeepCopy"%go "options") #())) in
-    do:  ("options" <-[apis_meta_v1.DeleteOptions] "$r0");;;
+    let: "$r0" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] ((MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions) "DeepCopy"%go "options") #())) in
+    do:  ("options" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "$r0");;;
     let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
     let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: ("$ret0", "$ret1") := (map.lookup2 KKey (go.InterfaceType []) (![go.MapType KKey (go.InterfaceType [])] (StructFieldRef State "m"%go (![go.PointerType State] "s"))) (![KKey] "key")) in
@@ -3078,29 +3078,29 @@ Definition State__deleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
     do:  ("exists" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "exists"))
     then
-      return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] (StructFieldRef KKey "Kind"%go "key")) in
-       CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
+      return: (Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] (StructFieldRef KKey "Kind"%go "key")) in
+       CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
        let: "$a1" := (![go.string] (StructFieldRef KKey "Name"%go "key")) in
-       (FuncResolve errors.NewNotFound [] #()) "$a0" "$a1"))
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewNotFound [] #()) "$a0" "$a1"))
     else do:  #());;;
     let: "objCopy" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: "$r0" := (let: "$a0" := (![go.InterfaceType []] "obj") in
     (FuncResolve deepCopy [] #()) "$a0") in
     do:  ("objCopy" <-[go.InterfaceType []] "$r0");;;
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-    let: "metadata" := (GoAlloc apis_meta_v1.Object (GoZeroVal apis_meta_v1.Object #())) in
+    let: "metadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![go.InterfaceType []] "objCopy") in
-    (FuncResolve meta.Accessor [] #()) "$a0") in
+    (FuncResolve code.k8s_io.apimachinery.pkg.api.meta.meta.Accessor [] #()) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("metadata" <-[apis_meta_v1.Object] "$r0");;;
+    do:  ("metadata" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then
       return: (let: "$a0" := #"failed to access object metadata: %w"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
     (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "$r0" := (let: "$a0" := "options" in
@@ -3109,7 +3109,7 @@ Definition State__deleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then return: (![go.error] "err")
     else do:  #()));;;
-    (let: "$r0" := (let: "$a0" := (![apis_meta_v1.Object] "metadata") in
+    (let: "$r0" := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata") in
     let: "$a1" := "options" in
     let: "$a2" := (![go.string] (StructFieldRef KKey "Kind"%go "key")) in
     (FuncResolve validateDeletePreconditions [] #()) "$a0" "$a1" "$a2") in
@@ -3136,7 +3136,7 @@ Definition State__deleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
     else do:  #());;;
     let: "newFinalizers" := (GoAlloc (go.SliceType go.string) (GoZeroVal (go.SliceType go.string) #())) in
     let: "shouldUpdateFinalizers" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (![apis_meta_v1.Object] "metadata") in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata") in
     let: "$a1" := "options" in
     (FuncResolve deletionFinalizersForGarbageCollection [] #()) "$a0" "$a1") in
     let: "$r0" := "$ret0" in
@@ -3146,17 +3146,17 @@ Definition State__deleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
     (if: ![go.bool] "shouldUpdateFinalizers"
     then
       do:  (let: "$a0" := (![go.SliceType go.string] "newFinalizers") in
-      (MethodResolve apis_meta_v1.Object "SetFinalizers"%go (![apis_meta_v1.Object] "metadata")) "$a0")
+      (MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "SetFinalizers"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) "$a0")
     else do:  #());;;
     let: "gracePeriod" := (GoAlloc go.int64 (GoZeroVal go.int64 #())) in
     let: "$r0" := #(W64 0) in
     do:  ("gracePeriod" <-[go.int64] "$r0");;;
-    (if: (![go.bool] "graceful") && ((![go.PointerType go.int64] (StructFieldRef apis_meta_v1.DeleteOptions "GracePeriodSeconds"%go "options")) ≠⟨go.PointerType go.int64⟩ (Convert go.untyped_nil (go.PointerType go.int64) UntypedNil))
+    (if: (![go.bool] "graceful") && ((![go.PointerType go.int64] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "GracePeriodSeconds"%go "options")) ≠⟨go.PointerType go.int64⟩ (Convert go.untyped_nil (go.PointerType go.int64) UntypedNil))
     then
-      let: "$r0" := (![go.int64] (![go.PointerType go.int64] (StructFieldRef apis_meta_v1.DeleteOptions "GracePeriodSeconds"%go "options"))) in
+      let: "$r0" := (![go.int64] (![go.PointerType go.int64] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "GracePeriodSeconds"%go "options"))) in
       do:  ("gracePeriod" <-[go.int64] "$r0")
     else do:  #());;;
-    (if: Convert go.untyped_bool go.bool (((let: "$a0" := ((MethodResolve apis_meta_v1.Object "GetFinalizers"%go (![apis_meta_v1.Object] "metadata")) #()) in
+    (if: Convert go.untyped_bool go.bool (((let: "$a0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetFinalizers"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
     (FuncResolve go.len [go.SliceType go.string] #()) "$a0") =⟨go.int⟩ #(W64 0)) && ((![go.int64] "gracePeriod") =⟨go.int64⟩ #(W64 0)))
     then
       do:  (let: "$a0" := (![go.MapType KKey (go.InterfaceType [])] (StructFieldRef State "m"%go (![go.PointerType State] "s"))) in
@@ -3165,23 +3165,23 @@ Definition State__deleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
       return: (Convert go.untyped_nil go.error UntypedNil)
     else do:  #());;;
     let: "currentGracePeriod" := (GoAlloc (go.PointerType go.int64) (GoZeroVal (go.PointerType go.int64) #())) in
-    let: "$r0" := ((MethodResolve apis_meta_v1.Object "GetDeletionGracePeriodSeconds"%go (![apis_meta_v1.Object] "metadata")) #()) in
+    let: "$r0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetDeletionGracePeriodSeconds"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
     do:  ("currentGracePeriod" <-[go.PointerType go.int64] "$r0");;;
     (if: Convert go.untyped_bool go.bool (((![go.PointerType go.int64] "currentGracePeriod") =⟨go.PointerType go.int64⟩ (Convert go.untyped_nil (go.PointerType go.int64) UntypedNil)) || ((![go.int64] (![go.PointerType go.int64] "currentGracePeriod")) ≠⟨go.int64⟩ (![go.int64] "gracePeriod")))
     then
       do:  (let: "$a0" := "gracePeriod" in
-      (MethodResolve apis_meta_v1.Object "SetDeletionGracePeriodSeconds"%go (![apis_meta_v1.Object] "metadata")) "$a0")
+      (MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "SetDeletionGracePeriodSeconds"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) "$a0")
     else do:  #());;;
-    (if: Convert go.untyped_bool go.bool (((MethodResolve apis_meta_v1.Object "GetDeletionTimestamp"%go (![apis_meta_v1.Object] "metadata")) #()) =⟨go.PointerType apis_meta_v1.Time⟩ (Convert go.untyped_nil (go.PointerType apis_meta_v1.Time) UntypedNil))
+    (if: Convert go.untyped_bool go.bool (((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetDeletionTimestamp"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) =⟨go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time) UntypedNil))
     then
       do:  (let: "$a0" := (let: "$a0" := (![go.bool] "graceful") in
       let: "$a1" := (![go.int64] "gracePeriod") in
       (FuncResolve deletionTimestampForDelete [] #()) "$a0" "$a1") in
-      (MethodResolve apis_meta_v1.Object "SetDeletionTimestamp"%go (![apis_meta_v1.Object] "metadata")) "$a0");;;
-      (if: Convert go.untyped_bool go.bool (((MethodResolve apis_meta_v1.Object "GetGeneration"%go (![apis_meta_v1.Object] "metadata")) #()) >⟨go.int64⟩ #(W64 0))
+      (MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "SetDeletionTimestamp"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) "$a0");;;
+      (if: Convert go.untyped_bool go.bool (((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetGeneration"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) >⟨go.int64⟩ #(W64 0))
       then
-        do:  (let: "$a0" := (((MethodResolve apis_meta_v1.Object "GetGeneration"%go (![apis_meta_v1.Object] "metadata")) #()) +⟨go.int64⟩ #(W64 1)) in
-        (MethodResolve apis_meta_v1.Object "SetGeneration"%go (![apis_meta_v1.Object] "metadata")) "$a0")
+        do:  (let: "$a0" := (((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetGeneration"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) +⟨go.int64⟩ #(W64 1)) in
+        (MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "SetGeneration"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) "$a0")
       else do:  #())
     else do:  #());;;
     (if: (⟨go.bool⟩! (let: "$a0" := (![go.InterfaceType []] "objCopy") in
@@ -3189,7 +3189,7 @@ Definition State__deleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
     (FuncResolve storageObjectDeepEqual [] #()) "$a0" "$a1"))
     then
       do:  (let: "$a0" := ((MethodResolve (go.PointerType State) "generateNewRVAndUpdate"%go (![go.PointerType State] "s")) #()) in
-      (MethodResolve apis_meta_v1.Object "SetResourceVersion"%go (![apis_meta_v1.Object] "metadata")) "$a0");;;
+      (MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "SetResourceVersion"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) "$a0");;;
       let: "$r0" := (![go.InterfaceType []] "objCopy") in
       do:  (map.insert KKey (![go.MapType KKey (go.InterfaceType [])] (StructFieldRef State "m"%go (![go.PointerType State] "s"))) (![KKey] "key") "$r0")
     else do:  #());;;
@@ -3229,24 +3229,24 @@ Definition State__PodMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_core_v1.Pod) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.Pod) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "pod" := (GoAlloc (go.PointerType api_core_v1.Pod) (GoZeroVal (go.PointerType api_core_v1.Pod) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_core_v1.Pod) (![go.InterfaceType []] "obj")) in
+    let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.Pod) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("pod" <-[go.PointerType api_core_v1.Pod] "$r0");;;
+    do:  ("pod" <-[go.PointerType code.k8s_io.api.core.v1.v1.Pod] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_core_v1.Pod) UntypedNil, let: "$a0" := #"state entry for pod %s/%s is not a *v1.Pod"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.Pod) UntypedNil, let: "$a0" := #"state entry for pod %s/%s is not a *v1.Pod"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "namespace")) in
        let: "$sl1" := (Convert go.string go.any (![go.string] "name")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_core_v1.Pod] "pod", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod", Convert go.untyped_nil go.error UntypedNil)).
 
 (* Returned value must be treated as read-only.
 
@@ -3254,10 +3254,10 @@ Definition State__PodMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
 Definition State__PodListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "selector" := (GoAlloc labels.Selector "selector") in
+    let: "selector" := (GoAlloc code.k8s_io.apimachinery.pkg.labels.labels.Selector "selector") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: ("$ret0", "$ret1") := ((let: "$a0" := (![go.string] "namespace") in
-    let: "$a1" := (![labels.Selector] "selector") in
+    let: "$a1" := (![code.k8s_io.apimachinery.pkg.labels.labels.Selector] "selector") in
     (MethodResolve (go.PointerType State) "PodMutList"%go (![go.PointerType State] "s")) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
@@ -3265,160 +3265,160 @@ Definition State__PodListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
 Definition State__PodMutListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "selector" := (GoAlloc labels.Selector "selector") in
+    let: "selector" := (GoAlloc code.k8s_io.apimachinery.pkg.labels.labels.Selector "selector") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "objs" := (GoAlloc (go.SliceType (go.InterfaceType [])) (GoZeroVal (go.SliceType (go.InterfaceType [])) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"Pod"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (![labels.Selector] "selector") in
+    let: "$a2" := (![code.k8s_io.apimachinery.pkg.labels.labels.Selector] "selector") in
     (MethodResolve (go.PointerType State) "objListBySelector"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("objs" <-[go.SliceType (go.InterfaceType [])] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.SliceType (go.PointerType api_core_v1.Pod)) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)) UntypedNil, ![go.error] "err")
     else do:  #());;;
-    let: "pods" := (GoAlloc (go.SliceType (go.PointerType api_core_v1.Pod)) (GoZeroVal (go.SliceType (go.PointerType api_core_v1.Pod)) #())) in
-    let: "$r0" := ((FuncResolve go.make3 [go.SliceType (go.PointerType api_core_v1.Pod)] #()) #(W64 0) (let: "$a0" := (![go.SliceType (go.InterfaceType [])] "objs") in
+    let: "pods" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)) (GoZeroVal (go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)) #())) in
+    let: "$r0" := ((FuncResolve go.make3 [go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)] #()) #(W64 0) (let: "$a0" := (![go.SliceType (go.InterfaceType [])] "objs") in
     (FuncResolve go.len [go.SliceType (go.InterfaceType [])] #()) "$a0")) in
-    do:  ("pods" <-[go.SliceType (go.PointerType api_core_v1.Pod)] "$r0");;;
+    do:  ("pods" <-[go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)] "$r0");;;
     let: "$range" := (![go.SliceType (go.InterfaceType [])] "objs") in
     (let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     slice.for_range (go.InterfaceType []) "$range" (λ: "$key" "$value",
       do:  ("obj" <-[go.InterfaceType []] "$value");;;
       do:  "$key";;;
       let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-      let: "pod" := (GoAlloc (go.PointerType api_core_v1.Pod) (GoZeroVal (go.PointerType api_core_v1.Pod) #())) in
-      let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_core_v1.Pod) (![go.InterfaceType []] "obj")) in
+      let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.Pod) #())) in
+      let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (![go.InterfaceType []] "obj")) in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
-      do:  ("pod" <-[go.PointerType api_core_v1.Pod] "$r0");;;
+      do:  ("pod" <-[go.PointerType code.k8s_io.api.core.v1.v1.Pod] "$r0");;;
       do:  ("ok" <-[go.bool] "$r1");;;
       (if: (⟨go.bool⟩! (![go.bool] "ok"))
       then
-        return: (Convert go.untyped_nil (go.SliceType (go.PointerType api_core_v1.Pod)) UntypedNil, let: "$a0" := #"state entry is not a *v1.Pod"%go in
+        return: (Convert go.untyped_nil (go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)) UntypedNil, let: "$a0" := #"state entry is not a *v1.Pod"%go in
          let: "$a1" := #slice.nil in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+         (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
       else do:  #());;;
-      let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType api_core_v1.Pod)] "pods") in
-      let: "$a1" := ((let: "$sl0" := (![go.PointerType api_core_v1.Pod] "pod") in
-      CompositeLiteral (go.SliceType (go.PointerType api_core_v1.Pod)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType api_core_v1.Pod) "$sl0")]))) in
-      (FuncResolve go.append [go.SliceType (go.PointerType api_core_v1.Pod)] #()) "$a0" "$a1") in
-      do:  ("pods" <-[go.SliceType (go.PointerType api_core_v1.Pod)] "$r0")));;;
-    return: (![go.SliceType (go.PointerType api_core_v1.Pod)] "pods", Convert go.untyped_nil go.error UntypedNil)).
+      let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)] "pods") in
+      let: "$a1" := ((let: "$sl0" := (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod") in
+      CompositeLiteral (go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "$sl0")]))) in
+      (FuncResolve go.append [go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)] #()) "$a0" "$a1") in
+      do:  ("pods" <-[go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)] "$r0")));;;
+    return: (![go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)] "pods", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:1686:17 *)
 Definition State__PodCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "pod",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "pod" := (GoAlloc (go.PointerType api_core_v1.Pod) "pod") in
+    let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "pod") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"Pod"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (Convert (go.PointerType api_core_v1.Pod) (go.InterfaceType []) (![go.PointerType api_core_v1.Pod] "pod")) in
+    let: "$a2" := (Convert (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod")) in
     (MethodResolve (go.PointerType State) "create"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_core_v1.Pod) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.Pod) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "createdPod" := (GoAlloc (go.PointerType api_core_v1.Pod) (GoZeroVal (go.PointerType api_core_v1.Pod) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_core_v1.Pod) (![go.InterfaceType []] "obj")) in
+    let: "createdPod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.Pod) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("createdPod" <-[go.PointerType api_core_v1.Pod] "$r0");;;
+    do:  ("createdPod" <-[go.PointerType code.k8s_io.api.core.v1.v1.Pod] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_core_v1.Pod) UntypedNil, let: "$a0" := #"create returned unexpected type %T"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.Pod) UntypedNil, let: "$a0" := #"create returned unexpected type %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_core_v1.Pod] "createdPod", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "createdPod", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:1700:17 *)
 Definition State__PodUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "pod",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "pod" := (GoAlloc (go.PointerType api_core_v1.Pod) "pod") in
+    let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "pod") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"Pod"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (Convert (go.PointerType api_core_v1.Pod) (go.InterfaceType []) (![go.PointerType api_core_v1.Pod] "pod")) in
+    let: "$a2" := (Convert (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod")) in
     (MethodResolve (go.PointerType State) "update"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_core_v1.Pod) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.Pod) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "updatedPod" := (GoAlloc (go.PointerType api_core_v1.Pod) (GoZeroVal (go.PointerType api_core_v1.Pod) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_core_v1.Pod) (![go.InterfaceType []] "obj")) in
+    let: "updatedPod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.Pod) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("updatedPod" <-[go.PointerType api_core_v1.Pod] "$r0");;;
+    do:  ("updatedPod" <-[go.PointerType code.k8s_io.api.core.v1.v1.Pod] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_core_v1.Pod) UntypedNil, let: "$a0" := #"update returned unexpected type %T"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.Pod) UntypedNil, let: "$a0" := #"update returned unexpected type %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_core_v1.Pod] "updatedPod", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "updatedPod", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:1714:17 *)
 Definition State__PodUpdateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "pod",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "pod" := (GoAlloc (go.PointerType api_core_v1.Pod) "pod") in
+    let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "pod") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"Pod"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (Convert (go.PointerType api_core_v1.Pod) (go.InterfaceType []) (![go.PointerType api_core_v1.Pod] "pod")) in
+    let: "$a2" := (Convert (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod")) in
     (MethodResolve (go.PointerType State) "updateStatus"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_core_v1.Pod) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.Pod) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "updatedPod" := (GoAlloc (go.PointerType api_core_v1.Pod) (GoZeroVal (go.PointerType api_core_v1.Pod) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_core_v1.Pod) (![go.InterfaceType []] "obj")) in
+    let: "updatedPod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.Pod) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("updatedPod" <-[go.PointerType api_core_v1.Pod] "$r0");;;
+    do:  ("updatedPod" <-[go.PointerType code.k8s_io.api.core.v1.v1.Pod] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_core_v1.Pod) UntypedNil, let: "$a0" := #"status update returned unexpected type %T"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.Pod) UntypedNil, let: "$a0" := #"status update returned unexpected type %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_core_v1.Pod] "updatedPod", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "updatedPod", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:1728:17 *)
 Definition State__PodDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name" "options",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "options" := (GoAlloc apis_meta_v1.DeleteOptions "options") in
+    let: "options" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "options") in
     let: "name" := (GoAlloc go.string "name") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "key" := (GoAlloc KKey (GoZeroVal KKey #())) in
@@ -3428,7 +3428,7 @@ Definition State__PodDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
     CompositeLiteral KKey (LiteralValue [KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Namespace"%go)) (ElementExpression go.string "$v1"); KeyedElement (Some (KeyField "Name"%go)) (ElementExpression go.string "$v2")])) in
     do:  ("key" <-[KKey] "$r0");;;
     return: (let: "$a0" := (![KKey] "key") in
-     let: "$a1" := (![apis_meta_v1.DeleteOptions] "options") in
+     let: "$a1" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options") in
      (MethodResolve (go.PointerType State) "delete"%go (![go.PointerType State] "s")) "$a0" "$a1")).
 
 (* Returned value must be treated as read-only.
@@ -3465,24 +3465,24 @@ Definition State__ReplicaSetMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSet) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) (GoZeroVal (go.PointerType api_apps_v1.ReplicaSet) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.ReplicaSet) (![go.InterfaceType []] "obj")) in
+    let: "rs" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("rs" <-[go.PointerType api_apps_v1.ReplicaSet] "$r0");;;
+    do:  ("rs" <-[go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSet) UntypedNil, let: "$a0" := #"state entry for replicaset %s/%s is not a *v1.ReplicaSet"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) UntypedNil, let: "$a0" := #"state entry for replicaset %s/%s is not a *v1.ReplicaSet"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "namespace")) in
        let: "$sl1" := (Convert go.string go.any (![go.string] "name")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_apps_v1.ReplicaSet] "rs", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "rs", Convert go.untyped_nil go.error UntypedNil)).
 
 (* Returned value must be treated as read-only.
 
@@ -3490,10 +3490,10 @@ Definition State__ReplicaSetMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
 Definition State__ReplicaSetListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "selector" := (GoAlloc labels.Selector "selector") in
+    let: "selector" := (GoAlloc code.k8s_io.apimachinery.pkg.labels.labels.Selector "selector") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: ("$ret0", "$ret1") := ((let: "$a0" := (![go.string] "namespace") in
-    let: "$a1" := (![labels.Selector] "selector") in
+    let: "$a1" := (![code.k8s_io.apimachinery.pkg.labels.labels.Selector] "selector") in
     (MethodResolve (go.PointerType State) "ReplicaSetMutList"%go (![go.PointerType State] "s")) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
@@ -3501,160 +3501,160 @@ Definition State__ReplicaSetListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
 Definition State__ReplicaSetMutListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "selector" := (GoAlloc labels.Selector "selector") in
+    let: "selector" := (GoAlloc code.k8s_io.apimachinery.pkg.labels.labels.Selector "selector") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "objs" := (GoAlloc (go.SliceType (go.InterfaceType [])) (GoZeroVal (go.SliceType (go.InterfaceType [])) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"ReplicaSet"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (![labels.Selector] "selector") in
+    let: "$a2" := (![code.k8s_io.apimachinery.pkg.labels.labels.Selector] "selector") in
     (MethodResolve (go.PointerType State) "objListBySelector"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("objs" <-[go.SliceType (go.InterfaceType [])] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.SliceType (go.PointerType api_apps_v1.ReplicaSet)) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)) UntypedNil, ![go.error] "err")
     else do:  #());;;
-    let: "rss" := (GoAlloc (go.SliceType (go.PointerType api_apps_v1.ReplicaSet)) (GoZeroVal (go.SliceType (go.PointerType api_apps_v1.ReplicaSet)) #())) in
-    let: "$r0" := ((FuncResolve go.make3 [go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] #()) #(W64 0) (let: "$a0" := (![go.SliceType (go.InterfaceType [])] "objs") in
+    let: "rss" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)) (GoZeroVal (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)) #())) in
+    let: "$r0" := ((FuncResolve go.make3 [go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)] #()) #(W64 0) (let: "$a0" := (![go.SliceType (go.InterfaceType [])] "objs") in
     (FuncResolve go.len [go.SliceType (go.InterfaceType [])] #()) "$a0")) in
-    do:  ("rss" <-[go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] "$r0");;;
+    do:  ("rss" <-[go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)] "$r0");;;
     let: "$range" := (![go.SliceType (go.InterfaceType [])] "objs") in
     (let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     slice.for_range (go.InterfaceType []) "$range" (λ: "$key" "$value",
       do:  ("obj" <-[go.InterfaceType []] "$value");;;
       do:  "$key";;;
       let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-      let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) (GoZeroVal (go.PointerType api_apps_v1.ReplicaSet) #())) in
-      let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.ReplicaSet) (![go.InterfaceType []] "obj")) in
+      let: "rs" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) #())) in
+      let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (![go.InterfaceType []] "obj")) in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
-      do:  ("rs" <-[go.PointerType api_apps_v1.ReplicaSet] "$r0");;;
+      do:  ("rs" <-[go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "$r0");;;
       do:  ("ok" <-[go.bool] "$r1");;;
       (if: (⟨go.bool⟩! (![go.bool] "ok"))
       then
-        return: (Convert go.untyped_nil (go.SliceType (go.PointerType api_apps_v1.ReplicaSet)) UntypedNil, let: "$a0" := #"state entry is not a *v1.ReplicaSet"%go in
+        return: (Convert go.untyped_nil (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)) UntypedNil, let: "$a0" := #"state entry is not a *v1.ReplicaSet"%go in
          let: "$a1" := #slice.nil in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+         (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
       else do:  #());;;
-      let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] "rss") in
-      let: "$a1" := ((let: "$sl0" := (![go.PointerType api_apps_v1.ReplicaSet] "rs") in
-      CompositeLiteral (go.SliceType (go.PointerType api_apps_v1.ReplicaSet)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType api_apps_v1.ReplicaSet) "$sl0")]))) in
-      (FuncResolve go.append [go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] #()) "$a0" "$a1") in
-      do:  ("rss" <-[go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] "$r0")));;;
-    return: (![go.SliceType (go.PointerType api_apps_v1.ReplicaSet)] "rss", Convert go.untyped_nil go.error UntypedNil)).
+      let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)] "rss") in
+      let: "$a1" := ((let: "$sl0" := (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "rs") in
+      CompositeLiteral (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) "$sl0")]))) in
+      (FuncResolve go.append [go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)] #()) "$a0" "$a1") in
+      do:  ("rss" <-[go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)] "$r0")));;;
+    return: (![go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)] "rss", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:1787:17 *)
 Definition State__ReplicaSetCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
+    let: "rs" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) "rs") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"ReplicaSet"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (Convert (go.PointerType api_apps_v1.ReplicaSet) (go.InterfaceType []) (![go.PointerType api_apps_v1.ReplicaSet] "rs")) in
+    let: "$a2" := (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "rs")) in
     (MethodResolve (go.PointerType State) "create"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSet) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "createdRS" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) (GoZeroVal (go.PointerType api_apps_v1.ReplicaSet) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.ReplicaSet) (![go.InterfaceType []] "obj")) in
+    let: "createdRS" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("createdRS" <-[go.PointerType api_apps_v1.ReplicaSet] "$r0");;;
+    do:  ("createdRS" <-[go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSet) UntypedNil, let: "$a0" := #"create returned unexpected type %T"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) UntypedNil, let: "$a0" := #"create returned unexpected type %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_apps_v1.ReplicaSet] "createdRS", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "createdRS", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:1801:17 *)
 Definition State__ReplicaSetUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
+    let: "rs" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) "rs") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"ReplicaSet"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (Convert (go.PointerType api_apps_v1.ReplicaSet) (go.InterfaceType []) (![go.PointerType api_apps_v1.ReplicaSet] "rs")) in
+    let: "$a2" := (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "rs")) in
     (MethodResolve (go.PointerType State) "update"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSet) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "updatedRS" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) (GoZeroVal (go.PointerType api_apps_v1.ReplicaSet) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.ReplicaSet) (![go.InterfaceType []] "obj")) in
+    let: "updatedRS" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("updatedRS" <-[go.PointerType api_apps_v1.ReplicaSet] "$r0");;;
+    do:  ("updatedRS" <-[go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSet) UntypedNil, let: "$a0" := #"update returned unexpected type %T"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) UntypedNil, let: "$a0" := #"update returned unexpected type %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_apps_v1.ReplicaSet] "updatedRS", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "updatedRS", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:1815:17 *)
 Definition State__ReplicaSetUpdateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
+    let: "rs" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) "rs") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"ReplicaSet"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (Convert (go.PointerType api_apps_v1.ReplicaSet) (go.InterfaceType []) (![go.PointerType api_apps_v1.ReplicaSet] "rs")) in
+    let: "$a2" := (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "rs")) in
     (MethodResolve (go.PointerType State) "updateStatus"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSet) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "updatedRS" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) (GoZeroVal (go.PointerType api_apps_v1.ReplicaSet) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.ReplicaSet) (![go.InterfaceType []] "obj")) in
+    let: "updatedRS" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("updatedRS" <-[go.PointerType api_apps_v1.ReplicaSet] "$r0");;;
+    do:  ("updatedRS" <-[go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSet) UntypedNil, let: "$a0" := #"status update returned unexpected type %T"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) UntypedNil, let: "$a0" := #"status update returned unexpected type %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_apps_v1.ReplicaSet] "updatedRS", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "updatedRS", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:1829:17 *)
 Definition State__ReplicaSetDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name" "options",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "options" := (GoAlloc apis_meta_v1.DeleteOptions "options") in
+    let: "options" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "options") in
     let: "name" := (GoAlloc go.string "name") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "key" := (GoAlloc KKey (GoZeroVal KKey #())) in
@@ -3664,7 +3664,7 @@ Definition State__ReplicaSetDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
     CompositeLiteral KKey (LiteralValue [KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Namespace"%go)) (ElementExpression go.string "$v1"); KeyedElement (Some (KeyField "Name"%go)) (ElementExpression go.string "$v2")])) in
     do:  ("key" <-[KKey] "$r0");;;
     return: (let: "$a0" := (![KKey] "key") in
-     let: "$a1" := (![apis_meta_v1.DeleteOptions] "options") in
+     let: "$a1" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options") in
      (MethodResolve (go.PointerType State) "delete"%go (![go.PointerType State] "s")) "$a0" "$a1")).
 
 (* Returned value must be treated as read-only.
@@ -3701,24 +3701,24 @@ Definition State__PersistentVolumeClaimMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_core_v1.PersistentVolumeClaim) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "pvc" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) (GoZeroVal (go.PointerType api_core_v1.PersistentVolumeClaim) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_core_v1.PersistentVolumeClaim) (![go.InterfaceType []] "obj")) in
+    let: "pvc" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("pvc" <-[go.PointerType api_core_v1.PersistentVolumeClaim] "$r0");;;
+    do:  ("pvc" <-[go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_core_v1.PersistentVolumeClaim) UntypedNil, let: "$a0" := #"state entry for persistentvolumeclaim %s/%s is not a *v1.PersistentVolumeClaim"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) UntypedNil, let: "$a0" := #"state entry for persistentvolumeclaim %s/%s is not a *v1.PersistentVolumeClaim"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "namespace")) in
        let: "$sl1" := (Convert go.string go.any (![go.string] "name")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_core_v1.PersistentVolumeClaim] "pvc", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim] "pvc", Convert go.untyped_nil go.error UntypedNil)).
 
 (* Returned value must be treated as read-only.
 
@@ -3726,10 +3726,10 @@ Definition State__PersistentVolumeClaimMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_
 Definition State__PersistentVolumeClaimListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "selector" := (GoAlloc labels.Selector "selector") in
+    let: "selector" := (GoAlloc code.k8s_io.apimachinery.pkg.labels.labels.Selector "selector") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: ("$ret0", "$ret1") := ((let: "$a0" := (![go.string] "namespace") in
-    let: "$a1" := (![labels.Selector] "selector") in
+    let: "$a1" := (![code.k8s_io.apimachinery.pkg.labels.labels.Selector] "selector") in
     (MethodResolve (go.PointerType State) "PersistentVolumeClaimMutList"%go (![go.PointerType State] "s")) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
@@ -3737,160 +3737,160 @@ Definition State__PersistentVolumeClaimListⁱᵐᵖˡ {ext : ffi_syntax} {go_gc
 Definition State__PersistentVolumeClaimMutListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "selector" := (GoAlloc labels.Selector "selector") in
+    let: "selector" := (GoAlloc code.k8s_io.apimachinery.pkg.labels.labels.Selector "selector") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "objs" := (GoAlloc (go.SliceType (go.InterfaceType [])) (GoZeroVal (go.SliceType (go.InterfaceType [])) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"PersistentVolumeClaim"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (![labels.Selector] "selector") in
+    let: "$a2" := (![code.k8s_io.apimachinery.pkg.labels.labels.Selector] "selector") in
     (MethodResolve (go.PointerType State) "objListBySelector"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("objs" <-[go.SliceType (go.InterfaceType [])] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim)) UntypedNil, ![go.error] "err")
     else do:  #());;;
-    let: "claims" := (GoAlloc (go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)) (GoZeroVal (go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)) #())) in
-    let: "$r0" := ((FuncResolve go.make3 [go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)] #()) #(W64 0) (let: "$a0" := (![go.SliceType (go.InterfaceType [])] "objs") in
+    let: "claims" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim)) (GoZeroVal (go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim)) #())) in
+    let: "$r0" := ((FuncResolve go.make3 [go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim)] #()) #(W64 0) (let: "$a0" := (![go.SliceType (go.InterfaceType [])] "objs") in
     (FuncResolve go.len [go.SliceType (go.InterfaceType [])] #()) "$a0")) in
-    do:  ("claims" <-[go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)] "$r0");;;
+    do:  ("claims" <-[go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim)] "$r0");;;
     let: "$range" := (![go.SliceType (go.InterfaceType [])] "objs") in
     (let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     slice.for_range (go.InterfaceType []) "$range" (λ: "$key" "$value",
       do:  ("obj" <-[go.InterfaceType []] "$value");;;
       do:  "$key";;;
       let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-      let: "claim" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) (GoZeroVal (go.PointerType api_core_v1.PersistentVolumeClaim) #())) in
-      let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_core_v1.PersistentVolumeClaim) (![go.InterfaceType []] "obj")) in
+      let: "claim" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) #())) in
+      let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) (![go.InterfaceType []] "obj")) in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
-      do:  ("claim" <-[go.PointerType api_core_v1.PersistentVolumeClaim] "$r0");;;
+      do:  ("claim" <-[go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim] "$r0");;;
       do:  ("ok" <-[go.bool] "$r1");;;
       (if: (⟨go.bool⟩! (![go.bool] "ok"))
       then
-        return: (Convert go.untyped_nil (go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)) UntypedNil, let: "$a0" := #"state entry is not a *v1.PersistentVolumeClaim"%go in
+        return: (Convert go.untyped_nil (go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim)) UntypedNil, let: "$a0" := #"state entry is not a *v1.PersistentVolumeClaim"%go in
          let: "$a1" := #slice.nil in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+         (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
       else do:  #());;;
-      let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)] "claims") in
-      let: "$a1" := ((let: "$sl0" := (![go.PointerType api_core_v1.PersistentVolumeClaim] "claim") in
-      CompositeLiteral (go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType api_core_v1.PersistentVolumeClaim) "$sl0")]))) in
-      (FuncResolve go.append [go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)] #()) "$a0" "$a1") in
-      do:  ("claims" <-[go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)] "$r0")));;;
-    return: (![go.SliceType (go.PointerType api_core_v1.PersistentVolumeClaim)] "claims", Convert go.untyped_nil go.error UntypedNil)).
+      let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim)] "claims") in
+      let: "$a1" := ((let: "$sl0" := (![go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim] "claim") in
+      CompositeLiteral (go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) "$sl0")]))) in
+      (FuncResolve go.append [go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim)] #()) "$a0" "$a1") in
+      do:  ("claims" <-[go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim)] "$r0")));;;
+    return: (![go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim)] "claims", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:1883:17 *)
 Definition State__PersistentVolumeClaimCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "pvc",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "pvc" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) "pvc") in
+    let: "pvc" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) "pvc") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"PersistentVolumeClaim"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (Convert (go.PointerType api_core_v1.PersistentVolumeClaim) (go.InterfaceType []) (![go.PointerType api_core_v1.PersistentVolumeClaim] "pvc")) in
+    let: "$a2" := (Convert (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim] "pvc")) in
     (MethodResolve (go.PointerType State) "create"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_core_v1.PersistentVolumeClaim) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "createdPVC" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) (GoZeroVal (go.PointerType api_core_v1.PersistentVolumeClaim) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_core_v1.PersistentVolumeClaim) (![go.InterfaceType []] "obj")) in
+    let: "createdPVC" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("createdPVC" <-[go.PointerType api_core_v1.PersistentVolumeClaim] "$r0");;;
+    do:  ("createdPVC" <-[go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_core_v1.PersistentVolumeClaim) UntypedNil, let: "$a0" := #"create returned unexpected type %T"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) UntypedNil, let: "$a0" := #"create returned unexpected type %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_core_v1.PersistentVolumeClaim] "createdPVC", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim] "createdPVC", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:1897:17 *)
 Definition State__PersistentVolumeClaimUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "pvc",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "pvc" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) "pvc") in
+    let: "pvc" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) "pvc") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"PersistentVolumeClaim"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (Convert (go.PointerType api_core_v1.PersistentVolumeClaim) (go.InterfaceType []) (![go.PointerType api_core_v1.PersistentVolumeClaim] "pvc")) in
+    let: "$a2" := (Convert (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim] "pvc")) in
     (MethodResolve (go.PointerType State) "update"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_core_v1.PersistentVolumeClaim) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "updatedPVC" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) (GoZeroVal (go.PointerType api_core_v1.PersistentVolumeClaim) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_core_v1.PersistentVolumeClaim) (![go.InterfaceType []] "obj")) in
+    let: "updatedPVC" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("updatedPVC" <-[go.PointerType api_core_v1.PersistentVolumeClaim] "$r0");;;
+    do:  ("updatedPVC" <-[go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_core_v1.PersistentVolumeClaim) UntypedNil, let: "$a0" := #"update returned unexpected type %T"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) UntypedNil, let: "$a0" := #"update returned unexpected type %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_core_v1.PersistentVolumeClaim] "updatedPVC", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim] "updatedPVC", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:1911:17 *)
 Definition State__PersistentVolumeClaimUpdateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "pvc",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "pvc" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) "pvc") in
+    let: "pvc" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) "pvc") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"PersistentVolumeClaim"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (Convert (go.PointerType api_core_v1.PersistentVolumeClaim) (go.InterfaceType []) (![go.PointerType api_core_v1.PersistentVolumeClaim] "pvc")) in
+    let: "$a2" := (Convert (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim] "pvc")) in
     (MethodResolve (go.PointerType State) "updateStatus"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_core_v1.PersistentVolumeClaim) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "updatedPVC" := (GoAlloc (go.PointerType api_core_v1.PersistentVolumeClaim) (GoZeroVal (go.PointerType api_core_v1.PersistentVolumeClaim) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_core_v1.PersistentVolumeClaim) (![go.InterfaceType []] "obj")) in
+    let: "updatedPVC" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("updatedPVC" <-[go.PointerType api_core_v1.PersistentVolumeClaim] "$r0");;;
+    do:  ("updatedPVC" <-[go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_core_v1.PersistentVolumeClaim) UntypedNil, let: "$a0" := #"status update returned unexpected type %T"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) UntypedNil, let: "$a0" := #"status update returned unexpected type %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_core_v1.PersistentVolumeClaim] "updatedPVC", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim] "updatedPVC", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:1925:17 *)
 Definition State__PersistentVolumeClaimDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name" "options",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "options" := (GoAlloc apis_meta_v1.DeleteOptions "options") in
+    let: "options" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "options") in
     let: "name" := (GoAlloc go.string "name") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "key" := (GoAlloc KKey (GoZeroVal KKey #())) in
@@ -3900,7 +3900,7 @@ Definition State__PersistentVolumeClaimDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_
     CompositeLiteral KKey (LiteralValue [KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Namespace"%go)) (ElementExpression go.string "$v1"); KeyedElement (Some (KeyField "Name"%go)) (ElementExpression go.string "$v2")])) in
     do:  ("key" <-[KKey] "$r0");;;
     return: (let: "$a0" := (![KKey] "key") in
-     let: "$a1" := (![apis_meta_v1.DeleteOptions] "options") in
+     let: "$a1" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options") in
      (MethodResolve (go.PointerType State) "delete"%go (![go.PointerType State] "s")) "$a0" "$a1")).
 
 (* Returned value must be treated as read-only.
@@ -3937,24 +3937,24 @@ Definition State__StatefulSetMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.StatefulSet) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "ss" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) (GoZeroVal (go.PointerType api_apps_v1.StatefulSet) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.StatefulSet) (![go.InterfaceType []] "obj")) in
+    let: "ss" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("ss" <-[go.PointerType api_apps_v1.StatefulSet] "$r0");;;
+    do:  ("ss" <-[go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_apps_v1.StatefulSet) UntypedNil, let: "$a0" := #"state entry for statefulset %s/%s is not a *v1.StatefulSet"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) UntypedNil, let: "$a0" := #"state entry for statefulset %s/%s is not a *v1.StatefulSet"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "namespace")) in
        let: "$sl1" := (Convert go.string go.any (![go.string] "name")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_apps_v1.StatefulSet] "ss", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "ss", Convert go.untyped_nil go.error UntypedNil)).
 
 (* Returned value must be treated as read-only.
 
@@ -3962,10 +3962,10 @@ Definition State__StatefulSetMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
 Definition State__StatefulSetListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "selector" := (GoAlloc labels.Selector "selector") in
+    let: "selector" := (GoAlloc code.k8s_io.apimachinery.pkg.labels.labels.Selector "selector") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: ("$ret0", "$ret1") := ((let: "$a0" := (![go.string] "namespace") in
-    let: "$a1" := (![labels.Selector] "selector") in
+    let: "$a1" := (![code.k8s_io.apimachinery.pkg.labels.labels.Selector] "selector") in
     (MethodResolve (go.PointerType State) "StatefulSetMutList"%go (![go.PointerType State] "s")) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
@@ -3973,160 +3973,160 @@ Definition State__StatefulSetListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
 Definition State__StatefulSetMutListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "selector" := (GoAlloc labels.Selector "selector") in
+    let: "selector" := (GoAlloc code.k8s_io.apimachinery.pkg.labels.labels.Selector "selector") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "objs" := (GoAlloc (go.SliceType (go.InterfaceType [])) (GoZeroVal (go.SliceType (go.InterfaceType [])) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"StatefulSet"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (![labels.Selector] "selector") in
+    let: "$a2" := (![code.k8s_io.apimachinery.pkg.labels.labels.Selector] "selector") in
     (MethodResolve (go.PointerType State) "objListBySelector"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("objs" <-[go.SliceType (go.InterfaceType [])] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.SliceType (go.PointerType api_apps_v1.StatefulSet)) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet)) UntypedNil, ![go.error] "err")
     else do:  #());;;
-    let: "sets" := (GoAlloc (go.SliceType (go.PointerType api_apps_v1.StatefulSet)) (GoZeroVal (go.SliceType (go.PointerType api_apps_v1.StatefulSet)) #())) in
-    let: "$r0" := ((FuncResolve go.make3 [go.SliceType (go.PointerType api_apps_v1.StatefulSet)] #()) #(W64 0) (let: "$a0" := (![go.SliceType (go.InterfaceType [])] "objs") in
+    let: "sets" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet)) (GoZeroVal (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet)) #())) in
+    let: "$r0" := ((FuncResolve go.make3 [go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet)] #()) #(W64 0) (let: "$a0" := (![go.SliceType (go.InterfaceType [])] "objs") in
     (FuncResolve go.len [go.SliceType (go.InterfaceType [])] #()) "$a0")) in
-    do:  ("sets" <-[go.SliceType (go.PointerType api_apps_v1.StatefulSet)] "$r0");;;
+    do:  ("sets" <-[go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet)] "$r0");;;
     let: "$range" := (![go.SliceType (go.InterfaceType [])] "objs") in
     (let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     slice.for_range (go.InterfaceType []) "$range" (λ: "$key" "$value",
       do:  ("obj" <-[go.InterfaceType []] "$value");;;
       do:  "$key";;;
       let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-      let: "set" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) (GoZeroVal (go.PointerType api_apps_v1.StatefulSet) #())) in
-      let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.StatefulSet) (![go.InterfaceType []] "obj")) in
+      let: "set" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) #())) in
+      let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) (![go.InterfaceType []] "obj")) in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
-      do:  ("set" <-[go.PointerType api_apps_v1.StatefulSet] "$r0");;;
+      do:  ("set" <-[go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "$r0");;;
       do:  ("ok" <-[go.bool] "$r1");;;
       (if: (⟨go.bool⟩! (![go.bool] "ok"))
       then
-        return: (Convert go.untyped_nil (go.SliceType (go.PointerType api_apps_v1.StatefulSet)) UntypedNil, let: "$a0" := #"state entry is not a *v1.StatefulSet"%go in
+        return: (Convert go.untyped_nil (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet)) UntypedNil, let: "$a0" := #"state entry is not a *v1.StatefulSet"%go in
          let: "$a1" := #slice.nil in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+         (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
       else do:  #());;;
-      let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType api_apps_v1.StatefulSet)] "sets") in
-      let: "$a1" := ((let: "$sl0" := (![go.PointerType api_apps_v1.StatefulSet] "set") in
-      CompositeLiteral (go.SliceType (go.PointerType api_apps_v1.StatefulSet)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType api_apps_v1.StatefulSet) "$sl0")]))) in
-      (FuncResolve go.append [go.SliceType (go.PointerType api_apps_v1.StatefulSet)] #()) "$a0" "$a1") in
-      do:  ("sets" <-[go.SliceType (go.PointerType api_apps_v1.StatefulSet)] "$r0")));;;
-    return: (![go.SliceType (go.PointerType api_apps_v1.StatefulSet)] "sets", Convert go.untyped_nil go.error UntypedNil)).
+      let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet)] "sets") in
+      let: "$a1" := ((let: "$sl0" := (![go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "set") in
+      CompositeLiteral (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) "$sl0")]))) in
+      (FuncResolve go.append [go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet)] #()) "$a0" "$a1") in
+      do:  ("sets" <-[go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet)] "$r0")));;;
+    return: (![go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet)] "sets", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:1979:17 *)
 Definition State__StatefulSetCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "ss",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "ss" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) "ss") in
+    let: "ss" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) "ss") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"StatefulSet"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (Convert (go.PointerType api_apps_v1.StatefulSet) (go.InterfaceType []) (![go.PointerType api_apps_v1.StatefulSet] "ss")) in
+    let: "$a2" := (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "ss")) in
     (MethodResolve (go.PointerType State) "create"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.StatefulSet) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "createdSS" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) (GoZeroVal (go.PointerType api_apps_v1.StatefulSet) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.StatefulSet) (![go.InterfaceType []] "obj")) in
+    let: "createdSS" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("createdSS" <-[go.PointerType api_apps_v1.StatefulSet] "$r0");;;
+    do:  ("createdSS" <-[go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_apps_v1.StatefulSet) UntypedNil, let: "$a0" := #"create returned unexpected type %T"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) UntypedNil, let: "$a0" := #"create returned unexpected type %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_apps_v1.StatefulSet] "createdSS", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "createdSS", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:1993:17 *)
 Definition State__StatefulSetUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "ss",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "ss" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) "ss") in
+    let: "ss" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) "ss") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"StatefulSet"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (Convert (go.PointerType api_apps_v1.StatefulSet) (go.InterfaceType []) (![go.PointerType api_apps_v1.StatefulSet] "ss")) in
+    let: "$a2" := (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "ss")) in
     (MethodResolve (go.PointerType State) "update"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.StatefulSet) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "updatedSS" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) (GoZeroVal (go.PointerType api_apps_v1.StatefulSet) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.StatefulSet) (![go.InterfaceType []] "obj")) in
+    let: "updatedSS" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("updatedSS" <-[go.PointerType api_apps_v1.StatefulSet] "$r0");;;
+    do:  ("updatedSS" <-[go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_apps_v1.StatefulSet) UntypedNil, let: "$a0" := #"update returned unexpected type %T"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) UntypedNil, let: "$a0" := #"update returned unexpected type %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_apps_v1.StatefulSet] "updatedSS", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "updatedSS", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:2007:17 *)
 Definition State__StatefulSetUpdateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "ss",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "ss" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) "ss") in
+    let: "ss" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) "ss") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"StatefulSet"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (Convert (go.PointerType api_apps_v1.StatefulSet) (go.InterfaceType []) (![go.PointerType api_apps_v1.StatefulSet] "ss")) in
+    let: "$a2" := (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "ss")) in
     (MethodResolve (go.PointerType State) "updateStatus"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.StatefulSet) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "updatedSS" := (GoAlloc (go.PointerType api_apps_v1.StatefulSet) (GoZeroVal (go.PointerType api_apps_v1.StatefulSet) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.StatefulSet) (![go.InterfaceType []] "obj")) in
+    let: "updatedSS" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("updatedSS" <-[go.PointerType api_apps_v1.StatefulSet] "$r0");;;
+    do:  ("updatedSS" <-[go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_apps_v1.StatefulSet) UntypedNil, let: "$a0" := #"status update returned unexpected type %T"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) UntypedNil, let: "$a0" := #"status update returned unexpected type %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_apps_v1.StatefulSet] "updatedSS", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "updatedSS", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:2021:17 *)
 Definition State__StatefulSetDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name" "options",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "options" := (GoAlloc apis_meta_v1.DeleteOptions "options") in
+    let: "options" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "options") in
     let: "name" := (GoAlloc go.string "name") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "key" := (GoAlloc KKey (GoZeroVal KKey #())) in
@@ -4136,7 +4136,7 @@ Definition State__StatefulSetDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
     CompositeLiteral KKey (LiteralValue [KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Namespace"%go)) (ElementExpression go.string "$v1"); KeyedElement (Some (KeyField "Name"%go)) (ElementExpression go.string "$v2")])) in
     do:  ("key" <-[KKey] "$r0");;;
     return: (let: "$a0" := (![KKey] "key") in
-     let: "$a1" := (![apis_meta_v1.DeleteOptions] "options") in
+     let: "$a1" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options") in
      (MethodResolve (go.PointerType State) "delete"%go (![go.PointerType State] "s")) "$a0" "$a1")).
 
 (* Returned value must be treated as read-only.
@@ -4174,27 +4174,27 @@ Definition State__DeploymentMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_apps_v1.Deployment) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"deployment"%go in
-       (FuncResolve api_apps_v1.Resource [] #()) "$a0") in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"deployment"%go in
+       (FuncResolve code.k8s_io.api.apps.v1.v1.Resource [] #()) "$a0") in
        let: "$a1" := (![go.string] "name") in
-       (FuncResolve errors.NewNotFound [] #()) "$a0" "$a1"))
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewNotFound [] #()) "$a0" "$a1"))
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "d" := (GoAlloc (go.PointerType api_apps_v1.Deployment) (GoZeroVal (go.PointerType api_apps_v1.Deployment) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.Deployment) (![go.InterfaceType []] "obj")) in
+    let: "d" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("d" <-[go.PointerType api_apps_v1.Deployment] "$r0");;;
+    do:  ("d" <-[go.PointerType code.k8s_io.api.apps.v1.v1.Deployment] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_apps_v1.Deployment) UntypedNil, let: "$a0" := #"state entry for deployment %s/%s is not a *v1.Deployment"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) UntypedNil, let: "$a0" := #"state entry for deployment %s/%s is not a *v1.Deployment"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "namespace")) in
        let: "$sl1" := (Convert go.string go.any (![go.string] "name")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_apps_v1.Deployment] "d", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.apps.v1.v1.Deployment] "d", Convert go.untyped_nil go.error UntypedNil)).
 
 (* Returned value must be treated as read-only.
 
@@ -4202,10 +4202,10 @@ Definition State__DeploymentMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
 Definition State__DeploymentListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "selector" := (GoAlloc labels.Selector "selector") in
+    let: "selector" := (GoAlloc code.k8s_io.apimachinery.pkg.labels.labels.Selector "selector") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: ("$ret0", "$ret1") := ((let: "$a0" := (![go.string] "namespace") in
-    let: "$a1" := (![labels.Selector] "selector") in
+    let: "$a1" := (![code.k8s_io.apimachinery.pkg.labels.labels.Selector] "selector") in
     (MethodResolve (go.PointerType State) "DeploymentMutList"%go (![go.PointerType State] "s")) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
@@ -4213,160 +4213,160 @@ Definition State__DeploymentListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
 Definition State__DeploymentMutListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "selector" := (GoAlloc labels.Selector "selector") in
+    let: "selector" := (GoAlloc code.k8s_io.apimachinery.pkg.labels.labels.Selector "selector") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "objs" := (GoAlloc (go.SliceType (go.InterfaceType [])) (GoZeroVal (go.SliceType (go.InterfaceType [])) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"Deployment"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (![labels.Selector] "selector") in
+    let: "$a2" := (![code.k8s_io.apimachinery.pkg.labels.labels.Selector] "selector") in
     (MethodResolve (go.PointerType State) "objListBySelector"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("objs" <-[go.SliceType (go.InterfaceType [])] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.SliceType (go.PointerType api_apps_v1.Deployment)) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment)) UntypedNil, ![go.error] "err")
     else do:  #());;;
-    let: "deployments" := (GoAlloc (go.SliceType (go.PointerType api_apps_v1.Deployment)) (GoZeroVal (go.SliceType (go.PointerType api_apps_v1.Deployment)) #())) in
-    let: "$r0" := ((FuncResolve go.make3 [go.SliceType (go.PointerType api_apps_v1.Deployment)] #()) #(W64 0) (let: "$a0" := (![go.SliceType (go.InterfaceType [])] "objs") in
+    let: "deployments" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment)) (GoZeroVal (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment)) #())) in
+    let: "$r0" := ((FuncResolve go.make3 [go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment)] #()) #(W64 0) (let: "$a0" := (![go.SliceType (go.InterfaceType [])] "objs") in
     (FuncResolve go.len [go.SliceType (go.InterfaceType [])] #()) "$a0")) in
-    do:  ("deployments" <-[go.SliceType (go.PointerType api_apps_v1.Deployment)] "$r0");;;
+    do:  ("deployments" <-[go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment)] "$r0");;;
     let: "$range" := (![go.SliceType (go.InterfaceType [])] "objs") in
     (let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     slice.for_range (go.InterfaceType []) "$range" (λ: "$key" "$value",
       do:  ("obj" <-[go.InterfaceType []] "$value");;;
       do:  "$key";;;
       let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-      let: "d" := (GoAlloc (go.PointerType api_apps_v1.Deployment) (GoZeroVal (go.PointerType api_apps_v1.Deployment) #())) in
-      let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.Deployment) (![go.InterfaceType []] "obj")) in
+      let: "d" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) #())) in
+      let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) (![go.InterfaceType []] "obj")) in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
-      do:  ("d" <-[go.PointerType api_apps_v1.Deployment] "$r0");;;
+      do:  ("d" <-[go.PointerType code.k8s_io.api.apps.v1.v1.Deployment] "$r0");;;
       do:  ("ok" <-[go.bool] "$r1");;;
       (if: (⟨go.bool⟩! (![go.bool] "ok"))
       then
-        return: (Convert go.untyped_nil (go.SliceType (go.PointerType api_apps_v1.Deployment)) UntypedNil, let: "$a0" := #"state entry is not a *v1.Deployment"%go in
+        return: (Convert go.untyped_nil (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment)) UntypedNil, let: "$a0" := #"state entry is not a *v1.Deployment"%go in
          let: "$a1" := #slice.nil in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+         (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
       else do:  #());;;
-      let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType api_apps_v1.Deployment)] "deployments") in
-      let: "$a1" := ((let: "$sl0" := (![go.PointerType api_apps_v1.Deployment] "d") in
-      CompositeLiteral (go.SliceType (go.PointerType api_apps_v1.Deployment)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType api_apps_v1.Deployment) "$sl0")]))) in
-      (FuncResolve go.append [go.SliceType (go.PointerType api_apps_v1.Deployment)] #()) "$a0" "$a1") in
-      do:  ("deployments" <-[go.SliceType (go.PointerType api_apps_v1.Deployment)] "$r0")));;;
-    return: (![go.SliceType (go.PointerType api_apps_v1.Deployment)] "deployments", Convert go.untyped_nil go.error UntypedNil)).
+      let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment)] "deployments") in
+      let: "$a1" := ((let: "$sl0" := (![go.PointerType code.k8s_io.api.apps.v1.v1.Deployment] "d") in
+      CompositeLiteral (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) "$sl0")]))) in
+      (FuncResolve go.append [go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment)] #()) "$a0" "$a1") in
+      do:  ("deployments" <-[go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment)] "$r0")));;;
+    return: (![go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment)] "deployments", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:2075:17 *)
 Definition State__DeploymentCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "d",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "d" := (GoAlloc (go.PointerType api_apps_v1.Deployment) "d") in
+    let: "d" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) "d") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"Deployment"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (Convert (go.PointerType api_apps_v1.Deployment) (go.InterfaceType []) (![go.PointerType api_apps_v1.Deployment] "d")) in
+    let: "$a2" := (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.apps.v1.v1.Deployment] "d")) in
     (MethodResolve (go.PointerType State) "create"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.Deployment) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "createdDeployment" := (GoAlloc (go.PointerType api_apps_v1.Deployment) (GoZeroVal (go.PointerType api_apps_v1.Deployment) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.Deployment) (![go.InterfaceType []] "obj")) in
+    let: "createdDeployment" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("createdDeployment" <-[go.PointerType api_apps_v1.Deployment] "$r0");;;
+    do:  ("createdDeployment" <-[go.PointerType code.k8s_io.api.apps.v1.v1.Deployment] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_apps_v1.Deployment) UntypedNil, let: "$a0" := #"create returned unexpected type %T"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) UntypedNil, let: "$a0" := #"create returned unexpected type %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_apps_v1.Deployment] "createdDeployment", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.apps.v1.v1.Deployment] "createdDeployment", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:2089:17 *)
 Definition State__DeploymentUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "d",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "d" := (GoAlloc (go.PointerType api_apps_v1.Deployment) "d") in
+    let: "d" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) "d") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"Deployment"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (Convert (go.PointerType api_apps_v1.Deployment) (go.InterfaceType []) (![go.PointerType api_apps_v1.Deployment] "d")) in
+    let: "$a2" := (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.apps.v1.v1.Deployment] "d")) in
     (MethodResolve (go.PointerType State) "update"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.Deployment) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "updatedDeployment" := (GoAlloc (go.PointerType api_apps_v1.Deployment) (GoZeroVal (go.PointerType api_apps_v1.Deployment) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.Deployment) (![go.InterfaceType []] "obj")) in
+    let: "updatedDeployment" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("updatedDeployment" <-[go.PointerType api_apps_v1.Deployment] "$r0");;;
+    do:  ("updatedDeployment" <-[go.PointerType code.k8s_io.api.apps.v1.v1.Deployment] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_apps_v1.Deployment) UntypedNil, let: "$a0" := #"update returned unexpected type %T"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) UntypedNil, let: "$a0" := #"update returned unexpected type %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_apps_v1.Deployment] "updatedDeployment", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.apps.v1.v1.Deployment] "updatedDeployment", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:2103:17 *)
 Definition State__DeploymentUpdateStatusⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "d",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "d" := (GoAlloc (go.PointerType api_apps_v1.Deployment) "d") in
+    let: "d" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) "d") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"Deployment"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (Convert (go.PointerType api_apps_v1.Deployment) (go.InterfaceType []) (![go.PointerType api_apps_v1.Deployment] "d")) in
+    let: "$a2" := (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.apps.v1.v1.Deployment] "d")) in
     (MethodResolve (go.PointerType State) "updateStatus"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.Deployment) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "updatedDeployment" := (GoAlloc (go.PointerType api_apps_v1.Deployment) (GoZeroVal (go.PointerType api_apps_v1.Deployment) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.Deployment) (![go.InterfaceType []] "obj")) in
+    let: "updatedDeployment" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("updatedDeployment" <-[go.PointerType api_apps_v1.Deployment] "$r0");;;
+    do:  ("updatedDeployment" <-[go.PointerType code.k8s_io.api.apps.v1.v1.Deployment] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_apps_v1.Deployment) UntypedNil, let: "$a0" := #"status update returned unexpected type %T"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) UntypedNil, let: "$a0" := #"status update returned unexpected type %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_apps_v1.Deployment] "updatedDeployment", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.apps.v1.v1.Deployment] "updatedDeployment", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:2117:17 *)
 Definition State__DeploymentDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "name" "options",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "options" := (GoAlloc apis_meta_v1.DeleteOptions "options") in
+    let: "options" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "options") in
     let: "name" := (GoAlloc go.string "name") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "key" := (GoAlloc KKey (GoZeroVal KKey #())) in
@@ -4376,7 +4376,7 @@ Definition State__DeploymentDeleteⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
     CompositeLiteral KKey (LiteralValue [KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Namespace"%go)) (ElementExpression go.string "$v1"); KeyedElement (Some (KeyField "Name"%go)) (ElementExpression go.string "$v2")])) in
     do:  ("key" <-[KKey] "$r0");;;
     return: (let: "$a0" := (![KKey] "key") in
-     let: "$a1" := (![apis_meta_v1.DeleteOptions] "options") in
+     let: "$a1" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options") in
      (MethodResolve (go.PointerType State) "delete"%go (![go.PointerType State] "s")) "$a0" "$a1")).
 
 (* Returned value must be treated as read-only.
@@ -4400,23 +4400,23 @@ Definition State__NamespaceGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_core_v1.Namespace) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.Namespace) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "namespace" := (GoAlloc (go.PointerType api_core_v1.Namespace) (GoZeroVal (go.PointerType api_core_v1.Namespace) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_core_v1.Namespace) (![go.InterfaceType []] "obj")) in
+    let: "namespace" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Namespace) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.Namespace) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.Namespace) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("namespace" <-[go.PointerType api_core_v1.Namespace] "$r0");;;
+    do:  ("namespace" <-[go.PointerType code.k8s_io.api.core.v1.v1.Namespace] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_core_v1.Namespace) UntypedNil, let: "$a0" := #"state entry for namespace %s is not a *v1.Namespace"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.Namespace) UntypedNil, let: "$a0" := #"state entry for namespace %s is not a *v1.Namespace"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "name")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_core_v1.Namespace] "namespace", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.core.v1.v1.Namespace] "namespace", Convert go.untyped_nil go.error UntypedNil)).
 
 (* Returned value must be treated as read-only.
 
@@ -4441,59 +4441,59 @@ Definition State__ServiceAccountGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_core_v1.ServiceAccount) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "serviceAccount" := (GoAlloc (go.PointerType api_core_v1.ServiceAccount) (GoZeroVal (go.PointerType api_core_v1.ServiceAccount) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_core_v1.ServiceAccount) (![go.InterfaceType []] "obj")) in
+    let: "serviceAccount" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("serviceAccount" <-[go.PointerType api_core_v1.ServiceAccount] "$r0");;;
+    do:  ("serviceAccount" <-[go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_core_v1.ServiceAccount) UntypedNil, let: "$a0" := #"state entry for serviceaccount %s/%s is not a *v1.ServiceAccount"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount) UntypedNil, let: "$a0" := #"state entry for serviceaccount %s/%s is not a *v1.ServiceAccount"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "namespace")) in
        let: "$sl1" := (Convert go.string go.any (![go.string] "name")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_core_v1.ServiceAccount] "serviceAccount", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount] "serviceAccount", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:2162:17 *)
 Definition State__ServiceAccountCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "serviceAccount",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "serviceAccount" := (GoAlloc (go.PointerType api_core_v1.ServiceAccount) "serviceAccount") in
+    let: "serviceAccount" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount) "serviceAccount") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"ServiceAccount"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (Convert (go.PointerType api_core_v1.ServiceAccount) (go.InterfaceType []) (![go.PointerType api_core_v1.ServiceAccount] "serviceAccount")) in
+    let: "$a2" := (Convert (go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount] "serviceAccount")) in
     (MethodResolve (go.PointerType State) "create"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_core_v1.ServiceAccount) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "createdServiceAccount" := (GoAlloc (go.PointerType api_core_v1.ServiceAccount) (GoZeroVal (go.PointerType api_core_v1.ServiceAccount) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_core_v1.ServiceAccount) (![go.InterfaceType []] "obj")) in
+    let: "createdServiceAccount" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("createdServiceAccount" <-[go.PointerType api_core_v1.ServiceAccount] "$r0");;;
+    do:  ("createdServiceAccount" <-[go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_core_v1.ServiceAccount) UntypedNil, let: "$a0" := #"create returned unexpected type %T"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount) UntypedNil, let: "$a0" := #"create returned unexpected type %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_core_v1.ServiceAccount] "createdServiceAccount", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount] "createdServiceAccount", Convert go.untyped_nil go.error UntypedNil)).
 
 (* Returned value must be treated as read-only.
 
@@ -4513,7 +4513,7 @@ Definition State__ClusterRoleMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
     let: "name" := (GoAlloc go.string "name") in
     let: "key" := (GoAlloc KKey (GoZeroVal KKey #())) in
     let: "$r0" := (let: "$v0" := #"ClusterRole"%go in
-    let: "$v1" := (Convert go.untyped_string go.string apis_meta_v1.NamespaceNone) in
+    let: "$v1" := (Convert go.untyped_string go.string code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.NamespaceNone) in
     let: "$v2" := (![go.string] "name") in
     CompositeLiteral KKey (LiteralValue [KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Namespace"%go)) (ElementExpression go.string "$v1"); KeyedElement (Some (KeyField "Name"%go)) (ElementExpression go.string "$v2")])) in
     do:  ("key" <-[KKey] "$r0");;;
@@ -4527,26 +4527,26 @@ Definition State__ClusterRoleMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_rbac_v1.ClusterRole) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"clusterrole"%go in
-       (FuncResolve api_rbac_v1.Resource [] #()) "$a0") in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"clusterrole"%go in
+       (FuncResolve code.k8s_io.api.rbac.v1.v1.Resource [] #()) "$a0") in
        let: "$a1" := (![go.string] "name") in
-       (FuncResolve errors.NewNotFound [] #()) "$a0" "$a1"))
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewNotFound [] #()) "$a0" "$a1"))
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "cr" := (GoAlloc (go.PointerType api_rbac_v1.ClusterRole) (GoZeroVal (go.PointerType api_rbac_v1.ClusterRole) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_rbac_v1.ClusterRole) (![go.InterfaceType []] "obj")) in
+    let: "cr" := (GoAlloc (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) (GoZeroVal (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("cr" <-[go.PointerType api_rbac_v1.ClusterRole] "$r0");;;
+    do:  ("cr" <-[go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_rbac_v1.ClusterRole) UntypedNil, let: "$a0" := #"state entry for clusterrole %s is not a *v1.ClusterRole"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) UntypedNil, let: "$a0" := #"state entry for clusterrole %s is not a *v1.ClusterRole"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "name")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_rbac_v1.ClusterRole] "cr", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "cr", Convert go.untyped_nil go.error UntypedNil)).
 
 (* Returned value must be treated as read-only.
 
@@ -4554,8 +4554,8 @@ Definition State__ClusterRoleMutGetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
 Definition State__ClusterRoleListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "selector" := (GoAlloc labels.Selector "selector") in
-    let: ("$ret0", "$ret1") := ((let: "$a0" := (![labels.Selector] "selector") in
+    let: "selector" := (GoAlloc code.k8s_io.apimachinery.pkg.labels.labels.Selector "selector") in
+    let: ("$ret0", "$ret1") := ((let: "$a0" := (![code.k8s_io.apimachinery.pkg.labels.labels.Selector] "selector") in
     (MethodResolve (go.PointerType State) "ClusterRoleMutList"%go (![go.PointerType State] "s")) "$a0")) in
     return: ("$ret0", "$ret1")).
 
@@ -4563,116 +4563,116 @@ Definition State__ClusterRoleListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
 Definition State__ClusterRoleMutListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "selector",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "selector" := (GoAlloc labels.Selector "selector") in
+    let: "selector" := (GoAlloc code.k8s_io.apimachinery.pkg.labels.labels.Selector "selector") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "objs" := (GoAlloc (go.SliceType (go.InterfaceType [])) (GoZeroVal (go.SliceType (go.InterfaceType [])) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"ClusterRole"%go in
-    let: "$a1" := (Convert go.untyped_string go.string apis_meta_v1.NamespaceAll) in
-    let: "$a2" := (![labels.Selector] "selector") in
+    let: "$a1" := (Convert go.untyped_string go.string code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.NamespaceAll) in
+    let: "$a2" := (![code.k8s_io.apimachinery.pkg.labels.labels.Selector] "selector") in
     (MethodResolve (go.PointerType State) "objListBySelector"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("objs" <-[go.SliceType (go.InterfaceType [])] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.SliceType (go.PointerType api_rbac_v1.ClusterRole)) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.SliceType (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole)) UntypedNil, ![go.error] "err")
     else do:  #());;;
-    let: "clusterRoles" := (GoAlloc (go.SliceType (go.PointerType api_rbac_v1.ClusterRole)) (GoZeroVal (go.SliceType (go.PointerType api_rbac_v1.ClusterRole)) #())) in
-    let: "$r0" := ((FuncResolve go.make3 [go.SliceType (go.PointerType api_rbac_v1.ClusterRole)] #()) #(W64 0) (let: "$a0" := (![go.SliceType (go.InterfaceType [])] "objs") in
+    let: "clusterRoles" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole)) (GoZeroVal (go.SliceType (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole)) #())) in
+    let: "$r0" := ((FuncResolve go.make3 [go.SliceType (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole)] #()) #(W64 0) (let: "$a0" := (![go.SliceType (go.InterfaceType [])] "objs") in
     (FuncResolve go.len [go.SliceType (go.InterfaceType [])] #()) "$a0")) in
-    do:  ("clusterRoles" <-[go.SliceType (go.PointerType api_rbac_v1.ClusterRole)] "$r0");;;
+    do:  ("clusterRoles" <-[go.SliceType (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole)] "$r0");;;
     let: "$range" := (![go.SliceType (go.InterfaceType [])] "objs") in
     (let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     slice.for_range (go.InterfaceType []) "$range" (λ: "$key" "$value",
       do:  ("obj" <-[go.InterfaceType []] "$value");;;
       do:  "$key";;;
       let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-      let: "cr" := (GoAlloc (go.PointerType api_rbac_v1.ClusterRole) (GoZeroVal (go.PointerType api_rbac_v1.ClusterRole) #())) in
-      let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_rbac_v1.ClusterRole) (![go.InterfaceType []] "obj")) in
+      let: "cr" := (GoAlloc (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) (GoZeroVal (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) #())) in
+      let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) (![go.InterfaceType []] "obj")) in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
-      do:  ("cr" <-[go.PointerType api_rbac_v1.ClusterRole] "$r0");;;
+      do:  ("cr" <-[go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "$r0");;;
       do:  ("ok" <-[go.bool] "$r1");;;
       (if: (⟨go.bool⟩! (![go.bool] "ok"))
       then
-        return: (Convert go.untyped_nil (go.SliceType (go.PointerType api_rbac_v1.ClusterRole)) UntypedNil, let: "$a0" := #"state entry is not a *v1.ClusterRole"%go in
+        return: (Convert go.untyped_nil (go.SliceType (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole)) UntypedNil, let: "$a0" := #"state entry is not a *v1.ClusterRole"%go in
          let: "$a1" := #slice.nil in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+         (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
       else do:  #());;;
-      let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType api_rbac_v1.ClusterRole)] "clusterRoles") in
-      let: "$a1" := ((let: "$sl0" := (![go.PointerType api_rbac_v1.ClusterRole] "cr") in
-      CompositeLiteral (go.SliceType (go.PointerType api_rbac_v1.ClusterRole)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType api_rbac_v1.ClusterRole) "$sl0")]))) in
-      (FuncResolve go.append [go.SliceType (go.PointerType api_rbac_v1.ClusterRole)] #()) "$a0" "$a1") in
-      do:  ("clusterRoles" <-[go.SliceType (go.PointerType api_rbac_v1.ClusterRole)] "$r0")));;;
-    return: (![go.SliceType (go.PointerType api_rbac_v1.ClusterRole)] "clusterRoles", Convert go.untyped_nil go.error UntypedNil)).
+      let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole)] "clusterRoles") in
+      let: "$a1" := ((let: "$sl0" := (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "cr") in
+      CompositeLiteral (go.SliceType (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) "$sl0")]))) in
+      (FuncResolve go.append [go.SliceType (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole)] #()) "$a0" "$a1") in
+      do:  ("clusterRoles" <-[go.SliceType (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole)] "$r0")));;;
+    return: (![go.SliceType (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole)] "clusterRoles", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:2225:17 *)
 Definition State__ClusterRoleCreateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "cr",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "cr" := (GoAlloc (go.PointerType api_rbac_v1.ClusterRole) "cr") in
+    let: "cr" := (GoAlloc (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) "cr") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"ClusterRole"%go in
-    let: "$a1" := (Convert go.untyped_string go.string apis_meta_v1.NamespaceNone) in
-    let: "$a2" := (Convert (go.PointerType api_rbac_v1.ClusterRole) (go.InterfaceType []) (![go.PointerType api_rbac_v1.ClusterRole] "cr")) in
+    let: "$a1" := (Convert go.untyped_string go.string code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.NamespaceNone) in
+    let: "$a2" := (Convert (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "cr")) in
     (MethodResolve (go.PointerType State) "create"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_rbac_v1.ClusterRole) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "createdCR" := (GoAlloc (go.PointerType api_rbac_v1.ClusterRole) (GoZeroVal (go.PointerType api_rbac_v1.ClusterRole) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_rbac_v1.ClusterRole) (![go.InterfaceType []] "obj")) in
+    let: "createdCR" := (GoAlloc (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) (GoZeroVal (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("createdCR" <-[go.PointerType api_rbac_v1.ClusterRole] "$r0");;;
+    do:  ("createdCR" <-[go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_rbac_v1.ClusterRole) UntypedNil, let: "$a0" := #"create returned unexpected type %T"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) UntypedNil, let: "$a0" := #"create returned unexpected type %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_rbac_v1.ClusterRole] "createdCR", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "createdCR", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: api_model.go:2238:17 *)
 Definition State__ClusterRoleUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "cr",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "cr" := (GoAlloc (go.PointerType api_rbac_v1.ClusterRole) "cr") in
+    let: "cr" := (GoAlloc (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) "cr") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"ClusterRole"%go in
-    let: "$a1" := (Convert go.untyped_string go.string apis_meta_v1.NamespaceNone) in
-    let: "$a2" := (Convert (go.PointerType api_rbac_v1.ClusterRole) (go.InterfaceType []) (![go.PointerType api_rbac_v1.ClusterRole] "cr")) in
+    let: "$a1" := (Convert go.untyped_string go.string code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.NamespaceNone) in
+    let: "$a2" := (Convert (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "cr")) in
     (MethodResolve (go.PointerType State) "update"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_rbac_v1.ClusterRole) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "updatedCR" := (GoAlloc (go.PointerType api_rbac_v1.ClusterRole) (GoZeroVal (go.PointerType api_rbac_v1.ClusterRole) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_rbac_v1.ClusterRole) (![go.InterfaceType []] "obj")) in
+    let: "updatedCR" := (GoAlloc (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) (GoZeroVal (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("updatedCR" <-[go.PointerType api_rbac_v1.ClusterRole] "$r0");;;
+    do:  ("updatedCR" <-[go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_rbac_v1.ClusterRole) UntypedNil, let: "$a0" := #"update returned unexpected type %T"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) UntypedNil, let: "$a0" := #"update returned unexpected type %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_rbac_v1.ClusterRole] "updatedCR", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "updatedCR", Convert go.untyped_nil go.error UntypedNil)).
 
 (* patch models non-apply PATCH requests with default PatchOptions. Application
    and validation are atomic with respect to other model operations. The result
@@ -4686,28 +4686,28 @@ Definition State__patchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
     let: "subresources" := (GoAlloc (go.SliceType go.string) "subresources") in
     let: "data" := (GoAlloc (go.SliceType go.byte) "data") in
-    let: "patchType" := (GoAlloc types.PatchType "patchType") in
+    let: "patchType" := (GoAlloc code.k8s_io.apimachinery.pkg.types.types.PatchType "patchType") in
     let: "name" := (GoAlloc go.string "name") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "kind" := (GoAlloc go.string "kind") in
-    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
-    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
+    do:  ((MethodResolve (go.PointerType code.sync.sync.Mutex) "Lock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
+    do:  (let: "$f" := (MethodResolve (go.PointerType code.sync.sync.Mutex) "Unlock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
     "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
     (λ: <>,
       "$f" #();;
       "$oldf" #()
       )));;;
-    (if: Convert go.untyped_bool go.bool ((((![types.PatchType] "patchType") ≠⟨types.PatchType⟩ types.JSONPatchType) && ((![types.PatchType] "patchType") ≠⟨types.PatchType⟩ types.MergePatchType)) && ((![types.PatchType] "patchType") ≠⟨types.PatchType⟩ types.StrategicMergePatchType))
+    (if: Convert go.untyped_bool go.bool ((((![code.k8s_io.apimachinery.pkg.types.types.PatchType] "patchType") ≠⟨code.k8s_io.apimachinery.pkg.types.types.PatchType⟩ code.k8s_io.apimachinery.pkg.types.types.JSONPatchType) && ((![code.k8s_io.apimachinery.pkg.types.types.PatchType] "patchType") ≠⟨code.k8s_io.apimachinery.pkg.types.types.PatchType⟩ code.k8s_io.apimachinery.pkg.types.types.MergePatchType)) && ((![code.k8s_io.apimachinery.pkg.types.types.PatchType] "patchType") ≠⟨code.k8s_io.apimachinery.pkg.types.types.PatchType⟩ code.k8s_io.apimachinery.pkg.types.types.StrategicMergePatchType))
     then
-      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (Convert go.untyped_int go.int http.StatusUnsupportedMediaType) in
+      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (Convert go.untyped_int go.int code.net.http.http.StatusUnsupportedMediaType) in
        let: "$a1" := #"PATCH"%go in
        let: "$a2" := (let: "$v0" := (![go.string] "kind") in
-       CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
+       CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
        let: "$a3" := (![go.string] "name") in
        let: "$a4" := #"unsupported patch type"%go in
        let: "$a5" := #(W64 0) in
        let: "$a6" := #false in
-       (FuncResolve errors.NewGenericServerResponse [] #()) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5" "$a6"))
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewGenericServerResponse [] #()) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5" "$a6"))
     else do:  #());;;
     let: "status" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
     let: "$r0" := (((let: "$a0" := (![go.SliceType go.string] "subresources") in
@@ -4716,10 +4716,10 @@ Definition State__patchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext
     (if: ((let: "$a0" := (![go.SliceType go.string] "subresources") in
     (FuncResolve go.len [go.SliceType go.string] #()) "$a0") >⟨go.int⟩ #(W64 0)) && (⟨go.bool⟩! (![go.bool] "status"))
     then
-      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
-       CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
+      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+       CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
        let: "$a1" := (![go.string] "name") in
-       (FuncResolve errors.NewNotFound [] #()) "$a0" "$a1"))
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewNotFound [] #()) "$a0" "$a1"))
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
     let: "existing" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
@@ -4733,10 +4733,10 @@ Definition State__patchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
-       CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
+      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+       CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
        let: "$a1" := (![go.string] "name") in
-       (FuncResolve errors.NewNotFound [] #()) "$a0" "$a1"))
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewNotFound [] #()) "$a0" "$a1"))
     else do:  #());;;
     (if: ![go.bool] "status"
     then
@@ -4760,57 +4760,57 @@ Definition State__patchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext
       do:  ("err" <-[go.error] "$r1");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then
-        return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
-         CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
+        return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] "kind") in
+         CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
          let: "$a1" := (![go.string] "name") in
-         (FuncResolve errors.NewNotFound [] #()) "$a0" "$a1"))
+         (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewNotFound [] #()) "$a0" "$a1"))
       else do:  #()))
     else do:  #());;;
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-    let: "obj" := (GoAlloc runtime.Object (GoZeroVal runtime.Object #())) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (TypeAssert runtime.Object (![go.InterfaceType []] "existing")) in
-    let: "$a1" := (![types.PatchType] "patchType") in
+    let: "obj" := (GoAlloc code.k8s_io.apimachinery.pkg.runtime.runtime.Object (GoZeroVal code.k8s_io.apimachinery.pkg.runtime.runtime.Object #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (TypeAssert code.k8s_io.apimachinery.pkg.runtime.runtime.Object (![go.InterfaceType []] "existing")) in
+    let: "$a1" := (![code.k8s_io.apimachinery.pkg.types.types.PatchType] "patchType") in
     let: "$a2" := (![go.SliceType go.byte] "data") in
     let: "$a3" := (![go.string] "name") in
     (FuncResolve applyPatchToObject [] #()) "$a0" "$a1" "$a2" "$a3") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("obj" <-[runtime.Object] "$r0");;;
+    do:  ("obj" <-[code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, ![go.error] "err")
     else do:  #());;;
-    let: "metadata" := (GoAlloc apis_meta_v1.Object (GoZeroVal apis_meta_v1.Object #())) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (Convert runtime.Object (go.InterfaceType []) (![runtime.Object] "obj")) in
-    (FuncResolve meta.Accessor [] #()) "$a0") in
+    let: "metadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (Convert code.k8s_io.apimachinery.pkg.runtime.runtime.Object (go.InterfaceType []) (![code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "obj")) in
+    (FuncResolve code.k8s_io.apimachinery.pkg.api.meta.meta.Accessor [] #()) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("metadata" <-[apis_meta_v1.Object] "$r0");;;
+    do:  ("metadata" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, ![go.error] "err")
     else do:  #());;;
-    (if: Convert go.untyped_bool go.bool (((MethodResolve apis_meta_v1.Object "GetName"%go (![apis_meta_v1.Object] "metadata")) #()) ≠⟨go.string⟩ (![go.string] "name"))
+    (if: Convert go.untyped_bool go.bool (((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetName"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) ≠⟨go.string⟩ (![go.string] "name"))
     then
-      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"the name of the object (%s) does not match the name on the URL (%s)"%go in
-       let: "$a1" := ((let: "$sl0" := (Convert go.string go.any ((MethodResolve apis_meta_v1.Object "GetName"%go (![apis_meta_v1.Object] "metadata")) #())) in
+      return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"the name of the object (%s) does not match the name on the URL (%s)"%go in
+       let: "$a1" := ((let: "$sl0" := (Convert go.string go.any ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetName"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #())) in
        let: "$sl1" := (Convert go.string go.any (![go.string] "name")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-       (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1") in
-       (FuncResolve errors.NewBadRequest [] #()) "$a0"))
+       (FuncResolve code.fmt.fmt.Sprintf [] #()) "$a0" "$a1") in
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewBadRequest [] #()) "$a0"))
     else do:  #());;;
     (if: ![go.bool] "status"
     then
       let: ("$ret0", "$ret1") := ((let: "$a0" := (![go.string] "kind") in
       let: "$a1" := (![go.string] "namespace") in
-      let: "$a2" := (Convert runtime.Object (go.InterfaceType []) (![runtime.Object] "obj")) in
+      let: "$a2" := (Convert code.k8s_io.apimachinery.pkg.runtime.runtime.Object (go.InterfaceType []) (![code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "obj")) in
       let: "$a3" := #false in
       (MethodResolve (go.PointerType State) "updateStatusLocked"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2" "$a3")) in
       return: ("$ret0", "$ret1")
     else do:  #());;;
     let: ("$ret0", "$ret1") := ((let: "$a0" := (![go.string] "kind") in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (Convert runtime.Object (go.InterfaceType []) (![runtime.Object] "obj")) in
+    let: "$a2" := (Convert code.k8s_io.apimachinery.pkg.runtime.runtime.Object (go.InterfaceType []) (![code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "obj")) in
     let: "$a3" := #false in
     (MethodResolve (go.PointerType State) "updateLocked"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2" "$a3")) in
     return: ("$ret0", "$ret1")).
@@ -4823,103 +4823,103 @@ Definition applyPatchToObjectⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalC
   λ: "existing" "patchType" "data" "name",
     exception_do (let: "name" := (GoAlloc go.string "name") in
     let: "data" := (GoAlloc (go.SliceType go.byte) "data") in
-    let: "patchType" := (GoAlloc types.PatchType "patchType") in
-    let: "existing" := (GoAlloc runtime.Object "existing") in
+    let: "patchType" := (GoAlloc code.k8s_io.apimachinery.pkg.types.types.PatchType "patchType") in
+    let: "existing" := (GoAlloc code.k8s_io.apimachinery.pkg.runtime.runtime.Object "existing") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-    let: "gvks" := (GoAlloc (go.SliceType schema.GroupVersionKind) (GoZeroVal (go.SliceType schema.GroupVersionKind) #())) in
-    let: (("$ret0", "$ret1"), "$ret2") := (let: "$a0" := (![runtime.Object] "existing") in
-    (MethodResolve (go.PointerType runtime.Scheme) "ObjectKinds"%go (![go.PointerType runtime.Scheme] (GlobalVarAddr legacyscheme.Scheme #()))) "$a0") in
+    let: "gvks" := (GoAlloc (go.SliceType code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersionKind) (GoZeroVal (go.SliceType code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersionKind) #())) in
+    let: (("$ret0", "$ret1"), "$ret2") := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "existing") in
+    (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme) "ObjectKinds"%go (![go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme] (GlobalVarAddr code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme.Scheme #()))) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     let: "$r2" := "$ret2" in
-    do:  ("gvks" <-[go.SliceType schema.GroupVersionKind] "$r0");;;
+    do:  ("gvks" <-[go.SliceType code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersionKind] "$r0");;;
     do:  "$r1";;;
     do:  ("err" <-[go.error] "$r2");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil runtime.Object UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil code.k8s_io.apimachinery.pkg.runtime.runtime.Object UntypedNil, ![go.error] "err")
     else do:  #());;;
-    (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![go.SliceType schema.GroupVersionKind] "gvks") in
-    (FuncResolve go.len [go.SliceType schema.GroupVersionKind] #()) "$a0") ≠⟨go.int⟩ #(W64 1))
+    (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![go.SliceType code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersionKind] "gvks") in
+    (FuncResolve go.len [go.SliceType code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersionKind] #()) "$a0") ≠⟨go.int⟩ #(W64 1))
     then
-      return: (Convert go.untyped_nil runtime.Object UntypedNil, let: "$a0" := #"expected one registered GVK for %T, got %v"%go in
-       let: "$a1" := ((let: "$sl0" := (Convert runtime.Object go.any (![runtime.Object] "existing")) in
-       let: "$sl1" := (Convert (go.SliceType schema.GroupVersionKind) go.any (![go.SliceType schema.GroupVersionKind] "gvks")) in
+      return: (Convert go.untyped_nil code.k8s_io.apimachinery.pkg.runtime.runtime.Object UntypedNil, let: "$a0" := #"expected one registered GVK for %T, got %v"%go in
+       let: "$a1" := ((let: "$sl0" := (Convert code.k8s_io.apimachinery.pkg.runtime.runtime.Object go.any (![code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "existing")) in
+       let: "$sl1" := (Convert (go.SliceType code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersionKind) go.any (![go.SliceType code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersionKind] "gvks")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    let: "codec" := (GoAlloc runtime.Codec (GoZeroVal runtime.Codec #())) in
-    let: "$r0" := (let: "$a0" := ((let: "$sl0" := ((MethodResolve (go.PointerType schema.GroupVersionKind) "GroupVersion"%go (IndexRef (go.SliceType schema.GroupVersionKind) (![go.SliceType schema.GroupVersionKind] "gvks", #(W64 0)))) #()) in
-    CompositeLiteral (go.SliceType schema.GroupVersion) (LiteralValue [KeyedElement None (ElementExpression schema.GroupVersion "$sl0")]))) in
-    (MethodResolve (go.PointerType serializer.CodecFactory) "LegacyCodec"%go (GlobalVarAddr legacyscheme.Codecs #())) "$a0") in
-    do:  ("codec" <-[runtime.Codec] "$r0");;;
+    let: "codec" := (GoAlloc code.k8s_io.apimachinery.pkg.runtime.runtime.Codec (GoZeroVal code.k8s_io.apimachinery.pkg.runtime.runtime.Codec #())) in
+    let: "$r0" := (let: "$a0" := ((let: "$sl0" := ((MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersionKind) "GroupVersion"%go (IndexRef (go.SliceType code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersionKind) (![go.SliceType code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersionKind] "gvks", #(W64 0)))) #()) in
+    CompositeLiteral (go.SliceType code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersion) (LiteralValue [KeyedElement None (ElementExpression code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersion "$sl0")]))) in
+    (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.runtime.serializer.serializer.CodecFactory) "LegacyCodec"%go (GlobalVarAddr code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme.Codecs #())) "$a0") in
+    do:  ("codec" <-[code.k8s_io.apimachinery.pkg.runtime.runtime.Codec] "$r0");;;
     let: "original" := (GoAlloc (go.SliceType go.byte) (GoZeroVal (go.SliceType go.byte) #())) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (Convert runtime.Codec runtime.Encoder (![runtime.Codec] "codec")) in
-    let: "$a1" := (![runtime.Object] "existing") in
-    (FuncResolve runtime.Encode [] #()) "$a0" "$a1") in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (Convert code.k8s_io.apimachinery.pkg.runtime.runtime.Codec code.k8s_io.apimachinery.pkg.runtime.runtime.Encoder (![code.k8s_io.apimachinery.pkg.runtime.runtime.Codec] "codec")) in
+    let: "$a1" := (![code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "existing") in
+    (FuncResolve code.k8s_io.apimachinery.pkg.runtime.runtime.Encode [] #()) "$a0" "$a1") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("original" <-[go.SliceType go.byte] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil runtime.Object UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil code.k8s_io.apimachinery.pkg.runtime.runtime.Object UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "patched" := (GoAlloc (go.SliceType go.byte) (GoZeroVal (go.SliceType go.byte) #())) in
-    let: "$sw" := (![types.PatchType] "patchType") in
-    (if: "$sw" =⟨types.PatchType⟩ types.JSONPatchType
+    let: "$sw" := (![code.k8s_io.apimachinery.pkg.types.types.PatchType] "patchType") in
+    (if: "$sw" =⟨code.k8s_io.apimachinery.pkg.types.types.PatchType⟩ code.k8s_io.apimachinery.pkg.types.types.JSONPatchType
     then
       let: "decodeErr" := (GoAlloc go.error (GoZeroVal go.error #())) in
-      let: "patch" := (GoAlloc jsonpatch.Patch (GoZeroVal jsonpatch.Patch #())) in
+      let: "patch" := (GoAlloc code.gopkg_in.evanphx.json_patch_v4.jsonpatch.Patch (GoZeroVal code.gopkg_in.evanphx.json_patch_v4.jsonpatch.Patch #())) in
       let: ("$ret0", "$ret1") := (let: "$a0" := (![go.SliceType go.byte] "data") in
-      (FuncResolve jsonpatch.DecodePatch [] #()) "$a0") in
+      (FuncResolve code.gopkg_in.evanphx.json_patch_v4.jsonpatch.DecodePatch [] #()) "$a0") in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
-      do:  ("patch" <-[jsonpatch.Patch] "$r0");;;
+      do:  ("patch" <-[code.gopkg_in.evanphx.json_patch_v4.jsonpatch.Patch] "$r0");;;
       do:  ("decodeErr" <-[go.error] "$r1");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "decodeErr") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then
-        return: (Convert go.untyped_nil runtime.Object UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := ((MethodResolve go.error "Error"%go (![go.error] "decodeErr")) #()) in
-         (FuncResolve errors.NewBadRequest [] #()) "$a0"))
+        return: (Convert go.untyped_nil code.k8s_io.apimachinery.pkg.runtime.runtime.Object UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := ((MethodResolve go.error "Error"%go (![go.error] "decodeErr")) #()) in
+         (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewBadRequest [] #()) "$a0"))
       else do:  #());;;
-      (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![jsonpatch.Patch] "patch") in
-      (FuncResolve go.len [jsonpatch.Patch] #()) "$a0") >⟨go.int⟩ #(W64 10000))
+      (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![code.gopkg_in.evanphx.json_patch_v4.jsonpatch.Patch] "patch") in
+      (FuncResolve go.len [code.gopkg_in.evanphx.json_patch_v4.jsonpatch.Patch] #()) "$a0") >⟨go.int⟩ #(W64 10000))
       then
-        return: (Convert go.untyped_nil runtime.Object UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := #"too many JSON patch operations"%go in
-         (FuncResolve errors.NewRequestEntityTooLargeError [] #()) "$a0"))
+        return: (Convert go.untyped_nil code.k8s_io.apimachinery.pkg.runtime.runtime.Object UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := #"too many JSON patch operations"%go in
+         (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewRequestEntityTooLargeError [] #()) "$a0"))
       else do:  #());;;
       let: ("$ret0", "$ret1") := (let: "$a0" := (![go.SliceType go.byte] "original") in
-      (MethodResolve (go.PointerType jsonpatch.Patch) "Apply"%go "patch") "$a0") in
+      (MethodResolve (go.PointerType code.gopkg_in.evanphx.json_patch_v4.jsonpatch.Patch) "Apply"%go "patch") "$a0") in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
       do:  ("patched" <-[go.SliceType go.byte] "$r0");;;
       do:  ("err" <-[go.error] "$r1");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then
-        return: (Convert go.untyped_nil runtime.Object UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (Convert go.untyped_int go.int http.StatusUnprocessableEntity) in
+        return: (Convert go.untyped_nil code.k8s_io.apimachinery.pkg.runtime.runtime.Object UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (Convert go.untyped_int go.int code.net.http.http.StatusUnprocessableEntity) in
          let: "$a1" := #""%go in
-         let: "$a2" := (CompositeLiteral schema.GroupResource (LiteralValue [])) in
+         let: "$a2" := (CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupResource (LiteralValue [])) in
          let: "$a3" := #""%go in
          let: "$a4" := ((MethodResolve go.error "Error"%go (![go.error] "err")) #()) in
          let: "$a5" := #(W64 0) in
          let: "$a6" := #false in
-         (FuncResolve errors.NewGenericServerResponse [] #()) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5" "$a6"))
+         (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewGenericServerResponse [] #()) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5" "$a6"))
       else do:  #())
     else
-      (if: "$sw" =⟨types.PatchType⟩ types.MergePatchType
+      (if: "$sw" =⟨code.k8s_io.apimachinery.pkg.types.types.PatchType⟩ code.k8s_io.apimachinery.pkg.types.types.MergePatchType
       then
         let: ("$ret0", "$ret1") := (let: "$a0" := (![go.SliceType go.byte] "original") in
         let: "$a1" := (![go.SliceType go.byte] "data") in
-        (FuncResolve jsonpatch.MergePatch [] #()) "$a0" "$a1") in
+        (FuncResolve code.gopkg_in.evanphx.json_patch_v4.jsonpatch.MergePatch [] #()) "$a0" "$a1") in
         let: "$r0" := "$ret0" in
         let: "$r1" := "$ret1" in
         do:  ("patched" <-[go.SliceType go.byte] "$r0");;;
         do:  ("err" <-[go.error] "$r1")
       else
-        (if: "$sw" =⟨types.PatchType⟩ types.StrategicMergePatchType
+        (if: "$sw" =⟨code.k8s_io.apimachinery.pkg.types.types.PatchType⟩ code.k8s_io.apimachinery.pkg.types.types.StrategicMergePatchType
         then
           let: ("$ret0", "$ret1") := (let: "$a0" := (![go.SliceType go.byte] "original") in
           let: "$a1" := (![go.SliceType go.byte] "data") in
-          let: "$a2" := (Convert runtime.Object (go.InterfaceType []) (![runtime.Object] "existing")) in
-          (FuncResolve strategicpatch.StrategicMergePatch [] #()) "$a0" "$a1" "$a2") in
+          let: "$a2" := (Convert code.k8s_io.apimachinery.pkg.runtime.runtime.Object (go.InterfaceType []) (![code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "existing")) in
+          (FuncResolve code.k8s_io.apimachinery.pkg.util.strategicpatch.strategicpatch.StrategicMergePatch [] #()) "$a0" "$a1" "$a2") in
           let: "$r0" := "$ret0" in
           let: "$r1" := "$ret1" in
           do:  ("patched" <-[go.SliceType go.byte] "$r0");;;
@@ -4927,58 +4927,58 @@ Definition applyPatchToObjectⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalC
         else do:  #())));;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then
-      (if: Convert go.untyped_bool go.bool (((![go.error] "err") =⟨go.error⟩ (![go.error] (GlobalVarAddr mergepatch.ErrNoListOfLists #()))) || ((![go.error] "err") =⟨go.error⟩ (![go.error] (GlobalVarAddr mergepatch.ErrPatchContentNotMatchRetainKeys #()))))
+      (if: Convert go.untyped_bool go.bool (((![go.error] "err") =⟨go.error⟩ (![go.error] (GlobalVarAddr code.k8s_io.apimachinery.pkg.util.mergepatch.mergepatch.ErrNoListOfLists #()))) || ((![go.error] "err") =⟨go.error⟩ (![go.error] (GlobalVarAddr code.k8s_io.apimachinery.pkg.util.mergepatch.mergepatch.ErrPatchContentNotMatchRetainKeys #()))))
       then
-        return: (Convert go.untyped_nil runtime.Object UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (Convert go.untyped_int go.int http.StatusUnprocessableEntity) in
+        return: (Convert go.untyped_nil code.k8s_io.apimachinery.pkg.runtime.runtime.Object UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (Convert go.untyped_int go.int code.net.http.http.StatusUnprocessableEntity) in
          let: "$a1" := #""%go in
-         let: "$a2" := (CompositeLiteral schema.GroupResource (LiteralValue [])) in
+         let: "$a2" := (CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupResource (LiteralValue [])) in
          let: "$a3" := #""%go in
          let: "$a4" := ((MethodResolve go.error "Error"%go (![go.error] "err")) #()) in
          let: "$a5" := #(W64 0) in
          let: "$a6" := #false in
-         (FuncResolve errors.NewGenericServerResponse [] #()) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5" "$a6"))
+         (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewGenericServerResponse [] #()) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5" "$a6"))
       else do:  #());;;
-      return: (Convert go.untyped_nil runtime.Object UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := ((MethodResolve go.error "Error"%go (![go.error] "err")) #()) in
-       (FuncResolve errors.NewBadRequest [] #()) "$a0"))
+      return: (Convert go.untyped_nil code.k8s_io.apimachinery.pkg.runtime.runtime.Object UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := ((MethodResolve go.error "Error"%go (![go.error] "err")) #()) in
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewBadRequest [] #()) "$a0"))
     else do:  #());;;
-    let: "obj" := (GoAlloc runtime.Object (GoZeroVal runtime.Object #())) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (![schema.GroupVersionKind] (IndexRef (go.SliceType schema.GroupVersionKind) (![go.SliceType schema.GroupVersionKind] "gvks", #(W64 0)))) in
-    (MethodResolve (go.PointerType runtime.Scheme) "New"%go (![go.PointerType runtime.Scheme] (GlobalVarAddr legacyscheme.Scheme #()))) "$a0") in
+    let: "obj" := (GoAlloc code.k8s_io.apimachinery.pkg.runtime.runtime.Object (GoZeroVal code.k8s_io.apimachinery.pkg.runtime.runtime.Object #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersionKind] (IndexRef (go.SliceType code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersionKind) (![go.SliceType code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersionKind] "gvks", #(W64 0)))) in
+    (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme) "New"%go (![go.PointerType code.k8s_io.apimachinery.pkg.runtime.runtime.Scheme] (GlobalVarAddr code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme.Scheme #()))) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("obj" <-[runtime.Object] "$r0");;;
+    do:  ("obj" <-[code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil runtime.Object UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil code.k8s_io.apimachinery.pkg.runtime.runtime.Object UntypedNil, ![go.error] "err")
     else do:  #());;;
-    (if: Convert go.untyped_bool go.bool ((![types.PatchType] "patchType") =⟨types.PatchType⟩ types.StrategicMergePatchType)
+    (if: Convert go.untyped_bool go.bool ((![code.k8s_io.apimachinery.pkg.types.types.PatchType] "patchType") =⟨code.k8s_io.apimachinery.pkg.types.types.PatchType⟩ code.k8s_io.apimachinery.pkg.types.types.StrategicMergePatchType)
     then
       let: "$r0" := (let: "$a0" := (![go.SliceType go.byte] "patched") in
-      let: "$a1" := (Convert runtime.Object go.any (![runtime.Object] "obj")) in
-      (FuncResolve json.Unmarshal [] #()) "$a0" "$a1") in
+      let: "$a1" := (Convert code.k8s_io.apimachinery.pkg.runtime.runtime.Object go.any (![code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "obj")) in
+      (FuncResolve code.encoding.json.json.Unmarshal [] #()) "$a0" "$a1") in
       do:  ("err" <-[go.error] "$r0")
     else
-      let: "$r0" := (let: "$a0" := (Convert runtime.Codec runtime.Decoder (![runtime.Codec] "codec")) in
+      let: "$r0" := (let: "$a0" := (Convert code.k8s_io.apimachinery.pkg.runtime.runtime.Codec code.k8s_io.apimachinery.pkg.runtime.runtime.Decoder (![code.k8s_io.apimachinery.pkg.runtime.runtime.Codec] "codec")) in
       let: "$a1" := (![go.SliceType go.byte] "patched") in
-      let: "$a2" := (![runtime.Object] "obj") in
-      (FuncResolve runtime.DecodeInto [] #()) "$a0" "$a1" "$a2") in
+      let: "$a2" := (![code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "obj") in
+      (FuncResolve code.k8s_io.apimachinery.pkg.runtime.runtime.DecodeInto [] #()) "$a0" "$a1" "$a2") in
       do:  ("err" <-[go.error] "$r0"));;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then
-      return: (Convert go.untyped_nil runtime.Object UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (CompositeLiteral schema.GroupKind (LiteralValue [])) in
+      return: (Convert go.untyped_nil code.k8s_io.apimachinery.pkg.runtime.runtime.Object UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupKind (LiteralValue [])) in
        let: "$a1" := (![go.string] "name") in
        let: "$a2" := (let: "$v0" := (let: "$a0" := (let: "$a0" := #"patch"%go in
        let: "$a1" := #slice.nil in
-       (FuncResolve field.NewPath [] #()) "$a0" "$a1") in
+       (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.NewPath [] #()) "$a0" "$a1") in
        let: "$a1" := (Convert go.string (go.InterfaceType []) (Convert (go.SliceType go.byte) go.string (![go.SliceType go.byte] "patched"))) in
        let: "$a2" := ((MethodResolve go.error "Error"%go (![go.error] "err")) #()) in
-       (FuncResolve field.Invalid [] #()) "$a0" "$a1" "$a2") in
-       CompositeLiteral field.ErrorList (LiteralValue [KeyedElement None (ElementExpression (go.PointerType field.Error) "$v0")])) in
-       (FuncResolve errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
+       (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.Invalid [] #()) "$a0" "$a1" "$a2") in
+       CompositeLiteral code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) "$v0")])) in
+       (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewInvalid [] #()) "$a0" "$a1" "$a2"))
     else do:  #());;;
-    do:  (let: "$a0" := ((MethodResolve schema.ObjectKind "GroupVersionKind"%go ((MethodResolve runtime.Object "GetObjectKind"%go (![runtime.Object] "existing")) #())) #()) in
-    (MethodResolve schema.ObjectKind "SetGroupVersionKind"%go ((MethodResolve runtime.Object "GetObjectKind"%go (![runtime.Object] "obj")) #())) "$a0");;;
-    return: (![runtime.Object] "obj", Convert go.untyped_nil go.error UntypedNil)).
+    do:  (let: "$a0" := ((MethodResolve code.k8s_io.apimachinery.pkg.runtime.schema.schema.ObjectKind "GroupVersionKind"%go ((MethodResolve code.k8s_io.apimachinery.pkg.runtime.runtime.Object "GetObjectKind"%go (![code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "existing")) #())) #()) in
+    (MethodResolve code.k8s_io.apimachinery.pkg.runtime.schema.schema.ObjectKind "SetGroupVersionKind"%go ((MethodResolve code.k8s_io.apimachinery.pkg.runtime.runtime.Object "GetObjectKind"%go (![code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "obj")) #())) "$a0");;;
+    return: (![code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "obj", Convert go.untyped_nil go.error UntypedNil)).
 
 (* PodPatch applies a patch to the named object, optionally to its status subresource.
 
@@ -4988,7 +4988,7 @@ Definition State__PodPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
     let: "subresources" := (GoAlloc (go.SliceType go.string) "subresources") in
     let: "data" := (GoAlloc (go.SliceType go.byte) "data") in
-    let: "patchType" := (GoAlloc types.PatchType "patchType") in
+    let: "patchType" := (GoAlloc code.k8s_io.apimachinery.pkg.types.types.PatchType "patchType") in
     let: "name" := (GoAlloc go.string "name") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
@@ -4996,7 +4996,7 @@ Definition State__PodPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
     let: ("$ret0", "$ret1") := (let: "$a0" := #"Pod"%go in
     let: "$a1" := (![go.string] "namespace") in
     let: "$a2" := (![go.string] "name") in
-    let: "$a3" := (![types.PatchType] "patchType") in
+    let: "$a3" := (![code.k8s_io.apimachinery.pkg.types.types.PatchType] "patchType") in
     let: "$a4" := (![go.SliceType go.byte] "data") in
     let: "$a5" := (![go.SliceType go.string] "subresources") in
     (MethodResolve (go.PointerType State) "patch"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5") in
@@ -5005,9 +5005,9 @@ Definition State__PodPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_core_v1.Pod) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.Pod) UntypedNil, ![go.error] "err")
     else do:  #());;;
-    return: (TypeAssert (go.PointerType api_core_v1.Pod) (![go.InterfaceType []] "obj"), Convert go.untyped_nil go.error UntypedNil)).
+    return: (TypeAssert (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (![go.InterfaceType []] "obj"), Convert go.untyped_nil go.error UntypedNil)).
 
 (* PersistentVolumeClaimPatch applies a patch to the named object, optionally to its status subresource.
 
@@ -5017,7 +5017,7 @@ Definition State__PersistentVolumeClaimPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_g
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
     let: "subresources" := (GoAlloc (go.SliceType go.string) "subresources") in
     let: "data" := (GoAlloc (go.SliceType go.byte) "data") in
-    let: "patchType" := (GoAlloc types.PatchType "patchType") in
+    let: "patchType" := (GoAlloc code.k8s_io.apimachinery.pkg.types.types.PatchType "patchType") in
     let: "name" := (GoAlloc go.string "name") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
@@ -5025,7 +5025,7 @@ Definition State__PersistentVolumeClaimPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_g
     let: ("$ret0", "$ret1") := (let: "$a0" := #"PersistentVolumeClaim"%go in
     let: "$a1" := (![go.string] "namespace") in
     let: "$a2" := (![go.string] "name") in
-    let: "$a3" := (![types.PatchType] "patchType") in
+    let: "$a3" := (![code.k8s_io.apimachinery.pkg.types.types.PatchType] "patchType") in
     let: "$a4" := (![go.SliceType go.byte] "data") in
     let: "$a5" := (![go.SliceType go.string] "subresources") in
     (MethodResolve (go.PointerType State) "patch"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5") in
@@ -5034,9 +5034,9 @@ Definition State__PersistentVolumeClaimPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_g
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_core_v1.PersistentVolumeClaim) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) UntypedNil, ![go.error] "err")
     else do:  #());;;
-    return: (TypeAssert (go.PointerType api_core_v1.PersistentVolumeClaim) (![go.InterfaceType []] "obj"), Convert go.untyped_nil go.error UntypedNil)).
+    return: (TypeAssert (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) (![go.InterfaceType []] "obj"), Convert go.untyped_nil go.error UntypedNil)).
 
 (* ReplicaSetPatch applies a patch to the named object, optionally to its status subresource.
 
@@ -5046,7 +5046,7 @@ Definition State__ReplicaSetPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
     let: "subresources" := (GoAlloc (go.SliceType go.string) "subresources") in
     let: "data" := (GoAlloc (go.SliceType go.byte) "data") in
-    let: "patchType" := (GoAlloc types.PatchType "patchType") in
+    let: "patchType" := (GoAlloc code.k8s_io.apimachinery.pkg.types.types.PatchType "patchType") in
     let: "name" := (GoAlloc go.string "name") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
@@ -5054,7 +5054,7 @@ Definition State__ReplicaSetPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
     let: ("$ret0", "$ret1") := (let: "$a0" := #"ReplicaSet"%go in
     let: "$a1" := (![go.string] "namespace") in
     let: "$a2" := (![go.string] "name") in
-    let: "$a3" := (![types.PatchType] "patchType") in
+    let: "$a3" := (![code.k8s_io.apimachinery.pkg.types.types.PatchType] "patchType") in
     let: "$a4" := (![go.SliceType go.byte] "data") in
     let: "$a5" := (![go.SliceType go.string] "subresources") in
     (MethodResolve (go.PointerType State) "patch"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5") in
@@ -5063,9 +5063,9 @@ Definition State__ReplicaSetPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSet) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) UntypedNil, ![go.error] "err")
     else do:  #());;;
-    return: (TypeAssert (go.PointerType api_apps_v1.ReplicaSet) (![go.InterfaceType []] "obj"), Convert go.untyped_nil go.error UntypedNil)).
+    return: (TypeAssert (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (![go.InterfaceType []] "obj"), Convert go.untyped_nil go.error UntypedNil)).
 
 (* StatefulSetPatch applies a patch to the named object, optionally to its status subresource.
 
@@ -5075,7 +5075,7 @@ Definition State__StatefulSetPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
     let: "subresources" := (GoAlloc (go.SliceType go.string) "subresources") in
     let: "data" := (GoAlloc (go.SliceType go.byte) "data") in
-    let: "patchType" := (GoAlloc types.PatchType "patchType") in
+    let: "patchType" := (GoAlloc code.k8s_io.apimachinery.pkg.types.types.PatchType "patchType") in
     let: "name" := (GoAlloc go.string "name") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
@@ -5083,7 +5083,7 @@ Definition State__StatefulSetPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
     let: ("$ret0", "$ret1") := (let: "$a0" := #"StatefulSet"%go in
     let: "$a1" := (![go.string] "namespace") in
     let: "$a2" := (![go.string] "name") in
-    let: "$a3" := (![types.PatchType] "patchType") in
+    let: "$a3" := (![code.k8s_io.apimachinery.pkg.types.types.PatchType] "patchType") in
     let: "$a4" := (![go.SliceType go.byte] "data") in
     let: "$a5" := (![go.SliceType go.string] "subresources") in
     (MethodResolve (go.PointerType State) "patch"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5") in
@@ -5092,9 +5092,9 @@ Definition State__StatefulSetPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.StatefulSet) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) UntypedNil, ![go.error] "err")
     else do:  #());;;
-    return: (TypeAssert (go.PointerType api_apps_v1.StatefulSet) (![go.InterfaceType []] "obj"), Convert go.untyped_nil go.error UntypedNil)).
+    return: (TypeAssert (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) (![go.InterfaceType []] "obj"), Convert go.untyped_nil go.error UntypedNil)).
 
 (* DeploymentPatch applies a patch to the named object, optionally to its status subresource.
 
@@ -5104,7 +5104,7 @@ Definition State__DeploymentPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
     let: "subresources" := (GoAlloc (go.SliceType go.string) "subresources") in
     let: "data" := (GoAlloc (go.SliceType go.byte) "data") in
-    let: "patchType" := (GoAlloc types.PatchType "patchType") in
+    let: "patchType" := (GoAlloc code.k8s_io.apimachinery.pkg.types.types.PatchType "patchType") in
     let: "name" := (GoAlloc go.string "name") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
@@ -5112,7 +5112,7 @@ Definition State__DeploymentPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
     let: ("$ret0", "$ret1") := (let: "$a0" := #"Deployment"%go in
     let: "$a1" := (![go.string] "namespace") in
     let: "$a2" := (![go.string] "name") in
-    let: "$a3" := (![types.PatchType] "patchType") in
+    let: "$a3" := (![code.k8s_io.apimachinery.pkg.types.types.PatchType] "patchType") in
     let: "$a4" := (![go.SliceType go.byte] "data") in
     let: "$a5" := (![go.SliceType go.string] "subresources") in
     (MethodResolve (go.PointerType State) "patch"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5") in
@@ -5121,9 +5121,9 @@ Definition State__DeploymentPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.Deployment) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) UntypedNil, ![go.error] "err")
     else do:  #());;;
-    return: (TypeAssert (go.PointerType api_apps_v1.Deployment) (![go.InterfaceType []] "obj"), Convert go.untyped_nil go.error UntypedNil)).
+    return: (TypeAssert (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) (![go.InterfaceType []] "obj"), Convert go.untyped_nil go.error UntypedNil)).
 
 (* ServiceAccountPatch applies a patch to the named object, optionally to its status subresource.
 
@@ -5133,7 +5133,7 @@ Definition State__ServiceAccountPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : G
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
     let: "subresources" := (GoAlloc (go.SliceType go.string) "subresources") in
     let: "data" := (GoAlloc (go.SliceType go.byte) "data") in
-    let: "patchType" := (GoAlloc types.PatchType "patchType") in
+    let: "patchType" := (GoAlloc code.k8s_io.apimachinery.pkg.types.types.PatchType "patchType") in
     let: "name" := (GoAlloc go.string "name") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
@@ -5141,7 +5141,7 @@ Definition State__ServiceAccountPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : G
     let: ("$ret0", "$ret1") := (let: "$a0" := #"ServiceAccount"%go in
     let: "$a1" := (![go.string] "namespace") in
     let: "$a2" := (![go.string] "name") in
-    let: "$a3" := (![types.PatchType] "patchType") in
+    let: "$a3" := (![code.k8s_io.apimachinery.pkg.types.types.PatchType] "patchType") in
     let: "$a4" := (![go.SliceType go.byte] "data") in
     let: "$a5" := (![go.SliceType go.string] "subresources") in
     (MethodResolve (go.PointerType State) "patch"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5") in
@@ -5150,9 +5150,9 @@ Definition State__ServiceAccountPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : G
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_core_v1.ServiceAccount) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount) UntypedNil, ![go.error] "err")
     else do:  #());;;
-    return: (TypeAssert (go.PointerType api_core_v1.ServiceAccount) (![go.InterfaceType []] "obj"), Convert go.untyped_nil go.error UntypedNil)).
+    return: (TypeAssert (go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount) (![go.InterfaceType []] "obj"), Convert go.untyped_nil go.error UntypedNil)).
 
 (* ClusterRolePatch applies a patch to the named object, optionally to its status subresource.
 
@@ -5162,14 +5162,14 @@ Definition State__ClusterRolePatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
     let: "subresources" := (GoAlloc (go.SliceType go.string) "subresources") in
     let: "data" := (GoAlloc (go.SliceType go.byte) "data") in
-    let: "patchType" := (GoAlloc types.PatchType "patchType") in
+    let: "patchType" := (GoAlloc code.k8s_io.apimachinery.pkg.types.types.PatchType "patchType") in
     let: "name" := (GoAlloc go.string "name") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"ClusterRole"%go in
     let: "$a1" := #""%go in
     let: "$a2" := (![go.string] "name") in
-    let: "$a3" := (![types.PatchType] "patchType") in
+    let: "$a3" := (![code.k8s_io.apimachinery.pkg.types.types.PatchType] "patchType") in
     let: "$a4" := (![go.SliceType go.byte] "data") in
     let: "$a5" := (![go.SliceType go.string] "subresources") in
     (MethodResolve (go.PointerType State) "patch"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2" "$a3" "$a4" "$a5") in
@@ -5178,44 +5178,44 @@ Definition State__ClusterRolePatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_rbac_v1.ClusterRole) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) UntypedNil, ![go.error] "err")
     else do:  #());;;
-    return: (TypeAssert (go.PointerType api_rbac_v1.ClusterRole) (![go.InterfaceType []] "obj"), Convert go.untyped_nil go.error UntypedNil)).
+    return: (TypeAssert (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) (![go.InterfaceType []] "obj"), Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: transaction.go:15:6 *)
 Definition preconditionUIDMismatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "options" "metadata",
-    exception_do (let: "metadata" := (GoAlloc apis_meta_v1.Object "metadata") in
-    let: "options" := (GoAlloc apis_meta_v1.DeleteOptions "options") in
-    return: ((((![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go "options")) ≠⟨go.PointerType apis_meta_v1.Preconditions⟩ (Convert go.untyped_nil (go.PointerType apis_meta_v1.Preconditions) UntypedNil)) && ((![go.PointerType types.UID] (StructFieldRef apis_meta_v1.Preconditions "UID"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go "options")))) ≠⟨go.PointerType types.UID⟩ (Convert go.untyped_nil (go.PointerType types.UID) UntypedNil))) && ((![types.UID] (![go.PointerType types.UID] (StructFieldRef apis_meta_v1.Preconditions "UID"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go "options"))))) ≠⟨types.UID⟩ ((MethodResolve apis_meta_v1.Object "GetUID"%go (![apis_meta_v1.Object] "metadata")) #())))).
+    exception_do (let: "metadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "metadata") in
+    let: "options" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "options") in
+    return: ((((![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "Preconditions"%go "options")) ≠⟨go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions) UntypedNil)) && ((![go.PointerType code.k8s_io.apimachinery.pkg.types.types.UID] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions "UID"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "Preconditions"%go "options")))) ≠⟨go.PointerType code.k8s_io.apimachinery.pkg.types.types.UID⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.types.types.UID) UntypedNil))) && ((![code.k8s_io.apimachinery.pkg.types.types.UID] (![go.PointerType code.k8s_io.apimachinery.pkg.types.types.UID] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions "UID"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "Preconditions"%go "options"))))) ≠⟨code.k8s_io.apimachinery.pkg.types.types.UID⟩ ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetUID"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #())))).
 
 (* go: transaction.go:19:6 *)
 Definition setPreconditionResourceVersionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "options" "metadata",
-    exception_do (let: "metadata" := (GoAlloc apis_meta_v1.Object "metadata") in
-    let: "options" := (GoAlloc (go.PointerType apis_meta_v1.DeleteOptions) "options") in
+    exception_do (let: "metadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "metadata") in
+    let: "options" := (GoAlloc (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions) "options") in
     let: "rv" := (GoAlloc go.string (GoZeroVal go.string #())) in
-    let: "$r0" := ((MethodResolve apis_meta_v1.Object "GetResourceVersion"%go (![apis_meta_v1.Object] "metadata")) #()) in
+    let: "$r0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetResourceVersion"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
     do:  ("rv" <-[go.string] "$r0");;;
-    (if: Convert go.untyped_bool go.bool ((![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options"))) =⟨go.PointerType apis_meta_v1.Preconditions⟩ (Convert go.untyped_nil (go.PointerType apis_meta_v1.Preconditions) UntypedNil))
+    (if: Convert go.untyped_bool go.bool ((![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "Preconditions"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options"))) =⟨go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions) UntypedNil))
     then
-      let: "$r0" := (GoAlloc apis_meta_v1.Preconditions (CompositeLiteral apis_meta_v1.Preconditions (LiteralValue []))) in
-      do:  ((StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options")) <-[go.PointerType apis_meta_v1.Preconditions] "$r0")
+      let: "$r0" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions (CompositeLiteral code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions (LiteralValue []))) in
+      do:  ((StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "Preconditions"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options")) <-[go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions] "$r0")
     else do:  #());;;
     let: "$r0" := "rv" in
-    do:  ((StructFieldRef apis_meta_v1.Preconditions "ResourceVersion"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go (![go.PointerType apis_meta_v1.DeleteOptions] "options")))) <-[go.PointerType go.string] "$r0");;;
+    do:  ((StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions "ResourceVersion"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "Preconditions"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options")))) <-[go.PointerType go.string] "$r0");;;
     return: #()).
 
 (* go: transaction.go:27:17 *)
 Definition State__deleteTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "key" "options",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "options" := (GoAlloc apis_meta_v1.DeleteOptions "options") in
+    let: "options" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "options") in
     let: "key" := (GoAlloc KKey "key") in
     (for: (λ: <>, #true); (λ: <>, #()) := λ: <>,
-      let: "optionsCopy" := (GoAlloc apis_meta_v1.DeleteOptions (GoZeroVal apis_meta_v1.DeleteOptions #())) in
-      let: "$r0" := (![apis_meta_v1.DeleteOptions] ((MethodResolve (go.PointerType apis_meta_v1.DeleteOptions) "DeepCopy"%go "options") #())) in
-      do:  ("optionsCopy" <-[apis_meta_v1.DeleteOptions] "$r0");;;
+      let: "optionsCopy" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions #())) in
+      let: "$r0" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] ((MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions) "DeepCopy"%go "options") #())) in
+      do:  ("optionsCopy" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "$r0");;;
       let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
       let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
       let: ("$ret0", "$ret1") := (let: "$a0" := (![KKey] "key") in
@@ -5227,43 +5227,43 @@ Definition State__deleteTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then return: (![go.error] "err")
       else do:  #());;;
-      let: "metadata" := (GoAlloc apis_meta_v1.Object (GoZeroVal apis_meta_v1.Object #())) in
+      let: "metadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object #())) in
       let: ("$ret0", "$ret1") := (let: "$a0" := (![go.InterfaceType []] "obj") in
-      (FuncResolve meta.Accessor [] #()) "$a0") in
+      (FuncResolve code.k8s_io.apimachinery.pkg.api.meta.meta.Accessor [] #()) "$a0") in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
-      do:  ("metadata" <-[apis_meta_v1.Object] "$r0");;;
+      do:  ("metadata" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "$r0");;;
       do:  ("err" <-[go.error] "$r1");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then
         return: (let: "$a0" := #"failed to access object metadata: %w"%go in
          let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
          CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+         (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
       else do:  #());;;
-      (if: let: "$a0" := (![apis_meta_v1.DeleteOptions] "optionsCopy") in
-      let: "$a1" := (![apis_meta_v1.Object] "metadata") in
+      (if: let: "$a0" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "optionsCopy") in
+      let: "$a1" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata") in
       (FuncResolve preconditionUIDMismatch [] #()) "$a0" "$a1"
       then
-        return: (Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] (StructFieldRef KKey "Kind"%go "key")) in
-         CompositeLiteral schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
-         let: "$a1" := ((MethodResolve apis_meta_v1.Object "GetName"%go (![apis_meta_v1.Object] "metadata")) #()) in
+        return: (Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$v0" := (![go.string] (StructFieldRef KKey "Kind"%go "key")) in
+         CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupResource (LiteralValue [KeyedElement (Some (KeyField "Resource"%go)) (ElementExpression go.string "$v0")])) in
+         let: "$a1" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetName"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
          let: "$a2" := (let: "$a0" := #"the UID in the precondition (%s) does not match the UID in record (%s). The object might have been deleted and then recreated"%go in
-         let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![types.UID] (![go.PointerType types.UID] (StructFieldRef apis_meta_v1.Preconditions "UID"%go (![go.PointerType apis_meta_v1.Preconditions] (StructFieldRef apis_meta_v1.DeleteOptions "Preconditions"%go "optionsCopy")))))) in
-         let: "$sl1" := (Convert go.string go.any ((MethodResolve apis_meta_v1.Object "GetUID"%go (![apis_meta_v1.Object] "metadata")) #())) in
+         let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![code.k8s_io.apimachinery.pkg.types.types.UID] (![go.PointerType code.k8s_io.apimachinery.pkg.types.types.UID] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions "UID"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "Preconditions"%go "optionsCopy")))))) in
+         let: "$sl1" := (Convert go.string go.any ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetUID"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #())) in
          CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1") in
-         (FuncResolve errors.NewConflict [] #()) "$a0" "$a1" "$a2"))
+         (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1") in
+         (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewConflict [] #()) "$a0" "$a1" "$a2"))
       else do:  #());;;
       do:  (let: "$a0" := "optionsCopy" in
-      let: "$a1" := (![apis_meta_v1.Object] "metadata") in
+      let: "$a1" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata") in
       (FuncResolve setPreconditionResourceVersion [] #()) "$a0" "$a1");;;
       let: "$r0" := (let: "$a0" := (![KKey] "key") in
-      let: "$a1" := (![apis_meta_v1.DeleteOptions] "optionsCopy") in
+      let: "$a1" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "optionsCopy") in
       (MethodResolve (go.PointerType State) "delete"%go (![go.PointerType State] "s")) "$a0" "$a1") in
       do:  ("err" <-[go.error] "$r0");;;
       (if: let: "$a0" := (![go.error] "err") in
-      (FuncResolve errors.IsConflict [] #()) "$a0"
+      (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.IsConflict [] #()) "$a0"
       then continue: #()
       else do:  #());;;
       return: (![go.error] "err"))).
@@ -5281,37 +5281,37 @@ Definition State__updateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
       (FuncResolve deepCopy [] #()) "$a0") in
       do:  ("objCopy" <-[go.InterfaceType []] "$r0");;;
       let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-      let: "metadata" := (GoAlloc apis_meta_v1.Object (GoZeroVal apis_meta_v1.Object #())) in
+      let: "metadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object #())) in
       let: ("$ret0", "$ret1") := (let: "$a0" := (![go.InterfaceType []] "objCopy") in
-      (FuncResolve meta.Accessor [] #()) "$a0") in
+      (FuncResolve code.k8s_io.apimachinery.pkg.api.meta.meta.Accessor [] #()) "$a0") in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
-      do:  ("metadata" <-[apis_meta_v1.Object] "$r0");;;
+      do:  ("metadata" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "$r0");;;
       do:  ("err" <-[go.error] "$r1");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then
         return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, let: "$a0" := #"failed to access object metadata: %w"%go in
          let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
          CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+         (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
       else do:  #());;;
       (let: "$r0" := (let: "$a0" := (![go.string] "namespace") in
-      let: "$a1" := (![apis_meta_v1.Object] "metadata") in
-      (FuncResolve rest.EnsureObjectNamespaceMatchesRequestNamespace [] #()) "$a0" "$a1") in
+      let: "$a1" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata") in
+      (FuncResolve code.k8s_io.apiserver.pkg.registry.rest.rest.EnsureObjectNamespaceMatchesRequestNamespace [] #()) "$a0" "$a1") in
       do:  ("err" <-[go.error] "$r0");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, ![go.error] "err")
       else do:  #()));;;
       let: "name" := (GoAlloc go.string (GoZeroVal go.string #())) in
-      let: "$r0" := ((MethodResolve apis_meta_v1.Object "GetName"%go (![apis_meta_v1.Object] "metadata")) #()) in
+      let: "$r0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetName"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
       do:  ("name" <-[go.string] "$r0");;;
       (if: Convert go.untyped_bool go.bool ((![go.string] "name") =⟨go.string⟩ #""%go)
       then
-        return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"object of kind %q must specify a name for update"%go in
+        return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"object of kind %q must specify a name for update"%go in
          let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "kind")) in
          CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-         (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1") in
-         (FuncResolve errors.NewBadRequest [] #()) "$a0"))
+         (FuncResolve code.fmt.fmt.Sprintf [] #()) "$a0" "$a1") in
+         (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewBadRequest [] #()) "$a0"))
       else do:  #());;;
       let: "key" := (GoAlloc KKey (GoZeroVal KKey #())) in
       let: "$r0" := (let: "$v0" := (![go.string] "kind") in
@@ -5329,22 +5329,22 @@ Definition State__updateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, ![go.error] "err")
       else do:  #());;;
-      let: "existingMetadata" := (GoAlloc apis_meta_v1.Object (GoZeroVal apis_meta_v1.Object #())) in
+      let: "existingMetadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object #())) in
       let: ("$ret0", "$ret1") := (let: "$a0" := (![go.InterfaceType []] "existingObj") in
-      (FuncResolve meta.Accessor [] #()) "$a0") in
+      (FuncResolve code.k8s_io.apimachinery.pkg.api.meta.meta.Accessor [] #()) "$a0") in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
-      do:  ("existingMetadata" <-[apis_meta_v1.Object] "$r0");;;
+      do:  ("existingMetadata" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "$r0");;;
       do:  ("err" <-[go.error] "$r1");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then
         return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, let: "$a0" := #"failed to access existing object metadata: %w"%go in
          let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
          CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+         (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
       else do:  #());;;
-      do:  (let: "$a0" := ((MethodResolve apis_meta_v1.Object "GetResourceVersion"%go (![apis_meta_v1.Object] "existingMetadata")) #()) in
-      (MethodResolve apis_meta_v1.Object "SetResourceVersion"%go (![apis_meta_v1.Object] "metadata")) "$a0");;;
+      do:  (let: "$a0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetResourceVersion"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "existingMetadata")) #()) in
+      (MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "SetResourceVersion"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) "$a0");;;
       let: "updatedObj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
       let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] "kind") in
       let: "$a1" := (![go.string] "namespace") in
@@ -5355,7 +5355,7 @@ Definition State__updateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
       do:  ("updatedObj" <-[go.InterfaceType []] "$r0");;;
       do:  ("err" <-[go.error] "$r1");;;
       (if: let: "$a0" := (![go.error] "err") in
-      (FuncResolve errors.IsConflict [] #()) "$a0"
+      (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.IsConflict [] #()) "$a0"
       then continue: #()
       else do:  #());;;
       return: (![go.InterfaceType []] "updatedObj", ![go.error] "err"))).
@@ -5364,71 +5364,71 @@ Definition State__updateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
 Definition State__PodUpdateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "pod",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "pod" := (GoAlloc (go.PointerType api_core_v1.Pod) "pod") in
+    let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "pod") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"Pod"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (Convert (go.PointerType api_core_v1.Pod) (go.InterfaceType []) (![go.PointerType api_core_v1.Pod] "pod")) in
+    let: "$a2" := (Convert (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod")) in
     (MethodResolve (go.PointerType State) "updateTx"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_core_v1.Pod) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.Pod) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "updatedPod" := (GoAlloc (go.PointerType api_core_v1.Pod) (GoZeroVal (go.PointerType api_core_v1.Pod) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_core_v1.Pod) (![go.InterfaceType []] "obj")) in
+    let: "updatedPod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.Pod) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("updatedPod" <-[go.PointerType api_core_v1.Pod] "$r0");;;
+    do:  ("updatedPod" <-[go.PointerType code.k8s_io.api.core.v1.v1.Pod] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_core_v1.Pod) UntypedNil, let: "$a0" := #"transactional update returned unexpected type %T"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.Pod) UntypedNil, let: "$a0" := #"transactional update returned unexpected type %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_core_v1.Pod] "updatedPod", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "updatedPod", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: transaction.go:117:17 *)
 Definition State__ReplicaSetUpdateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
+    let: "rs" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) "rs") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"ReplicaSet"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (Convert (go.PointerType api_apps_v1.ReplicaSet) (go.InterfaceType []) (![go.PointerType api_apps_v1.ReplicaSet] "rs")) in
+    let: "$a2" := (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "rs")) in
     (MethodResolve (go.PointerType State) "updateTx"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSet) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "updatedRS" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) (GoZeroVal (go.PointerType api_apps_v1.ReplicaSet) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.ReplicaSet) (![go.InterfaceType []] "obj")) in
+    let: "updatedRS" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("updatedRS" <-[go.PointerType api_apps_v1.ReplicaSet] "$r0");;;
+    do:  ("updatedRS" <-[go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSet) UntypedNil, let: "$a0" := #"transactional update returned unexpected type %T"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) UntypedNil, let: "$a0" := #"transactional update returned unexpected type %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_apps_v1.ReplicaSet] "updatedRS", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "updatedRS", Convert go.untyped_nil go.error UntypedNil)).
 
 (* go: transaction.go:131:17 *)
 Definition State__updateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
@@ -5443,37 +5443,37 @@ Definition State__updateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
       (FuncResolve deepCopy [] #()) "$a0") in
       do:  ("objCopy" <-[go.InterfaceType []] "$r0");;;
       let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-      let: "metadata" := (GoAlloc apis_meta_v1.Object (GoZeroVal apis_meta_v1.Object #())) in
+      let: "metadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object #())) in
       let: ("$ret0", "$ret1") := (let: "$a0" := (![go.InterfaceType []] "objCopy") in
-      (FuncResolve meta.Accessor [] #()) "$a0") in
+      (FuncResolve code.k8s_io.apimachinery.pkg.api.meta.meta.Accessor [] #()) "$a0") in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
-      do:  ("metadata" <-[apis_meta_v1.Object] "$r0");;;
+      do:  ("metadata" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "$r0");;;
       do:  ("err" <-[go.error] "$r1");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then
         return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, let: "$a0" := #"failed to access object metadata: %w"%go in
          let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
          CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+         (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
       else do:  #());;;
       (let: "$r0" := (let: "$a0" := (![go.string] "namespace") in
-      let: "$a1" := (![apis_meta_v1.Object] "metadata") in
-      (FuncResolve rest.EnsureObjectNamespaceMatchesRequestNamespace [] #()) "$a0" "$a1") in
+      let: "$a1" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata") in
+      (FuncResolve code.k8s_io.apiserver.pkg.registry.rest.rest.EnsureObjectNamespaceMatchesRequestNamespace [] #()) "$a0" "$a1") in
       do:  ("err" <-[go.error] "$r0");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, ![go.error] "err")
       else do:  #()));;;
       let: "name" := (GoAlloc go.string (GoZeroVal go.string #())) in
-      let: "$r0" := ((MethodResolve apis_meta_v1.Object "GetName"%go (![apis_meta_v1.Object] "metadata")) #()) in
+      let: "$r0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetName"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #()) in
       do:  ("name" <-[go.string] "$r0");;;
       (if: Convert go.untyped_bool go.bool ((![go.string] "name") =⟨go.string⟩ #""%go)
       then
-        return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"object of kind %q must specify a name for status update"%go in
+        return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, Convert (go.PointerType code.k8s_io.apimachinery.pkg.api.errors.errors.StatusError) go.error (let: "$a0" := (let: "$a0" := #"object of kind %q must specify a name for status update"%go in
          let: "$a1" := ((let: "$sl0" := (Convert go.string go.any (![go.string] "kind")) in
          CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-         (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1") in
-         (FuncResolve errors.NewBadRequest [] #()) "$a0"))
+         (FuncResolve code.fmt.fmt.Sprintf [] #()) "$a0" "$a1") in
+         (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.NewBadRequest [] #()) "$a0"))
       else do:  #());;;
       let: "key" := (GoAlloc KKey (GoZeroVal KKey #())) in
       let: "$r0" := (let: "$v0" := (![go.string] "kind") in
@@ -5491,22 +5491,22 @@ Definition State__updateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, ![go.error] "err")
       else do:  #());;;
-      let: "existingMetadata" := (GoAlloc apis_meta_v1.Object (GoZeroVal apis_meta_v1.Object #())) in
+      let: "existingMetadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object #())) in
       let: ("$ret0", "$ret1") := (let: "$a0" := (![go.InterfaceType []] "existingObj") in
-      (FuncResolve meta.Accessor [] #()) "$a0") in
+      (FuncResolve code.k8s_io.apimachinery.pkg.api.meta.meta.Accessor [] #()) "$a0") in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
-      do:  ("existingMetadata" <-[apis_meta_v1.Object] "$r0");;;
+      do:  ("existingMetadata" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "$r0");;;
       do:  ("err" <-[go.error] "$r1");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then
         return: (Convert go.untyped_nil (go.InterfaceType []) UntypedNil, let: "$a0" := #"failed to access existing object metadata: %w"%go in
          let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] "err")) in
          CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-         (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+         (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
       else do:  #());;;
-      do:  (let: "$a0" := ((MethodResolve apis_meta_v1.Object "GetResourceVersion"%go (![apis_meta_v1.Object] "existingMetadata")) #()) in
-      (MethodResolve apis_meta_v1.Object "SetResourceVersion"%go (![apis_meta_v1.Object] "metadata")) "$a0");;;
+      do:  (let: "$a0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetResourceVersion"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "existingMetadata")) #()) in
+      (MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "SetResourceVersion"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) "$a0");;;
       let: "updatedObj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
       let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] "kind") in
       let: "$a1" := (![go.string] "namespace") in
@@ -5517,7 +5517,7 @@ Definition State__updateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
       do:  ("updatedObj" <-[go.InterfaceType []] "$r0");;;
       do:  ("err" <-[go.error] "$r1");;;
       (if: let: "$a0" := (![go.error] "err") in
-      (FuncResolve errors.IsConflict [] #()) "$a0"
+      (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.IsConflict [] #()) "$a0"
       then continue: #()
       else do:  #());;;
       return: (![go.InterfaceType []] "updatedObj", ![go.error] "err"))).
@@ -5526,36 +5526,36 @@ Definition State__updateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
 Definition State__ReplicaSetUpdateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    let: "rs" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) "rs") in
+    let: "rs" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) "rs") in
     let: "namespace" := (GoAlloc go.string "namespace") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := #"ReplicaSet"%go in
     let: "$a1" := (![go.string] "namespace") in
-    let: "$a2" := (Convert (go.PointerType api_apps_v1.ReplicaSet) (go.InterfaceType []) (![go.PointerType api_apps_v1.ReplicaSet] "rs")) in
+    let: "$a2" := (Convert (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "rs")) in
     (MethodResolve (go.PointerType State) "updateStatusTx"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("obj" <-[go.InterfaceType []] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-    then return: (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSet) UntypedNil, ![go.error] "err")
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) UntypedNil, ![go.error] "err")
     else do:  #());;;
     let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "updatedRS" := (GoAlloc (go.PointerType api_apps_v1.ReplicaSet) (GoZeroVal (go.PointerType api_apps_v1.ReplicaSet) #())) in
-    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType api_apps_v1.ReplicaSet) (![go.InterfaceType []] "obj")) in
+    let: "updatedRS" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (![go.InterfaceType []] "obj")) in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("updatedRS" <-[go.PointerType api_apps_v1.ReplicaSet] "$r0");;;
+    do:  ("updatedRS" <-[go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "$r0");;;
     do:  ("ok" <-[go.bool] "$r1");;;
     (if: (⟨go.bool⟩! (![go.bool] "ok"))
     then
-      return: (Convert go.untyped_nil (go.PointerType api_apps_v1.ReplicaSet) UntypedNil, let: "$a0" := #"transactional status update returned unexpected type %T"%go in
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) UntypedNil, let: "$a0" := #"transactional status update returned unexpected type %T"%go in
        let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    return: (![go.PointerType api_apps_v1.ReplicaSet] "updatedRS", Convert go.untyped_nil go.error UntypedNil)).
+    return: (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "updatedRS", Convert go.untyped_nil go.error UntypedNil)).
 
 #[global] Instance info' : PkgInfo pkg_id.apimodel :=
 {|
@@ -5566,51 +5566,51 @@ Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.apimodel (λ: <>,
       exception_do (do:  (go.GlobalAlloc ModelState (go.PointerType State) #());;;
-      do:  (strategicpatch.initialize' #());;;
-      do:  (mergepatch.initialize' #());;;
-      do:  (jsonpatch.initialize' #());;;
-      do:  (http.initialize' #());;;
-      do:  (json.initialize' #());;;
-      do:  (rbac_install.initialize' #());;;
-      do:  (apps_install.initialize' #());;;
-      do:  (clusterrole.initialize' #());;;
-      do:  (serviceaccount.initialize' #());;;
-      do:  (pod.initialize' #());;;
-      do:  (persistentvolumeclaim.initialize' #());;;
-      do:  (statefulset.initialize' #());;;
-      do:  (replicaset.initialize' #());;;
-      do:  (deployment.initialize' #());;;
-      do:  (controller.initialize' #());;;
-      do:  (rbac.initialize' #());;;
-      do:  (apis_core_v1.initialize' #());;;
-      do:  (core.initialize' #());;;
-      do:  (apis_apps_v1.initialize' #());;;
-      do:  (apps.initialize' #());;;
-      do:  (legacyscheme.initialize' #());;;
-      do:  (rest.initialize' #());;;
-      do:  (registry.initialize' #());;;
-      do:  (request.initialize' #());;;
-      do:  (field.initialize' #());;;
-      do:  (uuid.initialize' #());;;
-      do:  (types.initialize' #());;;
-      do:  (schema.initialize' #());;;
-      do:  (runtime.initialize' #());;;
-      do:  (labels.initialize' #());;;
-      do:  (v1_validation.initialize' #());;;
-      do:  (apis_meta_v1.initialize' #());;;
-      do:  (api_validation.initialize' #());;;
-      do:  (meta.initialize' #());;;
-      do:  (errors.initialize' #());;;
-      do:  (api_rbac_v1.initialize' #());;;
-      do:  (api_core_v1.initialize' #());;;
-      do:  (api_apps_v1.initialize' #());;;
-      do:  (time.initialize' #());;;
-      do:  (sync.initialize' #());;;
-      do:  (strconv.initialize' #());;;
-      do:  (reflect.initialize' #());;;
-      do:  (rand.initialize' #());;;
-      do:  (fmt.initialize' #());;;
-      do:  (context.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.util.strategicpatch.strategicpatch.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.util.mergepatch.mergepatch.initialize' #());;;
+      do:  (code.gopkg_in.evanphx.json_patch_v4.jsonpatch.initialize' #());;;
+      do:  (code.net.http.http.initialize' #());;;
+      do:  (code.encoding.json.json.initialize' #());;;
+      do:  (code.k8s_io.kubernetes.pkg.apis.rbac.install.install.initialize' #());;;
+      do:  (code.k8s_io.kubernetes.pkg.apis.apps.install.install.initialize' #());;;
+      do:  (code.k8s_io.kubernetes.pkg.registry.rbac.clusterrole.clusterrole.initialize' #());;;
+      do:  (code.k8s_io.kubernetes.pkg.registry.core.serviceaccount.serviceaccount.initialize' #());;;
+      do:  (code.k8s_io.kubernetes.pkg.registry.core.pod.pod.initialize' #());;;
+      do:  (code.k8s_io.kubernetes.pkg.registry.core.persistentvolumeclaim.persistentvolumeclaim.initialize' #());;;
+      do:  (code.k8s_io.kubernetes.pkg.registry.apps.statefulset.statefulset.initialize' #());;;
+      do:  (code.k8s_io.kubernetes.pkg.registry.apps.replicaset.replicaset.initialize' #());;;
+      do:  (code.k8s_io.kubernetes.pkg.registry.apps.deployment.deployment.initialize' #());;;
+      do:  (code.k8s_io.kubernetes.pkg.controller.controller.initialize' #());;;
+      do:  (code.k8s_io.kubernetes.pkg.apis.rbac.rbac.initialize' #());;;
+      do:  (code.k8s_io.kubernetes.pkg.apis.core.v1.v1.initialize' #());;;
+      do:  (code.k8s_io.kubernetes.pkg.apis.core.core.initialize' #());;;
+      do:  (code.k8s_io.kubernetes.pkg.apis.apps.v1.v1.initialize' #());;;
+      do:  (code.k8s_io.kubernetes.pkg.apis.apps.apps.initialize' #());;;
+      do:  (code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme.initialize' #());;;
+      do:  (code.k8s_io.apiserver.pkg.registry.rest.rest.initialize' #());;;
+      do:  (code.k8s_io.apiserver.pkg.registry.generic.registry.registry.initialize' #());;;
+      do:  (code.k8s_io.apiserver.pkg.endpoints.request.request.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.util.validation.field.field.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.util.uuid.uuid.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.types.types.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.runtime.schema.schema.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.runtime.runtime.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.labels.labels.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.apis.meta.v1.validation.validation.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.api.validation.validation.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.api.meta.meta.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.api.errors.errors.initialize' #());;;
+      do:  (code.k8s_io.api.rbac.v1.v1.initialize' #());;;
+      do:  (code.k8s_io.api.core.v1.v1.initialize' #());;;
+      do:  (code.k8s_io.api.apps.v1.v1.initialize' #());;;
+      do:  (code.time.time.initialize' #());;;
+      do:  (code.sync.sync.initialize' #());;;
+      do:  (code.strconv.strconv.initialize' #());;;
+      do:  (code.reflect.reflect.initialize' #());;;
+      do:  (code.math.rand.rand.initialize' #());;;
+      do:  (code.fmt.fmt.initialize' #());;;
+      do:  (code.context.context.initialize' #());;;
       let: "$r0" := ((FuncResolve NewState [] #()) #()) in
       do:  ((GlobalVarAddr ModelState #()) <-[go.PointerType State] "$r0"))
       ).
@@ -5635,14 +5635,14 @@ End State.
 
 Definition State'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
   (go.FieldDecl "m"%go (go.MapType KKey (go.InterfaceType [])));
-  (go.FieldDecl "usedUID"%go (go.MapType types.UID (go.StructType [
+  (go.FieldDecl "usedUID"%go (go.MapType code.k8s_io.apimachinery.pkg.types.types.UID (go.StructType [
 
   ])));
   (go.FieldDecl "usedRV"%go (go.MapType go.string (go.StructType [
 
   ])));
   (go.FieldDecl "resourceVersionCounter"%go go.int64);
-  (go.FieldDecl "mu"%go (go.PointerType sync.Mutex))
+  (go.FieldDecl "mu"%go (go.PointerType code.sync.sync.Mutex))
 ].
 Program Definition State'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (State'fds_unsealed).
 Global Instance equals_unfold_State {ext : ffi_syntax} {go_gctx : GoGlobalContext} : State'fds =→ State'fds_unsealed.
@@ -5826,50 +5826,50 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] applyPatchToObject_unfold :: FuncUnfold applyPatchToObject [] (applyPatchToObjectⁱᵐᵖˡ);
   #[global] preconditionUIDMismatch_unfold :: FuncUnfold preconditionUIDMismatch [] (preconditionUIDMismatchⁱᵐᵖˡ);
   #[global] setPreconditionResourceVersion_unfold :: FuncUnfold setPreconditionResourceVersion [] (setPreconditionResourceVersionⁱᵐᵖˡ);
-  #[global] import_context_Assumption :: context.Assumptions;
-  #[global] import_fmt_Assumption :: fmt.Assumptions;
-  #[global] import_rand_Assumption :: rand.Assumptions;
-  #[global] import_reflect_Assumption :: reflect.Assumptions;
-  #[global] import_strconv_Assumption :: strconv.Assumptions;
-  #[global] import_sync_Assumption :: sync.Assumptions;
-  #[global] import_time_Assumption :: time.Assumptions;
-  #[global] import_api_apps_v1_Assumption :: api_apps_v1.Assumptions;
-  #[global] import_api_core_v1_Assumption :: api_core_v1.Assumptions;
-  #[global] import_api_rbac_v1_Assumption :: api_rbac_v1.Assumptions;
-  #[global] import_errors_Assumption :: errors.Assumptions;
-  #[global] import_meta_Assumption :: meta.Assumptions;
-  #[global] import_api_validation_Assumption :: api_validation.Assumptions;
-  #[global] import_apis_meta_v1_Assumption :: apis_meta_v1.Assumptions;
-  #[global] import_v1_validation_Assumption :: v1_validation.Assumptions;
-  #[global] import_labels_Assumption :: labels.Assumptions;
-  #[global] import_runtime_Assumption :: runtime.Assumptions;
-  #[global] import_schema_Assumption :: schema.Assumptions;
-  #[global] import_types_Assumption :: types.Assumptions;
-  #[global] import_uuid_Assumption :: uuid.Assumptions;
-  #[global] import_field_Assumption :: field.Assumptions;
-  #[global] import_request_Assumption :: request.Assumptions;
-  #[global] import_registry_Assumption :: registry.Assumptions;
-  #[global] import_rest_Assumption :: rest.Assumptions;
-  #[global] import_legacyscheme_Assumption :: legacyscheme.Assumptions;
-  #[global] import_apps_Assumption :: apps.Assumptions;
-  #[global] import_apis_apps_v1_Assumption :: apis_apps_v1.Assumptions;
-  #[global] import_core_Assumption :: core.Assumptions;
-  #[global] import_apis_core_v1_Assumption :: apis_core_v1.Assumptions;
-  #[global] import_rbac_Assumption :: rbac.Assumptions;
-  #[global] import_controller_Assumption :: controller.Assumptions;
-  #[global] import_deployment_Assumption :: deployment.Assumptions;
-  #[global] import_replicaset_Assumption :: replicaset.Assumptions;
-  #[global] import_statefulset_Assumption :: statefulset.Assumptions;
-  #[global] import_persistentvolumeclaim_Assumption :: persistentvolumeclaim.Assumptions;
-  #[global] import_pod_Assumption :: pod.Assumptions;
-  #[global] import_serviceaccount_Assumption :: serviceaccount.Assumptions;
-  #[global] import_clusterrole_Assumption :: clusterrole.Assumptions;
-  #[global] import_apps_install_Assumption :: apps_install.Assumptions;
-  #[global] import_rbac_install_Assumption :: rbac_install.Assumptions;
-  #[global] import_json_Assumption :: json.Assumptions;
-  #[global] import_http_Assumption :: http.Assumptions;
-  #[global] import_jsonpatch_Assumption :: jsonpatch.Assumptions;
-  #[global] import_mergepatch_Assumption :: mergepatch.Assumptions;
-  #[global] import_strategicpatch_Assumption :: strategicpatch.Assumptions;
+  #[global] import_context_Assumption :: code.context.context.Assumptions;
+  #[global] import_fmt_Assumption :: code.fmt.fmt.Assumptions;
+  #[global] import_rand_Assumption :: code.math.rand.rand.Assumptions;
+  #[global] import_reflect_Assumption :: code.reflect.reflect.Assumptions;
+  #[global] import_strconv_Assumption :: code.strconv.strconv.Assumptions;
+  #[global] import_sync_Assumption :: code.sync.sync.Assumptions;
+  #[global] import_time_Assumption :: code.time.time.Assumptions;
+  #[global] import_api_apps_v1_Assumption :: code.k8s_io.api.apps.v1.v1.Assumptions;
+  #[global] import_api_core_v1_Assumption :: code.k8s_io.api.core.v1.v1.Assumptions;
+  #[global] import_api_rbac_v1_Assumption :: code.k8s_io.api.rbac.v1.v1.Assumptions;
+  #[global] import_errors_Assumption :: code.k8s_io.apimachinery.pkg.api.errors.errors.Assumptions;
+  #[global] import_meta_Assumption :: code.k8s_io.apimachinery.pkg.api.meta.meta.Assumptions;
+  #[global] import_api_validation_Assumption :: code.k8s_io.apimachinery.pkg.api.validation.validation.Assumptions;
+  #[global] import_apis_meta_v1_Assumption :: code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions;
+  #[global] import_v1_validation_Assumption :: code.k8s_io.apimachinery.pkg.apis.meta.v1.validation.validation.Assumptions;
+  #[global] import_labels_Assumption :: code.k8s_io.apimachinery.pkg.labels.labels.Assumptions;
+  #[global] import_runtime_Assumption :: code.k8s_io.apimachinery.pkg.runtime.runtime.Assumptions;
+  #[global] import_schema_Assumption :: code.k8s_io.apimachinery.pkg.runtime.schema.schema.Assumptions;
+  #[global] import_types_Assumption :: code.k8s_io.apimachinery.pkg.types.types.Assumptions;
+  #[global] import_uuid_Assumption :: code.k8s_io.apimachinery.pkg.util.uuid.uuid.Assumptions;
+  #[global] import_field_Assumption :: code.k8s_io.apimachinery.pkg.util.validation.field.field.Assumptions;
+  #[global] import_request_Assumption :: code.k8s_io.apiserver.pkg.endpoints.request.request.Assumptions;
+  #[global] import_registry_Assumption :: code.k8s_io.apiserver.pkg.registry.generic.registry.registry.Assumptions;
+  #[global] import_rest_Assumption :: code.k8s_io.apiserver.pkg.registry.rest.rest.Assumptions;
+  #[global] import_legacyscheme_Assumption :: code.k8s_io.kubernetes.pkg.api.legacyscheme.legacyscheme.Assumptions;
+  #[global] import_apps_Assumption :: code.k8s_io.kubernetes.pkg.apis.apps.apps.Assumptions;
+  #[global] import_apis_apps_v1_Assumption :: code.k8s_io.kubernetes.pkg.apis.apps.v1.v1.Assumptions;
+  #[global] import_core_Assumption :: code.k8s_io.kubernetes.pkg.apis.core.core.Assumptions;
+  #[global] import_apis_core_v1_Assumption :: code.k8s_io.kubernetes.pkg.apis.core.v1.v1.Assumptions;
+  #[global] import_rbac_Assumption :: code.k8s_io.kubernetes.pkg.apis.rbac.rbac.Assumptions;
+  #[global] import_controller_Assumption :: code.k8s_io.kubernetes.pkg.controller.controller.Assumptions;
+  #[global] import_deployment_Assumption :: code.k8s_io.kubernetes.pkg.registry.apps.deployment.deployment.Assumptions;
+  #[global] import_replicaset_Assumption :: code.k8s_io.kubernetes.pkg.registry.apps.replicaset.replicaset.Assumptions;
+  #[global] import_statefulset_Assumption :: code.k8s_io.kubernetes.pkg.registry.apps.statefulset.statefulset.Assumptions;
+  #[global] import_persistentvolumeclaim_Assumption :: code.k8s_io.kubernetes.pkg.registry.core.persistentvolumeclaim.persistentvolumeclaim.Assumptions;
+  #[global] import_pod_Assumption :: code.k8s_io.kubernetes.pkg.registry.core.pod.pod.Assumptions;
+  #[global] import_serviceaccount_Assumption :: code.k8s_io.kubernetes.pkg.registry.core.serviceaccount.serviceaccount.Assumptions;
+  #[global] import_clusterrole_Assumption :: code.k8s_io.kubernetes.pkg.registry.rbac.clusterrole.clusterrole.Assumptions;
+  #[global] import_apps_install_Assumption :: code.k8s_io.kubernetes.pkg.apis.apps.install.install.Assumptions;
+  #[global] import_rbac_install_Assumption :: code.k8s_io.kubernetes.pkg.apis.rbac.install.install.Assumptions;
+  #[global] import_json_Assumption :: code.encoding.json.json.Assumptions;
+  #[global] import_http_Assumption :: code.net.http.http.Assumptions;
+  #[global] import_jsonpatch_Assumption :: code.gopkg_in.evanphx.json_patch_v4.jsonpatch.Assumptions;
+  #[global] import_mergepatch_Assumption :: code.k8s_io.apimachinery.pkg.util.mergepatch.mergepatch.Assumptions;
+  #[global] import_strategicpatch_Assumption :: code.k8s_io.apimachinery.pkg.util.strategicpatch.strategicpatch.Assumptions;
 }.
 End apimodel.

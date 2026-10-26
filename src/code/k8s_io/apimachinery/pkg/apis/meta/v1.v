@@ -1033,12 +1033,12 @@ Definition GetControllerOfⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
     let: "$r0" := (![OwnerReference] (![go.PointerType OwnerReference] "ref")) in
     do:  ("cp" <-[OwnerReference] "$r0");;;
     let: "$r0" := (let: "$a0" := (![go.bool] (![go.PointerType go.bool] (StructFieldRef OwnerReference "Controller"%go (![go.PointerType OwnerReference] "ref")))) in
-    (FuncResolve ptr.To [go.bool] #()) "$a0") in
+    (FuncResolve code.k8s_io.utils.ptr.ptr.To [go.bool] #()) "$a0") in
     do:  ((StructFieldRef OwnerReference "Controller"%go "cp") <-[go.PointerType go.bool] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((![go.PointerType go.bool] (StructFieldRef OwnerReference "BlockOwnerDeletion"%go (![go.PointerType OwnerReference] "ref"))) ≠⟨go.PointerType go.bool⟩ (Convert go.untyped_nil (go.PointerType go.bool) UntypedNil))
     then
       let: "$r0" := (let: "$a0" := (![go.bool] (![go.PointerType go.bool] (StructFieldRef OwnerReference "BlockOwnerDeletion"%go (![go.PointerType OwnerReference] "ref")))) in
-      (FuncResolve ptr.To [go.bool] #()) "$a0") in
+      (FuncResolve code.k8s_io.utils.ptr.ptr.To [go.bool] #()) "$a0") in
       do:  ((StructFieldRef OwnerReference "BlockOwnerDeletion"%go "cp") <-[go.PointerType go.bool] "$r0")
     else do:  #());;;
     return: ("cp")).
@@ -1066,17 +1066,17 @@ Definition GetControllerOfNoCopyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
    go: controller_ref.go:59:6 *)
 Definition NewControllerRefⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "owner" "gvk",
-    exception_do (let: "gvk" := (GoAlloc schema.GroupVersionKind "gvk") in
+    exception_do (let: "gvk" := (GoAlloc code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersionKind "gvk") in
     let: "owner" := (GoAlloc Object "owner") in
-    return: (GoAlloc OwnerReference (let: "$v0" := ((MethodResolve schema.GroupVersion "String"%go ((MethodResolve (go.PointerType schema.GroupVersionKind) "GroupVersion"%go "gvk") #())) #()) in
-     let: "$v1" := (![go.string] (StructFieldRef schema.GroupVersionKind "Kind"%go "gvk")) in
+    return: (GoAlloc OwnerReference (let: "$v0" := ((MethodResolve code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersion "String"%go ((MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersionKind) "GroupVersion"%go "gvk") #())) #()) in
+     let: "$v1" := (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersionKind "Kind"%go "gvk")) in
      let: "$v2" := ((MethodResolve Object "GetName"%go (![Object] "owner")) #()) in
      let: "$v3" := ((MethodResolve Object "GetUID"%go (![Object] "owner")) #()) in
      let: "$v4" := (let: "$a0" := #true in
-     (FuncResolve ptr.To [go.bool] #()) "$a0") in
+     (FuncResolve code.k8s_io.utils.ptr.ptr.To [go.bool] #()) "$a0") in
      let: "$v5" := (let: "$a0" := #true in
-     (FuncResolve ptr.To [go.bool] #()) "$a0") in
-     CompositeLiteral OwnerReference (LiteralValue [KeyedElement (Some (KeyField "APIVersion"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v1"); KeyedElement (Some (KeyField "Name"%go)) (ElementExpression go.string "$v2"); KeyedElement (Some (KeyField "UID"%go)) (ElementExpression types.UID "$v3"); KeyedElement (Some (KeyField "BlockOwnerDeletion"%go)) (ElementExpression (go.PointerType go.bool) "$v4"); KeyedElement (Some (KeyField "Controller"%go)) (ElementExpression (go.PointerType go.bool) "$v5")])))).
+     (FuncResolve code.k8s_io.utils.ptr.ptr.To [go.bool] #()) "$a0") in
+     CompositeLiteral OwnerReference (LiteralValue [KeyedElement (Some (KeyField "APIVersion"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v1"); KeyedElement (Some (KeyField "Name"%go)) (ElementExpression go.string "$v2"); KeyedElement (Some (KeyField "UID"%go)) (ElementExpression code.k8s_io.apimachinery.pkg.types.types.UID "$v3"); KeyedElement (Some (KeyField "BlockOwnerDeletion"%go)) (ElementExpression (go.PointerType go.bool) "$v4"); KeyedElement (Some (KeyField "Controller"%go)) (ElementExpression (go.PointerType go.bool) "$v5")])))).
 
 (* LabelSelectorAsSelector converts the LabelSelector api type into a struct that implements
    labels.Selector
@@ -1087,18 +1087,18 @@ Definition LabelSelectorAsSelectorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
   λ: "ps",
     exception_do (let: "ps" := (GoAlloc (go.PointerType LabelSelector) "ps") in
     (if: Convert go.untyped_bool go.bool ((![go.PointerType LabelSelector] "ps") =⟨go.PointerType LabelSelector⟩ (Convert go.untyped_nil (go.PointerType LabelSelector) UntypedNil))
-    then return: ((FuncResolve labels.Nothing [] #()) #(), Convert go.untyped_nil go.error UntypedNil)
+    then return: ((FuncResolve code.k8s_io.apimachinery.pkg.labels.labels.Nothing [] #()) #(), Convert go.untyped_nil go.error UntypedNil)
     else do:  #());;;
     (if: Convert go.untyped_bool go.bool (((let: "$a0" := (![go.MapType go.string go.string] (StructFieldRef LabelSelector "MatchLabels"%go (![go.PointerType LabelSelector] "ps"))) in
     (FuncResolve go.len [go.MapType go.string go.string] #()) "$a0") +⟨go.int⟩ (let: "$a0" := (![go.SliceType LabelSelectorRequirement] (StructFieldRef LabelSelector "MatchExpressions"%go (![go.PointerType LabelSelector] "ps"))) in
     (FuncResolve go.len [go.SliceType LabelSelectorRequirement] #()) "$a0")) =⟨go.int⟩ #(W64 0))
-    then return: ((FuncResolve labels.Everything [] #()) #(), Convert go.untyped_nil go.error UntypedNil)
+    then return: ((FuncResolve code.k8s_io.apimachinery.pkg.labels.labels.Everything [] #()) #(), Convert go.untyped_nil go.error UntypedNil)
     else do:  #());;;
-    let: "requirements" := (GoAlloc (go.SliceType labels.Requirement) (GoZeroVal (go.SliceType labels.Requirement) #())) in
-    let: "$r0" := ((FuncResolve go.make3 [go.SliceType labels.Requirement] #()) #(W64 0) ((let: "$a0" := (![go.MapType go.string go.string] (StructFieldRef LabelSelector "MatchLabels"%go (![go.PointerType LabelSelector] "ps"))) in
+    let: "requirements" := (GoAlloc (go.SliceType code.k8s_io.apimachinery.pkg.labels.labels.Requirement) (GoZeroVal (go.SliceType code.k8s_io.apimachinery.pkg.labels.labels.Requirement) #())) in
+    let: "$r0" := ((FuncResolve go.make3 [go.SliceType code.k8s_io.apimachinery.pkg.labels.labels.Requirement] #()) #(W64 0) ((let: "$a0" := (![go.MapType go.string go.string] (StructFieldRef LabelSelector "MatchLabels"%go (![go.PointerType LabelSelector] "ps"))) in
     (FuncResolve go.len [go.MapType go.string go.string] #()) "$a0") +⟨go.int⟩ (let: "$a0" := (![go.SliceType LabelSelectorRequirement] (StructFieldRef LabelSelector "MatchExpressions"%go (![go.PointerType LabelSelector] "ps"))) in
     (FuncResolve go.len [go.SliceType LabelSelectorRequirement] #()) "$a0"))) in
-    do:  ("requirements" <-[go.SliceType labels.Requirement] "$r0");;;
+    do:  ("requirements" <-[go.SliceType code.k8s_io.apimachinery.pkg.labels.labels.Requirement] "$r0");;;
     let: "$range" := (![go.MapType go.string go.string] (StructFieldRef LabelSelector "MatchLabels"%go (![go.PointerType LabelSelector] "ps"))) in
     (let: "v" := (GoAlloc go.string (GoZeroVal go.string #())) in
     let: "k" := (GoAlloc go.string (GoZeroVal go.string #())) in
@@ -1106,84 +1106,84 @@ Definition LabelSelectorAsSelectorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
       do:  ("v" <-[go.string] "$value");;;
       do:  ("k" <-[go.string] "$key");;;
       let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-      let: "r" := (GoAlloc (go.PointerType labels.Requirement) (GoZeroVal (go.PointerType labels.Requirement) #())) in
+      let: "r" := (GoAlloc (go.PointerType code.k8s_io.apimachinery.pkg.labels.labels.Requirement) (GoZeroVal (go.PointerType code.k8s_io.apimachinery.pkg.labels.labels.Requirement) #())) in
       let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] "k") in
-      let: "$a1" := selection.Equals in
+      let: "$a1" := code.k8s_io.apimachinery.pkg.selection.selection.Equals in
       let: "$a2" := (let: "$v0" := (![go.string] "v") in
       CompositeLiteral (go.SliceType go.string) (LiteralValue [KeyedElement None (ElementExpression go.string "$v0")])) in
       let: "$a3" := #slice.nil in
-      (FuncResolve labels.NewRequirement [] #()) "$a0" "$a1" "$a2" "$a3") in
+      (FuncResolve code.k8s_io.apimachinery.pkg.labels.labels.NewRequirement [] #()) "$a0" "$a1" "$a2" "$a3") in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
-      do:  ("r" <-[go.PointerType labels.Requirement] "$r0");;;
+      do:  ("r" <-[go.PointerType code.k8s_io.apimachinery.pkg.labels.labels.Requirement] "$r0");;;
       do:  ("err" <-[go.error] "$r1");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-      then return: (Convert go.untyped_nil labels.Selector UntypedNil, ![go.error] "err")
+      then return: (Convert go.untyped_nil code.k8s_io.apimachinery.pkg.labels.labels.Selector UntypedNil, ![go.error] "err")
       else do:  #());;;
-      let: "$r0" := (let: "$a0" := (![go.SliceType labels.Requirement] "requirements") in
-      let: "$a1" := ((let: "$sl0" := (![labels.Requirement] (![go.PointerType labels.Requirement] "r")) in
-      CompositeLiteral (go.SliceType labels.Requirement) (LiteralValue [KeyedElement None (ElementExpression labels.Requirement "$sl0")]))) in
-      (FuncResolve go.append [go.SliceType labels.Requirement] #()) "$a0" "$a1") in
-      do:  ("requirements" <-[go.SliceType labels.Requirement] "$r0")));;;
+      let: "$r0" := (let: "$a0" := (![go.SliceType code.k8s_io.apimachinery.pkg.labels.labels.Requirement] "requirements") in
+      let: "$a1" := ((let: "$sl0" := (![code.k8s_io.apimachinery.pkg.labels.labels.Requirement] (![go.PointerType code.k8s_io.apimachinery.pkg.labels.labels.Requirement] "r")) in
+      CompositeLiteral (go.SliceType code.k8s_io.apimachinery.pkg.labels.labels.Requirement) (LiteralValue [KeyedElement None (ElementExpression code.k8s_io.apimachinery.pkg.labels.labels.Requirement "$sl0")]))) in
+      (FuncResolve go.append [go.SliceType code.k8s_io.apimachinery.pkg.labels.labels.Requirement] #()) "$a0" "$a1") in
+      do:  ("requirements" <-[go.SliceType code.k8s_io.apimachinery.pkg.labels.labels.Requirement] "$r0")));;;
     let: "$range" := (![go.SliceType LabelSelectorRequirement] (StructFieldRef LabelSelector "MatchExpressions"%go (![go.PointerType LabelSelector] "ps"))) in
     (let: "expr" := (GoAlloc LabelSelectorRequirement (GoZeroVal LabelSelectorRequirement #())) in
     slice.for_range LabelSelectorRequirement "$range" (λ: "$key" "$value",
       do:  ("expr" <-[LabelSelectorRequirement] "$value");;;
       do:  "$key";;;
-      let: "op" := (GoAlloc selection.Operator (GoZeroVal selection.Operator #())) in
+      let: "op" := (GoAlloc code.k8s_io.apimachinery.pkg.selection.selection.Operator (GoZeroVal code.k8s_io.apimachinery.pkg.selection.selection.Operator #())) in
       let: "$sw" := (![LabelSelectorOperator] (StructFieldRef LabelSelectorRequirement "Operator"%go "expr")) in
       (if: "$sw" =⟨LabelSelectorOperator⟩ LabelSelectorOpIn
       then
-        let: "$r0" := selection.In in
-        do:  ("op" <-[selection.Operator] "$r0")
+        let: "$r0" := code.k8s_io.apimachinery.pkg.selection.selection.In in
+        do:  ("op" <-[code.k8s_io.apimachinery.pkg.selection.selection.Operator] "$r0")
       else
         (if: "$sw" =⟨LabelSelectorOperator⟩ LabelSelectorOpNotIn
         then
-          let: "$r0" := selection.NotIn in
-          do:  ("op" <-[selection.Operator] "$r0")
+          let: "$r0" := code.k8s_io.apimachinery.pkg.selection.selection.NotIn in
+          do:  ("op" <-[code.k8s_io.apimachinery.pkg.selection.selection.Operator] "$r0")
         else
           (if: "$sw" =⟨LabelSelectorOperator⟩ LabelSelectorOpExists
           then
-            let: "$r0" := selection.Exists in
-            do:  ("op" <-[selection.Operator] "$r0")
+            let: "$r0" := code.k8s_io.apimachinery.pkg.selection.selection.Exists in
+            do:  ("op" <-[code.k8s_io.apimachinery.pkg.selection.selection.Operator] "$r0")
           else
             (if: "$sw" =⟨LabelSelectorOperator⟩ LabelSelectorOpDoesNotExist
             then
-              let: "$r0" := selection.DoesNotExist in
-              do:  ("op" <-[selection.Operator] "$r0")
+              let: "$r0" := code.k8s_io.apimachinery.pkg.selection.selection.DoesNotExist in
+              do:  ("op" <-[code.k8s_io.apimachinery.pkg.selection.selection.Operator] "$r0")
             else
-              return: (Convert go.untyped_nil labels.Selector UntypedNil, let: "$a0" := #"%q is not a valid label selector operator"%go in
+              return: (Convert go.untyped_nil code.k8s_io.apimachinery.pkg.labels.labels.Selector UntypedNil, let: "$a0" := #"%q is not a valid label selector operator"%go in
                let: "$a1" := ((let: "$sl0" := (Convert LabelSelectorOperator go.any (![LabelSelectorOperator] (StructFieldRef LabelSelectorRequirement "Operator"%go "expr"))) in
                CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-               (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")))));;;
+               (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")))));;;
       let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-      let: "r" := (GoAlloc (go.PointerType labels.Requirement) (GoZeroVal (go.PointerType labels.Requirement) #())) in
+      let: "r" := (GoAlloc (go.PointerType code.k8s_io.apimachinery.pkg.labels.labels.Requirement) (GoZeroVal (go.PointerType code.k8s_io.apimachinery.pkg.labels.labels.Requirement) #())) in
       let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] (StructFieldRef LabelSelectorRequirement "Key"%go "expr")) in
-      let: "$a1" := (![selection.Operator] "op") in
+      let: "$a1" := (![code.k8s_io.apimachinery.pkg.selection.selection.Operator] "op") in
       let: "$a2" := (let: "$a0" := (Convert go.untyped_nil (go.SliceType go.string) UntypedNil) in
       let: "$a1" := (![go.SliceType go.string] (StructFieldRef LabelSelectorRequirement "Values"%go "expr")) in
       (FuncResolve go.append [go.SliceType go.string] #()) "$a0" "$a1") in
       let: "$a3" := #slice.nil in
-      (FuncResolve labels.NewRequirement [] #()) "$a0" "$a1" "$a2" "$a3") in
+      (FuncResolve code.k8s_io.apimachinery.pkg.labels.labels.NewRequirement [] #()) "$a0" "$a1" "$a2" "$a3") in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
-      do:  ("r" <-[go.PointerType labels.Requirement] "$r0");;;
+      do:  ("r" <-[go.PointerType code.k8s_io.apimachinery.pkg.labels.labels.Requirement] "$r0");;;
       do:  ("err" <-[go.error] "$r1");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
-      then return: (Convert go.untyped_nil labels.Selector UntypedNil, ![go.error] "err")
+      then return: (Convert go.untyped_nil code.k8s_io.apimachinery.pkg.labels.labels.Selector UntypedNil, ![go.error] "err")
       else do:  #());;;
-      let: "$r0" := (let: "$a0" := (![go.SliceType labels.Requirement] "requirements") in
-      let: "$a1" := ((let: "$sl0" := (![labels.Requirement] (![go.PointerType labels.Requirement] "r")) in
-      CompositeLiteral (go.SliceType labels.Requirement) (LiteralValue [KeyedElement None (ElementExpression labels.Requirement "$sl0")]))) in
-      (FuncResolve go.append [go.SliceType labels.Requirement] #()) "$a0" "$a1") in
-      do:  ("requirements" <-[go.SliceType labels.Requirement] "$r0")));;;
-    let: "selector" := (GoAlloc labels.Selector (GoZeroVal labels.Selector #())) in
-    let: "$r0" := ((FuncResolve labels.NewSelector [] #()) #()) in
-    do:  ("selector" <-[labels.Selector] "$r0");;;
-    let: "$r0" := (let: "$a0" := (![go.SliceType labels.Requirement] "requirements") in
-    (MethodResolve labels.Selector "Add"%go (![labels.Selector] "selector")) "$a0") in
-    do:  ("selector" <-[labels.Selector] "$r0");;;
-    return: (![labels.Selector] "selector", Convert go.untyped_nil go.error UntypedNil)).
+      let: "$r0" := (let: "$a0" := (![go.SliceType code.k8s_io.apimachinery.pkg.labels.labels.Requirement] "requirements") in
+      let: "$a1" := ((let: "$sl0" := (![code.k8s_io.apimachinery.pkg.labels.labels.Requirement] (![go.PointerType code.k8s_io.apimachinery.pkg.labels.labels.Requirement] "r")) in
+      CompositeLiteral (go.SliceType code.k8s_io.apimachinery.pkg.labels.labels.Requirement) (LiteralValue [KeyedElement None (ElementExpression code.k8s_io.apimachinery.pkg.labels.labels.Requirement "$sl0")]))) in
+      (FuncResolve go.append [go.SliceType code.k8s_io.apimachinery.pkg.labels.labels.Requirement] #()) "$a0" "$a1") in
+      do:  ("requirements" <-[go.SliceType code.k8s_io.apimachinery.pkg.labels.labels.Requirement] "$r0")));;;
+    let: "selector" := (GoAlloc code.k8s_io.apimachinery.pkg.labels.labels.Selector (GoZeroVal code.k8s_io.apimachinery.pkg.labels.labels.Selector #())) in
+    let: "$r0" := ((FuncResolve code.k8s_io.apimachinery.pkg.labels.labels.NewSelector [] #()) #()) in
+    do:  ("selector" <-[code.k8s_io.apimachinery.pkg.labels.labels.Selector] "$r0");;;
+    let: "$r0" := (let: "$a0" := (![go.SliceType code.k8s_io.apimachinery.pkg.labels.labels.Requirement] "requirements") in
+    (MethodResolve code.k8s_io.apimachinery.pkg.labels.labels.Selector "Add"%go (![code.k8s_io.apimachinery.pkg.labels.labels.Selector] "selector")) "$a0") in
+    do:  ("selector" <-[code.k8s_io.apimachinery.pkg.labels.labels.Selector] "$r0");;;
+    return: (![code.k8s_io.apimachinery.pkg.labels.labels.Selector] "selector", Convert go.untyped_nil go.error UntypedNil)).
 
 (* Namespace implements metav1.Object for any object with an ObjectMeta typed field. Allows
    fast, direct access to metadata fields for API objects.
@@ -1237,15 +1237,15 @@ Definition ObjectMeta__SetGenerateNameⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
 Definition ObjectMeta__GetUIDⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "meta" <>,
     exception_do (let: "meta" := (GoAlloc (go.PointerType ObjectMeta) "meta") in
-    return: (![types.UID] (StructFieldRef ObjectMeta "UID"%go (![go.PointerType ObjectMeta] "meta")))).
+    return: (![code.k8s_io.apimachinery.pkg.types.types.UID] (StructFieldRef ObjectMeta "UID"%go (![go.PointerType ObjectMeta] "meta")))).
 
 (* go: meta.go:142:25 *)
 Definition ObjectMeta__SetUIDⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "meta" "uid",
     exception_do (let: "meta" := (GoAlloc (go.PointerType ObjectMeta) "meta") in
-    let: "uid" := (GoAlloc types.UID "uid") in
-    let: "$r0" := (![types.UID] "uid") in
-    do:  ((StructFieldRef ObjectMeta "UID"%go (![go.PointerType ObjectMeta] "meta")) <-[types.UID] "$r0");;;
+    let: "uid" := (GoAlloc code.k8s_io.apimachinery.pkg.types.types.UID "uid") in
+    let: "$r0" := (![code.k8s_io.apimachinery.pkg.types.types.UID] "uid") in
+    do:  ((StructFieldRef ObjectMeta "UID"%go (![go.PointerType ObjectMeta] "meta")) <-[code.k8s_io.apimachinery.pkg.types.types.UID] "$r0");;;
     return: #()).
 
 (* go: meta.go:143:25 *)
@@ -1418,17 +1418,17 @@ Definition ObjectMeta__SetManagedFieldsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx :
    go: time.go:45:6 *)
 Definition NewTimeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "time",
-    exception_do (let: "time" := (GoAlloc time.Time "time") in
-    return: (let: "$v0" := (![time.Time] "time") in
-     CompositeLiteral Time (LiteralValue [KeyedElement None (ElementExpression time.Time "$v0")]))).
+    exception_do (let: "time" := (GoAlloc code.time.time.Time "time") in
+    return: (let: "$v0" := (![code.time.time.Time] "time") in
+     CompositeLiteral Time (LiteralValue [KeyedElement None (ElementExpression code.time.time.Time "$v0")]))).
 
 (* Now returns the current local time.
 
    go: time.go:56:6 *)
 Definition Nowⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
-    exception_do (return: (let: "$v0" := ((FuncResolve time.Now [] #()) #()) in
-     CompositeLiteral Time (LiteralValue [KeyedElement None (ElementExpression time.Time "$v0")]))).
+    exception_do (return: (let: "$v0" := ((FuncResolve code.time.time.Now [] #()) #()) in
+     CompositeLiteral Time (LiteralValue [KeyedElement None (ElementExpression code.time.time.Time "$v0")]))).
 
 #[global] Instance info' : PkgInfo pkg_id.v1 :=
 {|
@@ -1440,13 +1440,13 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.v1 (λ: <>,
-      exception_do (do:  (selection.initialize' #());;;
-      do:  (time.initialize' #());;;
-      do:  (types.initialize' #());;;
-      do:  (labels.initialize' #());;;
-      do:  (fmt.initialize' #());;;
-      do:  (ptr.initialize' #());;;
-      do:  (schema.initialize' #());;;
+      exception_do (do:  (code.k8s_io.apimachinery.pkg.selection.selection.initialize' #());;;
+      do:  (code.time.time.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.types.types.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.labels.labels.initialize' #());;;
+      do:  (code.fmt.fmt.initialize' #());;;
+      do:  (code.k8s_io.utils.ptr.ptr.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.runtime.schema.schema.initialize' #());;;
       do:  (_'init #());;;
       do:  (_'init #());;;
       do:  (_'init #());;;
@@ -1627,7 +1627,7 @@ Definition t : Type := interface.t.
 End def.
 End Object.
 
-Definition Objectⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "GetAnnotations"%go (go.Signature [] false [go.MapType go.string go.string]); go.MethodElem "GetCreationTimestamp"%go (go.Signature [] false [Time]); go.MethodElem "GetDeletionGracePeriodSeconds"%go (go.Signature [] false [go.PointerType go.int64]); go.MethodElem "GetDeletionTimestamp"%go (go.Signature [] false [go.PointerType Time]); go.MethodElem "GetFinalizers"%go (go.Signature [] false [go.SliceType go.string]); go.MethodElem "GetGenerateName"%go (go.Signature [] false [go.string]); go.MethodElem "GetGeneration"%go (go.Signature [] false [go.int64]); go.MethodElem "GetLabels"%go (go.Signature [] false [go.MapType go.string go.string]); go.MethodElem "GetManagedFields"%go (go.Signature [] false [go.SliceType ManagedFieldsEntry]); go.MethodElem "GetName"%go (go.Signature [] false [go.string]); go.MethodElem "GetNamespace"%go (go.Signature [] false [go.string]); go.MethodElem "GetOwnerReferences"%go (go.Signature [] false [go.SliceType OwnerReference]); go.MethodElem "GetResourceVersion"%go (go.Signature [] false [go.string]); go.MethodElem "GetSelfLink"%go (go.Signature [] false [go.string]); go.MethodElem "GetUID"%go (go.Signature [] false [types.UID]); go.MethodElem "SetAnnotations"%go (go.Signature [go.MapType go.string go.string] false []); go.MethodElem "SetCreationTimestamp"%go (go.Signature [Time] false []); go.MethodElem "SetDeletionGracePeriodSeconds"%go (go.Signature [go.PointerType go.int64] false []); go.MethodElem "SetDeletionTimestamp"%go (go.Signature [go.PointerType Time] false []); go.MethodElem "SetFinalizers"%go (go.Signature [go.SliceType go.string] false []); go.MethodElem "SetGenerateName"%go (go.Signature [go.string] false []); go.MethodElem "SetGeneration"%go (go.Signature [go.int64] false []); go.MethodElem "SetLabels"%go (go.Signature [go.MapType go.string go.string] false []); go.MethodElem "SetManagedFields"%go (go.Signature [go.SliceType ManagedFieldsEntry] false []); go.MethodElem "SetName"%go (go.Signature [go.string] false []); go.MethodElem "SetNamespace"%go (go.Signature [go.string] false []); go.MethodElem "SetOwnerReferences"%go (go.Signature [go.SliceType OwnerReference] false []); go.MethodElem "SetResourceVersion"%go (go.Signature [go.string] false []); go.MethodElem "SetSelfLink"%go (go.Signature [go.string] false []); go.MethodElem "SetUID"%go (go.Signature [types.UID] false [])].
+Definition Objectⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "GetAnnotations"%go (go.Signature [] false [go.MapType go.string go.string]); go.MethodElem "GetCreationTimestamp"%go (go.Signature [] false [Time]); go.MethodElem "GetDeletionGracePeriodSeconds"%go (go.Signature [] false [go.PointerType go.int64]); go.MethodElem "GetDeletionTimestamp"%go (go.Signature [] false [go.PointerType Time]); go.MethodElem "GetFinalizers"%go (go.Signature [] false [go.SliceType go.string]); go.MethodElem "GetGenerateName"%go (go.Signature [] false [go.string]); go.MethodElem "GetGeneration"%go (go.Signature [] false [go.int64]); go.MethodElem "GetLabels"%go (go.Signature [] false [go.MapType go.string go.string]); go.MethodElem "GetManagedFields"%go (go.Signature [] false [go.SliceType ManagedFieldsEntry]); go.MethodElem "GetName"%go (go.Signature [] false [go.string]); go.MethodElem "GetNamespace"%go (go.Signature [] false [go.string]); go.MethodElem "GetOwnerReferences"%go (go.Signature [] false [go.SliceType OwnerReference]); go.MethodElem "GetResourceVersion"%go (go.Signature [] false [go.string]); go.MethodElem "GetSelfLink"%go (go.Signature [] false [go.string]); go.MethodElem "GetUID"%go (go.Signature [] false [code.k8s_io.apimachinery.pkg.types.types.UID]); go.MethodElem "SetAnnotations"%go (go.Signature [go.MapType go.string go.string] false []); go.MethodElem "SetCreationTimestamp"%go (go.Signature [Time] false []); go.MethodElem "SetDeletionGracePeriodSeconds"%go (go.Signature [go.PointerType go.int64] false []); go.MethodElem "SetDeletionTimestamp"%go (go.Signature [go.PointerType Time] false []); go.MethodElem "SetFinalizers"%go (go.Signature [go.SliceType go.string] false []); go.MethodElem "SetGenerateName"%go (go.Signature [go.string] false []); go.MethodElem "SetGeneration"%go (go.Signature [go.int64] false []); go.MethodElem "SetLabels"%go (go.Signature [go.MapType go.string go.string] false []); go.MethodElem "SetManagedFields"%go (go.Signature [go.SliceType ManagedFieldsEntry] false []); go.MethodElem "SetName"%go (go.Signature [go.string] false []); go.MethodElem "SetNamespace"%go (go.Signature [go.string] false []); go.MethodElem "SetOwnerReferences"%go (go.Signature [go.SliceType OwnerReference] false []); go.MethodElem "SetResourceVersion"%go (go.Signature [go.string] false []); go.MethodElem "SetSelfLink"%go (go.Signature [go.string] false []); go.MethodElem "SetUID"%go (go.Signature [code.k8s_io.apimachinery.pkg.types.types.UID] false [])].
 
 Class Object_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
@@ -1719,7 +1719,7 @@ Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Record t :=
 mk {
-  Time' : time.Time.t;
+  Time' : code.time.time.Time.t;
 }.
 
 #[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _)|}.
@@ -1729,7 +1729,7 @@ End def.
 End Time.
 
 Definition Time'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
-  (go.EmbeddedField "Time"%go time.Time)
+  (go.EmbeddedField "Time"%go code.time.time.Time)
 ].
 Program Definition Time'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (Time'fds_unsealed).
 Global Instance equals_unfold_Time {ext : ffi_syntax} {go_gctx : GoGlobalContext} : Time'fds =→ Time'fds_unsealed.
@@ -1743,8 +1743,8 @@ Class Time_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext}
   #[global] Time_underlying :: (Time) <u (Timeⁱᵐᵖˡ);
   #[global] Time_get_Time (x : Time.t) :: ⟦StructFieldGet (Timeⁱᵐᵖˡ) "Time", #x⟧ ⤳[under] #x.(Time.Time');
   #[global] Time_set_Time (x : Time.t) y :: ⟦StructFieldSet (Timeⁱᵐᵖˡ) "Time", (#x, #y)⟧ ⤳[under] #(x <|Time.Time' := y|>);
-  #[global] Time_Add_unfold :: MethodUnfold (Time) "Add" (λ: "$r", MethodResolve time.Time "Add" (StructFieldGet (Time) "Time" "$r" ))%V;
-  #[global] Time'ptr_Add_unfold :: MethodUnfold (go.PointerType (Time)) "Add" (λ: "$r", MethodResolve (go.PointerType time.Time) "Add" (StructFieldRef Time "Time"%go "$r"));
+  #[global] Time_Add_unfold :: MethodUnfold (Time) "Add" (λ: "$r", MethodResolve code.time.time.Time "Add" (StructFieldGet (Time) "Time" "$r" ))%V;
+  #[global] Time'ptr_Add_unfold :: MethodUnfold (go.PointerType (Time)) "Add" (λ: "$r", MethodResolve (go.PointerType code.time.time.Time) "Add" (StructFieldRef Time "Time"%go "$r"));
 }.
 
 Module Timestamp.
@@ -1823,7 +1823,7 @@ mk {
   GenerateName' : go_string;
   Namespace' : go_string;
   SelfLink' : go_string;
-  UID' : types.UID.t;
+  UID' : code.k8s_io.apimachinery.pkg.types.types.UID.t;
   ResourceVersion' : go_string;
   Generation' : w64;
   CreationTimestamp' : v1.Time.t;
@@ -1847,7 +1847,7 @@ Definition ObjectMeta'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext
   (go.FieldDecl "GenerateName"%go go.string);
   (go.FieldDecl "Namespace"%go go.string);
   (go.FieldDecl "SelfLink"%go go.string);
-  (go.FieldDecl "UID"%go types.UID);
+  (go.FieldDecl "UID"%go code.k8s_io.apimachinery.pkg.types.types.UID);
   (go.FieldDecl "ResourceVersion"%go go.string);
   (go.FieldDecl "Generation"%go go.int64);
   (go.FieldDecl "CreationTimestamp"%go Time);
@@ -1939,7 +1939,7 @@ mk {
   APIVersion' : go_string;
   Kind' : go_string;
   Name' : go_string;
-  UID' : types.UID.t;
+  UID' : code.k8s_io.apimachinery.pkg.types.types.UID.t;
   Controller' : loc;
   BlockOwnerDeletion' : loc;
 }.
@@ -1954,7 +1954,7 @@ Definition OwnerReference'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalCon
   (go.FieldDecl "APIVersion"%go go.string);
   (go.FieldDecl "Kind"%go go.string);
   (go.FieldDecl "Name"%go go.string);
-  (go.FieldDecl "UID"%go types.UID);
+  (go.FieldDecl "UID"%go code.k8s_io.apimachinery.pkg.types.types.UID);
   (go.FieldDecl "Controller"%go (go.PointerType go.bool));
   (go.FieldDecl "BlockOwnerDeletion"%go (go.PointerType go.bool))
 ].
@@ -2180,7 +2180,7 @@ End def.
 End Preconditions.
 
 Definition Preconditions'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
-  (go.FieldDecl "UID"%go (go.PointerType types.UID));
+  (go.FieldDecl "UID"%go (go.PointerType code.k8s_io.apimachinery.pkg.types.types.UID));
   (go.FieldDecl "ResourceVersion"%go (go.PointerType go.string))
 ].
 Program Definition Preconditions'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (Preconditions'fds_unsealed).
@@ -2959,12 +2959,12 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] LabelSelectorAsSelector_unfold :: FuncUnfold LabelSelectorAsSelector [] (LabelSelectorAsSelectorⁱᵐᵖˡ);
   #[global] NewTime_unfold :: FuncUnfold NewTime [] (NewTimeⁱᵐᵖˡ);
   #[global] Now_unfold :: FuncUnfold Now [] (Nowⁱᵐᵖˡ);
-  #[global] import_schema_Assumption :: schema.Assumptions;
-  #[global] import_ptr_Assumption :: ptr.Assumptions;
-  #[global] import_fmt_Assumption :: fmt.Assumptions;
-  #[global] import_labels_Assumption :: labels.Assumptions;
-  #[global] import_types_Assumption :: types.Assumptions;
-  #[global] import_time_Assumption :: time.Assumptions;
-  #[global] import_selection_Assumption :: selection.Assumptions;
+  #[global] import_schema_Assumption :: code.k8s_io.apimachinery.pkg.runtime.schema.schema.Assumptions;
+  #[global] import_ptr_Assumption :: code.k8s_io.utils.ptr.ptr.Assumptions;
+  #[global] import_fmt_Assumption :: code.fmt.fmt.Assumptions;
+  #[global] import_labels_Assumption :: code.k8s_io.apimachinery.pkg.labels.labels.Assumptions;
+  #[global] import_types_Assumption :: code.k8s_io.apimachinery.pkg.types.types.Assumptions;
+  #[global] import_time_Assumption :: code.time.time.Assumptions;
+  #[global] import_selection_Assumption :: code.k8s_io.apimachinery.pkg.selection.selection.Assumptions;
 }.
 End v1.

@@ -107,17 +107,17 @@ Proof.
       (fun v x => v <|(v1.StatefulSetSpec.Replicas') := x|>)
       (ltac:(tc_solve)) (ltac:(tc_solve));
     build_generated_struct_field
-      "Selector" (go.PointerType meta_v1.LabelSelector)
+      "Selector" (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector)
       (fun v => v.(v1.StatefulSetSpec.Selector'))
       (fun v x => v <|(v1.StatefulSetSpec.Selector') := x|>)
       (ltac:(tc_solve)) (ltac:(tc_solve));
     build_generated_struct_field
-      "Template" core_v1.PodTemplateSpec
+      "Template" code.k8s_io.api.core.v1.v1.PodTemplateSpec
       (fun v => v.(v1.StatefulSetSpec.Template'))
       (fun v x => v <|(v1.StatefulSetSpec.Template') := x|>)
       (ltac:(tc_solve)) (ltac:(tc_solve));
     build_generated_struct_field
-      "VolumeClaimTemplates" (go.SliceType core_v1.PersistentVolumeClaim)
+      "VolumeClaimTemplates" (go.SliceType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim)
       (fun v => v.(v1.StatefulSetSpec.VolumeClaimTemplates'))
       (fun v x => v <|(v1.StatefulSetSpec.VolumeClaimTemplates') := x|>)
       (ltac:(tc_solve)) (ltac:(tc_solve));

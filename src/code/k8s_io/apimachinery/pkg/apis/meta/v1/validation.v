@@ -96,57 +96,57 @@ Definition ValidateIgnoreStoreReadError {ext : ffi_syntax} {go_gctx : GoGlobalCo
 (* go: validation.go:157:6 *)
 Definition ValidateDeleteOptionsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "options",
-    exception_do (let: "options" := (GoAlloc (go.PointerType v1.DeleteOptions) "options") in
-    let: "allErrs" := (GoAlloc field.ErrorList (GoZeroVal field.ErrorList #())) in
-    let: "$r0" := (CompositeLiteral field.ErrorList (LiteralValue [])) in
-    do:  ("allErrs" <-[field.ErrorList] "$r0");;;
-    (if: Convert go.untyped_bool go.bool (((![go.PointerType go.bool] (StructFieldRef v1.DeleteOptions "OrphanDependents"%go (![go.PointerType v1.DeleteOptions] "options"))) ≠⟨go.PointerType go.bool⟩ (Convert go.untyped_nil (go.PointerType go.bool) UntypedNil)) && ((![go.PointerType v1.DeletionPropagation] (StructFieldRef v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType v1.DeleteOptions] "options"))) ≠⟨go.PointerType v1.DeletionPropagation⟩ (Convert go.untyped_nil (go.PointerType v1.DeletionPropagation) UntypedNil)))
+    exception_do (let: "options" := (GoAlloc (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions) "options") in
+    let: "allErrs" := (GoAlloc code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList (GoZeroVal code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList #())) in
+    let: "$r0" := (CompositeLiteral code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList (LiteralValue [])) in
+    do:  ("allErrs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0");;;
+    (if: Convert go.untyped_bool go.bool (((![go.PointerType go.bool] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "OrphanDependents"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options"))) ≠⟨go.PointerType go.bool⟩ (Convert go.untyped_nil (go.PointerType go.bool) UntypedNil)) && ((![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options"))) ≠⟨go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation) UntypedNil)))
     then
-      let: "$r0" := (let: "$a0" := (![field.ErrorList] "allErrs") in
+      let: "$r0" := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "allErrs") in
       let: "$a1" := ((let: "$sl0" := (let: "$a0" := (let: "$a0" := #"propagationPolicy"%go in
       let: "$a1" := #slice.nil in
-      (FuncResolve field.NewPath [] #()) "$a0" "$a1") in
-      let: "$a1" := (Convert (go.PointerType v1.DeletionPropagation) (go.InterfaceType []) (![go.PointerType v1.DeletionPropagation] (StructFieldRef v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType v1.DeleteOptions] "options")))) in
+      (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.NewPath [] #()) "$a0" "$a1") in
+      let: "$a1" := (Convert (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation) (go.InterfaceType []) (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options")))) in
       let: "$a2" := #"orphanDependents and deletionPropagation cannot be both set"%go in
-      (FuncResolve field.Invalid [] #()) "$a0" "$a1" "$a2") in
-      CompositeLiteral (go.SliceType (go.PointerType field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType field.Error) "$sl0")]))) in
-      (FuncResolve go.append [field.ErrorList] #()) "$a0" "$a1") in
-      do:  ("allErrs" <-[field.ErrorList] "$r0")
+      (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.Invalid [] #()) "$a0" "$a1" "$a2") in
+      CompositeLiteral (go.SliceType (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) "$sl0")]))) in
+      (FuncResolve go.append [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0" "$a1") in
+      do:  ("allErrs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0")
     else do:  #());;;
-    (if: Convert go.untyped_bool go.bool (((((![go.PointerType v1.DeletionPropagation] (StructFieldRef v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType v1.DeleteOptions] "options"))) ≠⟨go.PointerType v1.DeletionPropagation⟩ (Convert go.untyped_nil (go.PointerType v1.DeletionPropagation) UntypedNil)) && ((![v1.DeletionPropagation] (![go.PointerType v1.DeletionPropagation] (StructFieldRef v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType v1.DeleteOptions] "options")))) ≠⟨v1.DeletionPropagation⟩ v1.DeletePropagationForeground)) && ((![v1.DeletionPropagation] (![go.PointerType v1.DeletionPropagation] (StructFieldRef v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType v1.DeleteOptions] "options")))) ≠⟨v1.DeletionPropagation⟩ v1.DeletePropagationBackground)) && ((![v1.DeletionPropagation] (![go.PointerType v1.DeletionPropagation] (StructFieldRef v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType v1.DeleteOptions] "options")))) ≠⟨v1.DeletionPropagation⟩ v1.DeletePropagationOrphan))
+    (if: Convert go.untyped_bool go.bool (((((![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options"))) ≠⟨go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation) UntypedNil)) && ((![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation] (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options")))) ≠⟨code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation⟩ code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletePropagationForeground)) && ((![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation] (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options")))) ≠⟨code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation⟩ code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletePropagationBackground)) && ((![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation] (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options")))) ≠⟨code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation⟩ code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletePropagationOrphan))
     then
-      let: "$r0" := (let: "$a0" := (![field.ErrorList] "allErrs") in
+      let: "$r0" := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "allErrs") in
       let: "$a1" := ((let: "$sl0" := (let: "$a0" := (let: "$a0" := #"propagationPolicy"%go in
       let: "$a1" := #slice.nil in
-      (FuncResolve field.NewPath [] #()) "$a0" "$a1") in
-      let: "$a1" := (Convert (go.PointerType v1.DeletionPropagation) (go.InterfaceType []) (![go.PointerType v1.DeletionPropagation] (StructFieldRef v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType v1.DeleteOptions] "options")))) in
-      let: "$a2" := (let: "$v0" := v1.DeletePropagationForeground in
-      let: "$v1" := v1.DeletePropagationBackground in
-      let: "$v2" := v1.DeletePropagationOrphan in
+      (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.NewPath [] #()) "$a0" "$a1") in
+      let: "$a1" := (Convert (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation) (go.InterfaceType []) (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options")))) in
+      let: "$a2" := (let: "$v0" := code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletePropagationForeground in
+      let: "$v1" := code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletePropagationBackground in
+      let: "$v2" := code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletePropagationOrphan in
       let: "$v3" := #"nil"%go in
       CompositeLiteral (go.SliceType go.string) (LiteralValue [KeyedElement None (ElementExpression go.string "$v0"); KeyedElement None (ElementExpression go.string "$v1"); KeyedElement None (ElementExpression go.string "$v2"); KeyedElement None (ElementExpression go.string "$v3")])) in
-      (FuncResolve field.NotSupported [go.string] #()) "$a0" "$a1" "$a2") in
-      CompositeLiteral (go.SliceType (go.PointerType field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType field.Error) "$sl0")]))) in
-      (FuncResolve go.append [field.ErrorList] #()) "$a0" "$a1") in
-      do:  ("allErrs" <-[field.ErrorList] "$r0")
+      (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.NotSupported [go.string] #()) "$a0" "$a1" "$a2") in
+      CompositeLiteral (go.SliceType (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) "$sl0")]))) in
+      (FuncResolve go.append [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0" "$a1") in
+      do:  ("allErrs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0")
     else do:  #());;;
-    let: "$r0" := (let: "$a0" := (![field.ErrorList] "allErrs") in
+    let: "$r0" := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "allErrs") in
     let: "$a1" := (let: "$a0" := (let: "$a0" := #"dryRun"%go in
     let: "$a1" := #slice.nil in
-    (FuncResolve field.NewPath [] #()) "$a0" "$a1") in
-    let: "$a1" := (![go.SliceType go.string] (StructFieldRef v1.DeleteOptions "DryRun"%go (![go.PointerType v1.DeleteOptions] "options"))) in
+    (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.NewPath [] #()) "$a0" "$a1") in
+    let: "$a1" := (![go.SliceType go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "DryRun"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options"))) in
     (FuncResolve ValidateDryRun [] #()) "$a0" "$a1") in
-    (FuncResolve go.append [field.ErrorList] #()) "$a0" "$a1") in
-    do:  ("allErrs" <-[field.ErrorList] "$r0");;;
-    let: "$r0" := (let: "$a0" := (![field.ErrorList] "allErrs") in
+    (FuncResolve go.append [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0" "$a1") in
+    do:  ("allErrs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0");;;
+    let: "$r0" := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "allErrs") in
     let: "$a1" := (let: "$a0" := (let: "$a0" := #"ignoreStoreReadErrorWithClusterBreakingPotential"%go in
     let: "$a1" := #slice.nil in
-    (FuncResolve field.NewPath [] #()) "$a0" "$a1") in
-    let: "$a1" := (![go.PointerType v1.DeleteOptions] "options") in
+    (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.NewPath [] #()) "$a0" "$a1") in
+    let: "$a1" := (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options") in
     (FuncResolve ValidateIgnoreStoreReadError [] #()) "$a0" "$a1") in
-    (FuncResolve go.append [field.ErrorList] #()) "$a0" "$a1") in
-    do:  ("allErrs" <-[field.ErrorList] "$r0");;;
-    return: (![field.ErrorList] "allErrs")).
+    (FuncResolve go.append [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0" "$a1") in
+    do:  ("allErrs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0");;;
+    return: (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "allErrs")).
 
 (* ValidateDryRun validates that a dryRun query param only contains allowed values.
 
@@ -154,23 +154,23 @@ Definition ValidateDeleteOptionsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
 Definition ValidateDryRunⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "fldPath" "dryRun",
     exception_do (let: "dryRun" := (GoAlloc (go.SliceType go.string) "dryRun") in
-    let: "fldPath" := (GoAlloc (go.PointerType field.Path) "fldPath") in
-    let: "allErrs" := (GoAlloc field.ErrorList (GoZeroVal field.ErrorList #())) in
-    let: "$r0" := (CompositeLiteral field.ErrorList (LiteralValue [])) in
-    do:  ("allErrs" <-[field.ErrorList] "$r0");;;
+    let: "fldPath" := (GoAlloc (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path) "fldPath") in
+    let: "allErrs" := (GoAlloc code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList (GoZeroVal code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList #())) in
+    let: "$r0" := (CompositeLiteral code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList (LiteralValue [])) in
+    do:  ("allErrs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0");;;
     (if: (⟨go.bool⟩! (let: "$a0" := (![go.SliceType go.string] "dryRun") in
-    (MethodResolve (go.PointerType sets.String) "HasAll"%go (GlobalVarAddr allowedDryRunValues #())) "$a0"))
+    (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.util.sets.sets.String) "HasAll"%go (GlobalVarAddr allowedDryRunValues #())) "$a0"))
     then
-      let: "$r0" := (let: "$a0" := (![field.ErrorList] "allErrs") in
-      let: "$a1" := ((let: "$sl0" := (let: "$a0" := (![go.PointerType field.Path] "fldPath") in
+      let: "$r0" := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "allErrs") in
+      let: "$a1" := ((let: "$sl0" := (let: "$a0" := (![go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path] "fldPath") in
       let: "$a1" := (Convert (go.SliceType go.string) (go.InterfaceType []) (![go.SliceType go.string] "dryRun")) in
-      let: "$a2" := ((MethodResolve (go.PointerType sets.String) "List"%go (GlobalVarAddr allowedDryRunValues #())) #()) in
-      (FuncResolve field.NotSupported [go.string] #()) "$a0" "$a1" "$a2") in
-      CompositeLiteral (go.SliceType (go.PointerType field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType field.Error) "$sl0")]))) in
-      (FuncResolve go.append [field.ErrorList] #()) "$a0" "$a1") in
-      do:  ("allErrs" <-[field.ErrorList] "$r0")
+      let: "$a2" := ((MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.util.sets.sets.String) "List"%go (GlobalVarAddr allowedDryRunValues #())) #()) in
+      (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.NotSupported [go.string] #()) "$a0" "$a1" "$a2") in
+      CompositeLiteral (go.SliceType (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) "$sl0")]))) in
+      (FuncResolve go.append [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0" "$a1") in
+      do:  ("allErrs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0")
     else do:  #());;;
-    return: (![field.ErrorList] "allErrs")).
+    return: (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "allErrs")).
 
 (* ValidateIgnoreStoreReadError validates that delete options are valid when
    ignoreStoreReadErrorWithClusterBreakingPotential is enabled
@@ -178,76 +178,76 @@ Definition ValidateDryRunⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
    go: validation.go:367:6 *)
 Definition ValidateIgnoreStoreReadErrorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "fldPath" "options",
-    exception_do (let: "options" := (GoAlloc (go.PointerType v1.DeleteOptions) "options") in
-    let: "fldPath" := (GoAlloc (go.PointerType field.Path) "fldPath") in
-    let: "allErrs" := (GoAlloc field.ErrorList (GoZeroVal field.ErrorList #())) in
-    let: "$r0" := (CompositeLiteral field.ErrorList (LiteralValue [])) in
-    do:  ("allErrs" <-[field.ErrorList] "$r0");;;
+    exception_do (let: "options" := (GoAlloc (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions) "options") in
+    let: "fldPath" := (GoAlloc (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path) "fldPath") in
+    let: "allErrs" := (GoAlloc code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList (GoZeroVal code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList #())) in
+    let: "$r0" := (CompositeLiteral code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList (LiteralValue [])) in
+    do:  ("allErrs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0");;;
     (let: "enabled" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
-    let: "$r0" := (let: "$a0" := (![go.PointerType go.bool] (StructFieldRef v1.DeleteOptions "IgnoreStoreReadErrorWithClusterBreakingPotential"%go (![go.PointerType v1.DeleteOptions] "options"))) in
+    let: "$r0" := (let: "$a0" := (![go.PointerType go.bool] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "IgnoreStoreReadErrorWithClusterBreakingPotential"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options"))) in
     let: "$a1" := #false in
-    (FuncResolve ptr.Deref [go.bool] #()) "$a0" "$a1") in
+    (FuncResolve code.k8s_io.utils.ptr.ptr.Deref [go.bool] #()) "$a0" "$a1") in
     do:  ("enabled" <-[go.bool] "$r0");;;
     (if: (⟨go.bool⟩! (![go.bool] "enabled"))
-    then return: (![field.ErrorList] "allErrs")
+    then return: (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "allErrs")
     else do:  #()));;;
-    (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![go.SliceType go.string] (StructFieldRef v1.DeleteOptions "DryRun"%go (![go.PointerType v1.DeleteOptions] "options"))) in
+    (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![go.SliceType go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "DryRun"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options"))) in
     (FuncResolve go.len [go.SliceType go.string] #()) "$a0") >⟨go.int⟩ #(W64 0))
     then
-      let: "$r0" := (let: "$a0" := (![field.ErrorList] "allErrs") in
-      let: "$a1" := ((let: "$sl0" := (let: "$a0" := (![go.PointerType field.Path] "fldPath") in
+      let: "$r0" := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "allErrs") in
+      let: "$a1" := ((let: "$sl0" := (let: "$a0" := (![go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path] "fldPath") in
       let: "$a1" := (Convert go.bool (go.InterfaceType []) #true) in
       let: "$a2" := #"cannot be set together with .dryRun"%go in
-      (FuncResolve field.Invalid [] #()) "$a0" "$a1" "$a2") in
-      CompositeLiteral (go.SliceType (go.PointerType field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType field.Error) "$sl0")]))) in
-      (FuncResolve go.append [field.ErrorList] #()) "$a0" "$a1") in
-      do:  ("allErrs" <-[field.ErrorList] "$r0")
+      (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.Invalid [] #()) "$a0" "$a1" "$a2") in
+      CompositeLiteral (go.SliceType (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) "$sl0")]))) in
+      (FuncResolve go.append [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0" "$a1") in
+      do:  ("allErrs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0")
     else do:  #());;;
-    (if: Convert go.untyped_bool go.bool ((![go.PointerType v1.DeletionPropagation] (StructFieldRef v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType v1.DeleteOptions] "options"))) ≠⟨go.PointerType v1.DeletionPropagation⟩ (Convert go.untyped_nil (go.PointerType v1.DeletionPropagation) UntypedNil))
+    (if: Convert go.untyped_bool go.bool ((![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "PropagationPolicy"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options"))) ≠⟨go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeletionPropagation) UntypedNil))
     then
-      let: "$r0" := (let: "$a0" := (![field.ErrorList] "allErrs") in
-      let: "$a1" := ((let: "$sl0" := (let: "$a0" := (![go.PointerType field.Path] "fldPath") in
+      let: "$r0" := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "allErrs") in
+      let: "$a1" := ((let: "$sl0" := (let: "$a0" := (![go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path] "fldPath") in
       let: "$a1" := (Convert go.bool (go.InterfaceType []) #true) in
       let: "$a2" := #"cannot be set together with .propagationPolicy"%go in
-      (FuncResolve field.Invalid [] #()) "$a0" "$a1" "$a2") in
-      CompositeLiteral (go.SliceType (go.PointerType field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType field.Error) "$sl0")]))) in
-      (FuncResolve go.append [field.ErrorList] #()) "$a0" "$a1") in
-      do:  ("allErrs" <-[field.ErrorList] "$r0")
+      (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.Invalid [] #()) "$a0" "$a1" "$a2") in
+      CompositeLiteral (go.SliceType (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) "$sl0")]))) in
+      (FuncResolve go.append [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0" "$a1") in
+      do:  ("allErrs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0")
     else do:  #());;;
-    (if: Convert go.untyped_bool go.bool ((![go.PointerType go.bool] (StructFieldRef v1.DeleteOptions "OrphanDependents"%go (![go.PointerType v1.DeleteOptions] "options"))) ≠⟨go.PointerType go.bool⟩ (Convert go.untyped_nil (go.PointerType go.bool) UntypedNil))
+    (if: Convert go.untyped_bool go.bool ((![go.PointerType go.bool] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "OrphanDependents"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options"))) ≠⟨go.PointerType go.bool⟩ (Convert go.untyped_nil (go.PointerType go.bool) UntypedNil))
     then
-      let: "$r0" := (let: "$a0" := (![field.ErrorList] "allErrs") in
-      let: "$a1" := ((let: "$sl0" := (let: "$a0" := (![go.PointerType field.Path] "fldPath") in
+      let: "$r0" := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "allErrs") in
+      let: "$a1" := ((let: "$sl0" := (let: "$a0" := (![go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path] "fldPath") in
       let: "$a1" := (Convert go.bool (go.InterfaceType []) #true) in
       let: "$a2" := #"cannot be set together with .orphanDependents"%go in
-      (FuncResolve field.Invalid [] #()) "$a0" "$a1" "$a2") in
-      CompositeLiteral (go.SliceType (go.PointerType field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType field.Error) "$sl0")]))) in
-      (FuncResolve go.append [field.ErrorList] #()) "$a0" "$a1") in
-      do:  ("allErrs" <-[field.ErrorList] "$r0")
+      (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.Invalid [] #()) "$a0" "$a1" "$a2") in
+      CompositeLiteral (go.SliceType (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) "$sl0")]))) in
+      (FuncResolve go.append [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0" "$a1") in
+      do:  ("allErrs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0")
     else do:  #());;;
-    (if: Convert go.untyped_bool go.bool ((![go.PointerType go.int64] (StructFieldRef v1.DeleteOptions "GracePeriodSeconds"%go (![go.PointerType v1.DeleteOptions] "options"))) ≠⟨go.PointerType go.int64⟩ (Convert go.untyped_nil (go.PointerType go.int64) UntypedNil))
+    (if: Convert go.untyped_bool go.bool ((![go.PointerType go.int64] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "GracePeriodSeconds"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options"))) ≠⟨go.PointerType go.int64⟩ (Convert go.untyped_nil (go.PointerType go.int64) UntypedNil))
     then
-      let: "$r0" := (let: "$a0" := (![field.ErrorList] "allErrs") in
-      let: "$a1" := ((let: "$sl0" := (let: "$a0" := (![go.PointerType field.Path] "fldPath") in
+      let: "$r0" := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "allErrs") in
+      let: "$a1" := ((let: "$sl0" := (let: "$a0" := (![go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path] "fldPath") in
       let: "$a1" := (Convert go.bool (go.InterfaceType []) #true) in
       let: "$a2" := #"cannot be set together with .gracePeriodSeconds"%go in
-      (FuncResolve field.Invalid [] #()) "$a0" "$a1" "$a2") in
-      CompositeLiteral (go.SliceType (go.PointerType field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType field.Error) "$sl0")]))) in
-      (FuncResolve go.append [field.ErrorList] #()) "$a0" "$a1") in
-      do:  ("allErrs" <-[field.ErrorList] "$r0")
+      (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.Invalid [] #()) "$a0" "$a1" "$a2") in
+      CompositeLiteral (go.SliceType (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) "$sl0")]))) in
+      (FuncResolve go.append [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0" "$a1") in
+      do:  ("allErrs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0")
     else do:  #());;;
-    (if: Convert go.untyped_bool go.bool ((![go.PointerType v1.Preconditions] (StructFieldRef v1.DeleteOptions "Preconditions"%go (![go.PointerType v1.DeleteOptions] "options"))) ≠⟨go.PointerType v1.Preconditions⟩ (Convert go.untyped_nil (go.PointerType v1.Preconditions) UntypedNil))
+    (if: Convert go.untyped_bool go.bool ((![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "Preconditions"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options"))) ≠⟨go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions) UntypedNil))
     then
-      let: "$r0" := (let: "$a0" := (![field.ErrorList] "allErrs") in
-      let: "$a1" := ((let: "$sl0" := (let: "$a0" := (![go.PointerType field.Path] "fldPath") in
+      let: "$r0" := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "allErrs") in
+      let: "$a1" := ((let: "$sl0" := (let: "$a0" := (![go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path] "fldPath") in
       let: "$a1" := (Convert go.bool (go.InterfaceType []) #true) in
       let: "$a2" := #"cannot be set together with .preconditions"%go in
-      (FuncResolve field.Invalid [] #()) "$a0" "$a1" "$a2") in
-      CompositeLiteral (go.SliceType (go.PointerType field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType field.Error) "$sl0")]))) in
-      (FuncResolve go.append [field.ErrorList] #()) "$a0" "$a1") in
-      do:  ("allErrs" <-[field.ErrorList] "$r0")
+      (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.Invalid [] #()) "$a0" "$a1" "$a2") in
+      CompositeLiteral (go.SliceType (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) "$sl0")]))) in
+      (FuncResolve go.append [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0" "$a1") in
+      do:  ("allErrs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0")
     else do:  #());;;
-    return: (![field.ErrorList] "allErrs")).
+    return: (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "allErrs")).
 
 #[global] Instance info' : PkgInfo pkg_id.validation :=
 {|
@@ -259,10 +259,10 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.validation (λ: <>,
-      exception_do (do:  (ptr.initialize' #());;;
-      do:  (field.initialize' #());;;
-      do:  (sets.initialize' #());;;
-      do:  (v1.initialize' #());;;
+      exception_do (do:  (code.k8s_io.utils.ptr.ptr.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.util.validation.field.field.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.util.sets.sets.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.initialize' #());;;
       do:  (FieldManagerMaxLength'init #());;;
       do:  (allowedDryRunValues'init #());;;
       do:  (allowedFieldValidationValues'init #());;;
@@ -309,9 +309,9 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] ValidateDeleteOptions_unfold :: FuncUnfold ValidateDeleteOptions [] (ValidateDeleteOptionsⁱᵐᵖˡ);
   #[global] ValidateDryRun_unfold :: FuncUnfold ValidateDryRun [] (ValidateDryRunⁱᵐᵖˡ);
   #[global] ValidateIgnoreStoreReadError_unfold :: FuncUnfold ValidateIgnoreStoreReadError [] (ValidateIgnoreStoreReadErrorⁱᵐᵖˡ);
-  #[global] import_v1_Assumption :: v1.Assumptions;
-  #[global] import_sets_Assumption :: sets.Assumptions;
-  #[global] import_field_Assumption :: field.Assumptions;
-  #[global] import_ptr_Assumption :: ptr.Assumptions;
+  #[global] import_v1_Assumption :: code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions;
+  #[global] import_sets_Assumption :: code.k8s_io.apimachinery.pkg.util.sets.sets.Assumptions;
+  #[global] import_field_Assumption :: code.k8s_io.apimachinery.pkg.util.validation.field.field.Assumptions;
+  #[global] import_ptr_Assumption :: code.k8s_io.utils.ptr.ptr.Assumptions;
 }.
 End validation.

@@ -342,7 +342,7 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.features (λ: <>,
-      exception_do (do:  (featuregate.initialize' #());;;
+      exception_do (do:  (code.k8s_io.component_base.featuregate.featuregate.initialize' #());;;
       do:  (_'init #());;;
       do:  (_'init #());;;
       do:  (defaultVersionedKubernetesFeatureGates'init #()))
@@ -367,6 +367,6 @@ Class clientAdapter_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLoca
 Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] clientAdapter_instance :: clientAdapter_Assumptions;
-  #[global] import_featuregate_Assumption :: featuregate.Assumptions;
+  #[global] import_featuregate_Assumption :: code.k8s_io.component_base.featuregate.featuregate.Assumptions;
 }.
 End features.

@@ -448,9 +448,9 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.rest (λ: <>,
-      exception_do (do:  (flowcontrol.initialize' #());;;
-      do:  (types.initialize' #());;;
-      do:  (schema.initialize' #());;;
+      exception_do (do:  (code.k8s_io.client_go.util.flowcontrol.flowcontrol.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.types.types.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.runtime.schema.schema.initialize' #());;;
       do:  (ErrNotInCluster'init #());;;
       do:  (_'init #());;;
       do:  (_'init #());;;
@@ -483,7 +483,7 @@ Definition t : Type := interface.t.
 End def.
 End Interface.
 
-Definition Interfaceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "APIVersion"%go (go.Signature [] false [schema.GroupVersion]); go.MethodElem "Delete"%go (go.Signature [] false [go.PointerType Request]); go.MethodElem "Get"%go (go.Signature [] false [go.PointerType Request]); go.MethodElem "GetRateLimiter"%go (go.Signature [] false [flowcontrol.RateLimiter]); go.MethodElem "Patch"%go (go.Signature [types.PatchType] false [go.PointerType Request]); go.MethodElem "Post"%go (go.Signature [] false [go.PointerType Request]); go.MethodElem "Put"%go (go.Signature [] false [go.PointerType Request]); go.MethodElem "Verb"%go (go.Signature [go.string] false [go.PointerType Request])].
+Definition Interfaceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "APIVersion"%go (go.Signature [] false [code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersion]); go.MethodElem "Delete"%go (go.Signature [] false [go.PointerType Request]); go.MethodElem "Get"%go (go.Signature [] false [go.PointerType Request]); go.MethodElem "GetRateLimiter"%go (go.Signature [] false [code.k8s_io.client_go.util.flowcontrol.flowcontrol.RateLimiter]); go.MethodElem "Patch"%go (go.Signature [code.k8s_io.apimachinery.pkg.types.types.PatchType] false [go.PointerType Request]); go.MethodElem "Post"%go (go.Signature [] false [go.PointerType Request]); go.MethodElem "Put"%go (go.Signature [] false [go.PointerType Request]); go.MethodElem "Verb"%go (go.Signature [go.string] false [go.PointerType Request])].
 
 Class Interface_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
@@ -1190,8 +1190,8 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] RetryAfter_instance :: RetryAfter_Assumptions;
   #[global] withRetry_instance :: withRetry_Assumptions;
   #[global] wrapPreviousError_instance :: wrapPreviousError_Assumptions;
-  #[global] import_schema_Assumption :: schema.Assumptions;
-  #[global] import_types_Assumption :: types.Assumptions;
-  #[global] import_flowcontrol_Assumption :: flowcontrol.Assumptions;
+  #[global] import_schema_Assumption :: code.k8s_io.apimachinery.pkg.runtime.schema.schema.Assumptions;
+  #[global] import_types_Assumption :: code.k8s_io.apimachinery.pkg.types.types.Assumptions;
+  #[global] import_flowcontrol_Assumption :: code.k8s_io.client_go.util.flowcontrol.flowcontrol.Assumptions;
 }.
 End rest.

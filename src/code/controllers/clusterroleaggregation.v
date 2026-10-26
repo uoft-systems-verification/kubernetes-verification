@@ -28,92 +28,92 @@ Definition syncClusterRoleⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
   λ: "name",
     exception_do (let: "name" := (GoAlloc go.string "name") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-    let: "sharedClusterRole" := (GoAlloc (go.PointerType rbac_v1.ClusterRole) (GoZeroVal (go.PointerType rbac_v1.ClusterRole) #())) in
+    let: "sharedClusterRole" := (GoAlloc (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) (GoZeroVal (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] "name") in
-    (MethodResolve (go.PointerType apimodel.State) "ClusterRoleGet"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0") in
+    (MethodResolve (go.PointerType code.kubernetes_model.apimodel.apimodel.State) "ClusterRoleGet"%go (![go.PointerType code.kubernetes_model.apimodel.apimodel.State] (GlobalVarAddr code.kubernetes_model.apimodel.apimodel.ModelState #()))) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("sharedClusterRole" <-[go.PointerType rbac_v1.ClusterRole] "$r0");;;
+    do:  ("sharedClusterRole" <-[go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: let: "$a0" := (![go.error] "err") in
-    (FuncResolve errors.IsNotFound [] #()) "$a0"
+    (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.IsNotFound [] #()) "$a0"
     then return: (Convert go.untyped_nil go.error UntypedNil)
     else do:  #());;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then return: (![go.error] "err")
     else do:  #());;;
-    (if: Convert go.untyped_bool go.bool ((![go.PointerType rbac_v1.AggregationRule] (StructFieldRef rbac_v1.ClusterRole "AggregationRule"%go (![go.PointerType rbac_v1.ClusterRole] "sharedClusterRole"))) =⟨go.PointerType rbac_v1.AggregationRule⟩ (Convert go.untyped_nil (go.PointerType rbac_v1.AggregationRule) UntypedNil))
+    (if: Convert go.untyped_bool go.bool ((![go.PointerType code.k8s_io.api.rbac.v1.v1.AggregationRule] (StructFieldRef code.k8s_io.api.rbac.v1.v1.ClusterRole "AggregationRule"%go (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "sharedClusterRole"))) =⟨go.PointerType code.k8s_io.api.rbac.v1.v1.AggregationRule⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.api.rbac.v1.v1.AggregationRule) UntypedNil))
     then return: (Convert go.untyped_nil go.error UntypedNil)
     else do:  #());;;
-    let: "newPolicyRules" := (GoAlloc (go.SliceType rbac_v1.PolicyRule) (GoZeroVal (go.SliceType rbac_v1.PolicyRule) #())) in
-    let: "$r0" := (CompositeLiteral (go.SliceType rbac_v1.PolicyRule) (LiteralValue [])) in
-    do:  ("newPolicyRules" <-[go.SliceType rbac_v1.PolicyRule] "$r0");;;
-    let: "$range" := (![go.SliceType meta_v1.LabelSelector] (StructFieldRef rbac_v1.AggregationRule "ClusterRoleSelectors"%go (![go.PointerType rbac_v1.AggregationRule] (StructFieldRef rbac_v1.ClusterRole "AggregationRule"%go (![go.PointerType rbac_v1.ClusterRole] "sharedClusterRole"))))) in
+    let: "newPolicyRules" := (GoAlloc (go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule) (GoZeroVal (go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule) #())) in
+    let: "$r0" := (CompositeLiteral (go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule) (LiteralValue [])) in
+    do:  ("newPolicyRules" <-[go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule] "$r0");;;
+    let: "$range" := (![go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector] (StructFieldRef code.k8s_io.api.rbac.v1.v1.AggregationRule "ClusterRoleSelectors"%go (![go.PointerType code.k8s_io.api.rbac.v1.v1.AggregationRule] (StructFieldRef code.k8s_io.api.rbac.v1.v1.ClusterRole "AggregationRule"%go (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "sharedClusterRole"))))) in
     (let: "i" := (GoAlloc go.int (GoZeroVal go.int #())) in
-    slice.for_range meta_v1.LabelSelector "$range" (λ: "$key" "$value",
+    slice.for_range code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector "$range" (λ: "$key" "$value",
       do:  ("i" <-[go.int] "$key");;;
-      let: "selector" := (GoAlloc meta_v1.LabelSelector (GoZeroVal meta_v1.LabelSelector #())) in
-      let: "$r0" := (![meta_v1.LabelSelector] (IndexRef (go.SliceType meta_v1.LabelSelector) (![go.SliceType meta_v1.LabelSelector] (StructFieldRef rbac_v1.AggregationRule "ClusterRoleSelectors"%go (![go.PointerType rbac_v1.AggregationRule] (StructFieldRef rbac_v1.ClusterRole "AggregationRule"%go (![go.PointerType rbac_v1.ClusterRole] "sharedClusterRole")))), ![go.int] "i"))) in
-      do:  ("selector" <-[meta_v1.LabelSelector] "$r0");;;
+      let: "selector" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector #())) in
+      let: "$r0" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector] (IndexRef (go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector) (![go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector] (StructFieldRef code.k8s_io.api.rbac.v1.v1.AggregationRule "ClusterRoleSelectors"%go (![go.PointerType code.k8s_io.api.rbac.v1.v1.AggregationRule] (StructFieldRef code.k8s_io.api.rbac.v1.v1.ClusterRole "AggregationRule"%go (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "sharedClusterRole")))), ![go.int] "i"))) in
+      do:  ("selector" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector] "$r0");;;
       let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-      let: "runtimeLabelSelector" := (GoAlloc labels.Selector (GoZeroVal labels.Selector #())) in
+      let: "runtimeLabelSelector" := (GoAlloc code.k8s_io.apimachinery.pkg.labels.labels.Selector (GoZeroVal code.k8s_io.apimachinery.pkg.labels.labels.Selector #())) in
       let: ("$ret0", "$ret1") := (let: "$a0" := "selector" in
-      (FuncResolve meta_v1.LabelSelectorAsSelector [] #()) "$a0") in
+      (FuncResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelectorAsSelector [] #()) "$a0") in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
-      do:  ("runtimeLabelSelector" <-[labels.Selector] "$r0");;;
+      do:  ("runtimeLabelSelector" <-[code.k8s_io.apimachinery.pkg.labels.labels.Selector] "$r0");;;
       do:  ("err" <-[go.error] "$r1");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then return: (![go.error] "err")
       else do:  #());;;
-      let: "clusterRoles" := (GoAlloc (go.SliceType (go.PointerType rbac_v1.ClusterRole)) (GoZeroVal (go.SliceType (go.PointerType rbac_v1.ClusterRole)) #())) in
-      let: ("$ret0", "$ret1") := (let: "$a0" := (![labels.Selector] "runtimeLabelSelector") in
-      (MethodResolve (go.PointerType apimodel.State) "ClusterRoleList"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0") in
+      let: "clusterRoles" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole)) (GoZeroVal (go.SliceType (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole)) #())) in
+      let: ("$ret0", "$ret1") := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.labels.labels.Selector] "runtimeLabelSelector") in
+      (MethodResolve (go.PointerType code.kubernetes_model.apimodel.apimodel.State) "ClusterRoleList"%go (![go.PointerType code.kubernetes_model.apimodel.apimodel.State] (GlobalVarAddr code.kubernetes_model.apimodel.apimodel.ModelState #()))) "$a0") in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
-      do:  ("clusterRoles" <-[go.SliceType (go.PointerType rbac_v1.ClusterRole)] "$r0");;;
+      do:  ("clusterRoles" <-[go.SliceType (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole)] "$r0");;;
       do:  ("err" <-[go.error] "$r1");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then return: (![go.error] "err")
       else do:  #());;;
-      do:  (let: "$a0" := (Convert byName sort.Interface (![go.SliceType (go.PointerType rbac_v1.ClusterRole)] "clusterRoles")) in
-      (FuncResolve sort.Sort [] #()) "$a0");;;
-      let: "$range" := (![go.SliceType (go.PointerType rbac_v1.ClusterRole)] "clusterRoles") in
+      do:  (let: "$a0" := (Convert byName code.sort.sort.Interface (![go.SliceType (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole)] "clusterRoles")) in
+      (FuncResolve code.sort.sort.Sort [] #()) "$a0");;;
+      let: "$range" := (![go.SliceType (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole)] "clusterRoles") in
       (let: "i" := (GoAlloc go.int (GoZeroVal go.int #())) in
-      slice.for_range (go.PointerType rbac_v1.ClusterRole) "$range" (λ: "$key" "$value",
+      slice.for_range (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) "$range" (λ: "$key" "$value",
         do:  ("i" <-[go.int] "$key");;;
-        (if: Convert go.untyped_bool go.bool ((![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef rbac_v1.ClusterRole "ObjectMeta"%go (![go.PointerType rbac_v1.ClusterRole] (IndexRef (go.SliceType (go.PointerType rbac_v1.ClusterRole)) (![go.SliceType (go.PointerType rbac_v1.ClusterRole)] "clusterRoles", ![go.int] "i")))))) =⟨go.string⟩ (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef rbac_v1.ClusterRole "ObjectMeta"%go (![go.PointerType rbac_v1.ClusterRole] "sharedClusterRole")))))
+        (if: Convert go.untyped_bool go.bool ((![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Name"%go (StructFieldRef code.k8s_io.api.rbac.v1.v1.ClusterRole "ObjectMeta"%go (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] (IndexRef (go.SliceType (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole)) (![go.SliceType (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole)] "clusterRoles", ![go.int] "i")))))) =⟨go.string⟩ (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Name"%go (StructFieldRef code.k8s_io.api.rbac.v1.v1.ClusterRole "ObjectMeta"%go (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "sharedClusterRole")))))
         then continue: #()
         else do:  #());;;
-        let: "$range" := (![go.SliceType rbac_v1.PolicyRule] (StructFieldRef rbac_v1.ClusterRole "Rules"%go (![go.PointerType rbac_v1.ClusterRole] (IndexRef (go.SliceType (go.PointerType rbac_v1.ClusterRole)) (![go.SliceType (go.PointerType rbac_v1.ClusterRole)] "clusterRoles", ![go.int] "i"))))) in
+        let: "$range" := (![go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule] (StructFieldRef code.k8s_io.api.rbac.v1.v1.ClusterRole "Rules"%go (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] (IndexRef (go.SliceType (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole)) (![go.SliceType (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole)] "clusterRoles", ![go.int] "i"))))) in
         (let: "j" := (GoAlloc go.int (GoZeroVal go.int #())) in
-        slice.for_range rbac_v1.PolicyRule "$range" (λ: "$key" "$value",
+        slice.for_range code.k8s_io.api.rbac.v1.v1.PolicyRule "$range" (λ: "$key" "$value",
           do:  ("j" <-[go.int] "$key");;;
-          let: "currRule" := (GoAlloc rbac_v1.PolicyRule (GoZeroVal rbac_v1.PolicyRule #())) in
-          let: "$r0" := (![rbac_v1.PolicyRule] (IndexRef (go.SliceType rbac_v1.PolicyRule) (![go.SliceType rbac_v1.PolicyRule] (StructFieldRef rbac_v1.ClusterRole "Rules"%go (![go.PointerType rbac_v1.ClusterRole] (IndexRef (go.SliceType (go.PointerType rbac_v1.ClusterRole)) (![go.SliceType (go.PointerType rbac_v1.ClusterRole)] "clusterRoles", ![go.int] "i")))), ![go.int] "j"))) in
-          do:  ("currRule" <-[rbac_v1.PolicyRule] "$r0");;;
-          (if: (⟨go.bool⟩! (let: "$a0" := (![go.SliceType rbac_v1.PolicyRule] "newPolicyRules") in
-          let: "$a1" := (![rbac_v1.PolicyRule] "currRule") in
+          let: "currRule" := (GoAlloc code.k8s_io.api.rbac.v1.v1.PolicyRule (GoZeroVal code.k8s_io.api.rbac.v1.v1.PolicyRule #())) in
+          let: "$r0" := (![code.k8s_io.api.rbac.v1.v1.PolicyRule] (IndexRef (go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule) (![go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule] (StructFieldRef code.k8s_io.api.rbac.v1.v1.ClusterRole "Rules"%go (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] (IndexRef (go.SliceType (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole)) (![go.SliceType (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole)] "clusterRoles", ![go.int] "i")))), ![go.int] "j"))) in
+          do:  ("currRule" <-[code.k8s_io.api.rbac.v1.v1.PolicyRule] "$r0");;;
+          (if: (⟨go.bool⟩! (let: "$a0" := (![go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule] "newPolicyRules") in
+          let: "$a1" := (![code.k8s_io.api.rbac.v1.v1.PolicyRule] "currRule") in
           (FuncResolve ruleExists [] #()) "$a0" "$a1"))
           then
-            let: "$r0" := (let: "$a0" := (![go.SliceType rbac_v1.PolicyRule] "newPolicyRules") in
-            let: "$a1" := ((let: "$sl0" := (![rbac_v1.PolicyRule] "currRule") in
-            CompositeLiteral (go.SliceType rbac_v1.PolicyRule) (LiteralValue [KeyedElement None (ElementExpression rbac_v1.PolicyRule "$sl0")]))) in
-            (FuncResolve go.append [go.SliceType rbac_v1.PolicyRule] #()) "$a0" "$a1") in
-            do:  ("newPolicyRules" <-[go.SliceType rbac_v1.PolicyRule] "$r0")
+            let: "$r0" := (let: "$a0" := (![go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule] "newPolicyRules") in
+            let: "$a1" := ((let: "$sl0" := (![code.k8s_io.api.rbac.v1.v1.PolicyRule] "currRule") in
+            CompositeLiteral (go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule) (LiteralValue [KeyedElement None (ElementExpression code.k8s_io.api.rbac.v1.v1.PolicyRule "$sl0")]))) in
+            (FuncResolve go.append [go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule] #()) "$a0" "$a1") in
+            do:  ("newPolicyRules" <-[go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule] "$r0")
           else do:  #())))))));;;
-    (if: let: "$a0" := (Convert (go.SliceType rbac_v1.PolicyRule) (go.InterfaceType []) (![go.SliceType rbac_v1.PolicyRule] "newPolicyRules")) in
-    let: "$a1" := (Convert (go.SliceType rbac_v1.PolicyRule) (go.InterfaceType []) (![go.SliceType rbac_v1.PolicyRule] (StructFieldRef rbac_v1.ClusterRole "Rules"%go (![go.PointerType rbac_v1.ClusterRole] "sharedClusterRole")))) in
-    (MethodResolve (go.PointerType conversion.Equalities) "DeepEqual"%go (GlobalVarAddr equality.Semantic #())) "$a0" "$a1"
+    (if: let: "$a0" := (Convert (go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule) (go.InterfaceType []) (![go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule] "newPolicyRules")) in
+    let: "$a1" := (Convert (go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule) (go.InterfaceType []) (![go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule] (StructFieldRef code.k8s_io.api.rbac.v1.v1.ClusterRole "Rules"%go (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "sharedClusterRole")))) in
+    (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.conversion.conversion.Equalities) "DeepEqual"%go (GlobalVarAddr code.k8s_io.apimachinery.pkg.api.equality.equality.Semantic #())) "$a0" "$a1"
     then return: (Convert go.untyped_nil go.error UntypedNil)
     else do:  #());;;
-    let: "updated" := (GoAlloc (go.PointerType rbac_v1.ClusterRole) (GoZeroVal (go.PointerType rbac_v1.ClusterRole) #())) in
-    let: "$r0" := ((MethodResolve (go.PointerType rbac_v1.ClusterRole) "DeepCopy"%go (![go.PointerType rbac_v1.ClusterRole] "sharedClusterRole")) #()) in
-    do:  ("updated" <-[go.PointerType rbac_v1.ClusterRole] "$r0");;;
-    let: "$r0" := (![go.SliceType rbac_v1.PolicyRule] "newPolicyRules") in
-    do:  ((StructFieldRef rbac_v1.ClusterRole "Rules"%go (![go.PointerType rbac_v1.ClusterRole] "updated")) <-[go.SliceType rbac_v1.PolicyRule] "$r0");;;
-    let: ("$ret0", "$ret1") := (let: "$a0" := (![go.PointerType rbac_v1.ClusterRole] "updated") in
-    (MethodResolve (go.PointerType apimodel.State) "ClusterRoleUpdate"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0") in
+    let: "updated" := (GoAlloc (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) (GoZeroVal (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) #())) in
+    let: "$r0" := ((MethodResolve (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) "DeepCopy"%go (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "sharedClusterRole")) #()) in
+    do:  ("updated" <-[go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "$r0");;;
+    let: "$r0" := (![go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule] "newPolicyRules") in
+    do:  ((StructFieldRef code.k8s_io.api.rbac.v1.v1.ClusterRole "Rules"%go (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "updated")) <-[go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule] "$r0");;;
+    let: ("$ret0", "$ret1") := (let: "$a0" := (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "updated") in
+    (MethodResolve (go.PointerType code.kubernetes_model.apimodel.apimodel.State) "ClusterRoleUpdate"%go (![go.PointerType code.kubernetes_model.apimodel.apimodel.State] (GlobalVarAddr code.kubernetes_model.apimodel.apimodel.ModelState #()))) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  "$r0";;;
@@ -133,7 +133,7 @@ Definition byName__Lessⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext
     exception_do (let: "r" := (GoAlloc byName "r") in
     let: "j" := (GoAlloc go.int "j") in
     let: "i" := (GoAlloc go.int "i") in
-    return: ((![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef rbac_v1.ClusterRole "ObjectMeta"%go (![go.PointerType rbac_v1.ClusterRole] (IndexRef byName (![byName] "r", ![go.int] "i")))))) <⟨go.string⟩ (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef rbac_v1.ClusterRole "ObjectMeta"%go (![go.PointerType rbac_v1.ClusterRole] (IndexRef byName (![byName] "r", ![go.int] "j")))))))).
+    return: ((![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Name"%go (StructFieldRef code.k8s_io.api.rbac.v1.v1.ClusterRole "ObjectMeta"%go (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] (IndexRef byName (![byName] "r", ![go.int] "i")))))) <⟨go.string⟩ (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Name"%go (StructFieldRef code.k8s_io.api.rbac.v1.v1.ClusterRole "ObjectMeta"%go (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] (IndexRef byName (![byName] "r", ![go.int] "j")))))))).
 
 (* go: clusterroleaggregation.go:85:17 *)
 Definition byName__Swapⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
@@ -141,24 +141,24 @@ Definition byName__Swapⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext
     exception_do (let: "r" := (GoAlloc byName "r") in
     let: "j" := (GoAlloc go.int "j") in
     let: "i" := (GoAlloc go.int "i") in
-    let: "$r0" := (![go.PointerType rbac_v1.ClusterRole] (IndexRef byName (![byName] "r", ![go.int] "j"))) in
-    let: "$r1" := (![go.PointerType rbac_v1.ClusterRole] (IndexRef byName (![byName] "r", ![go.int] "i"))) in
-    do:  ((IndexRef byName (![byName] "r", ![go.int] "i")) <-[go.PointerType rbac_v1.ClusterRole] "$r0");;;
-    do:  ((IndexRef byName (![byName] "r", ![go.int] "j")) <-[go.PointerType rbac_v1.ClusterRole] "$r1");;;
+    let: "$r0" := (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] (IndexRef byName (![byName] "r", ![go.int] "j"))) in
+    let: "$r1" := (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] (IndexRef byName (![byName] "r", ![go.int] "i"))) in
+    do:  ((IndexRef byName (![byName] "r", ![go.int] "i")) <-[go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "$r0");;;
+    do:  ((IndexRef byName (![byName] "r", ![go.int] "j")) <-[go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "$r1");;;
     return: #()).
 
 (* go: clusterroleaggregation.go:89:6 *)
 Definition ruleExistsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "rules" "rule",
-    exception_do (let: "rule" := (GoAlloc rbac_v1.PolicyRule "rule") in
-    let: "rules" := (GoAlloc (go.SliceType rbac_v1.PolicyRule) "rules") in
-    let: "$range" := (![go.SliceType rbac_v1.PolicyRule] "rules") in
+    exception_do (let: "rule" := (GoAlloc code.k8s_io.api.rbac.v1.v1.PolicyRule "rule") in
+    let: "rules" := (GoAlloc (go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule) "rules") in
+    let: "$range" := (![go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule] "rules") in
     (let: "i" := (GoAlloc go.int (GoZeroVal go.int #())) in
-    slice.for_range rbac_v1.PolicyRule "$range" (λ: "$key" "$value",
+    slice.for_range code.k8s_io.api.rbac.v1.v1.PolicyRule "$range" (λ: "$key" "$value",
       do:  ("i" <-[go.int] "$key");;;
-      (if: let: "$a0" := (Convert rbac_v1.PolicyRule (go.InterfaceType []) (![rbac_v1.PolicyRule] (IndexRef (go.SliceType rbac_v1.PolicyRule) (![go.SliceType rbac_v1.PolicyRule] "rules", ![go.int] "i")))) in
-      let: "$a1" := (Convert rbac_v1.PolicyRule (go.InterfaceType []) (![rbac_v1.PolicyRule] "rule")) in
-      (MethodResolve (go.PointerType conversion.Equalities) "DeepEqual"%go (GlobalVarAddr equality.Semantic #())) "$a0" "$a1"
+      (if: let: "$a0" := (Convert code.k8s_io.api.rbac.v1.v1.PolicyRule (go.InterfaceType []) (![code.k8s_io.api.rbac.v1.v1.PolicyRule] (IndexRef (go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule) (![go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule] "rules", ![go.int] "i")))) in
+      let: "$a1" := (Convert code.k8s_io.api.rbac.v1.v1.PolicyRule (go.InterfaceType []) (![code.k8s_io.api.rbac.v1.v1.PolicyRule] "rule")) in
+      (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.conversion.conversion.Equalities) "DeepEqual"%go (GlobalVarAddr code.k8s_io.apimachinery.pkg.api.equality.equality.Semantic #())) "$a0" "$a1"
       then return: (#true)
       else do:  #())));;;
     return: (#false)).
@@ -171,12 +171,12 @@ Definition ruleExistsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} 
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.clusterroleaggregation (λ: <>,
-      exception_do (do:  (meta_v1.initialize' #());;;
-      do:  (errors.initialize' #());;;
-      do:  (equality.initialize' #());;;
-      do:  (rbac_v1.initialize' #());;;
-      do:  (apimodel.initialize' #());;;
-      do:  (sort.initialize' #()))
+      exception_do (do:  (code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.api.errors.errors.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.api.equality.equality.initialize' #());;;
+      do:  (code.k8s_io.api.rbac.v1.v1.initialize' #());;;
+      do:  (code.kubernetes_model.apimodel.apimodel.initialize' #());;;
+      do:  (code.sort.sort.initialize' #()))
       ).
 
 Module byName.
@@ -187,7 +187,7 @@ Definition t : Type := slice.t.
 End def.
 End byName.
 
-Definition byNameⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.SliceType (go.PointerType rbac_v1.ClusterRole).
+Definition byNameⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.SliceType (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole).
 
 Class byName_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
@@ -205,11 +205,11 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] byName_instance :: byName_Assumptions;
   #[global] syncClusterRole_unfold :: FuncUnfold syncClusterRole [] (syncClusterRoleⁱᵐᵖˡ);
   #[global] ruleExists_unfold :: FuncUnfold ruleExists [] (ruleExistsⁱᵐᵖˡ);
-  #[global] import_sort_Assumption :: sort.Assumptions;
-  #[global] import_apimodel_Assumption :: apimodel.Assumptions;
-  #[global] import_rbac_v1_Assumption :: rbac_v1.Assumptions;
-  #[global] import_equality_Assumption :: equality.Assumptions;
-  #[global] import_errors_Assumption :: errors.Assumptions;
-  #[global] import_meta_v1_Assumption :: meta_v1.Assumptions;
+  #[global] import_sort_Assumption :: code.sort.sort.Assumptions;
+  #[global] import_apimodel_Assumption :: code.kubernetes_model.apimodel.apimodel.Assumptions;
+  #[global] import_rbac_v1_Assumption :: code.k8s_io.api.rbac.v1.v1.Assumptions;
+  #[global] import_equality_Assumption :: code.k8s_io.apimachinery.pkg.api.equality.equality.Assumptions;
+  #[global] import_errors_Assumption :: code.k8s_io.apimachinery.pkg.api.errors.errors.Assumptions;
+  #[global] import_meta_v1_Assumption :: code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions;
 }.
 End clusterroleaggregation.

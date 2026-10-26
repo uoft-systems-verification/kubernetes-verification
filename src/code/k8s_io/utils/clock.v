@@ -69,16 +69,16 @@ Axiom realTickerⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}
    go: clock.go:88:18 *)
 Definition RealClock__Nowⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <> <>,
-    exception_do (return: ((FuncResolve time.Now [] #()) #())).
+    exception_do (return: ((FuncResolve code.time.time.Now [] #()) #())).
 
 (* Since returns time since the specified timestamp.
 
    go: clock.go:93:18 *)
 Definition RealClock__Sinceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <> "ts",
-    exception_do (let: "ts" := (GoAlloc time.Time "ts") in
-    return: (let: "$a0" := (![time.Time] "ts") in
-     (FuncResolve time.Since [] #()) "$a0")).
+    exception_do (let: "ts" := (GoAlloc code.time.time.Time "ts") in
+    return: (let: "$a0" := (![code.time.time.Time] "ts") in
+     (FuncResolve code.time.time.Since [] #()) "$a0")).
 
 #[global] Instance info' : PkgInfo pkg_id.clock :=
 {|
@@ -90,7 +90,7 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.clock (λ: <>,
-      exception_do (do:  (time.initialize' #());;;
+      exception_do (do:  (code.time.time.initialize' #());;;
       do:  (_'init #());;;
       do:  (_'init #()))
       ).
@@ -103,7 +103,7 @@ Definition t : Type := interface.t.
 End def.
 End PassiveClock.
 
-Definition PassiveClockⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "Now"%go (go.Signature [] false [time.Time]); go.MethodElem "Since"%go (go.Signature [time.Time] false [time.Duration])].
+Definition PassiveClockⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "Now"%go (go.Signature [] false [code.time.time.Time]); go.MethodElem "Since"%go (go.Signature [code.time.time.Time] false [code.time.time.Duration])].
 
 Class PassiveClock_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
@@ -282,6 +282,6 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] Timer_instance :: Timer_Assumptions;
   #[global] realTimer_instance :: realTimer_Assumptions;
   #[global] realTicker_instance :: realTicker_Assumptions;
-  #[global] import_time_Assumption :: time.Assumptions;
+  #[global] import_time_Assumption :: code.time.time.Assumptions;
 }.
 End clock.

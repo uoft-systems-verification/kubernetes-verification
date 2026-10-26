@@ -181,23 +181,23 @@ Definition GetDeploymentsForReplicaSet {ext : ffi_syntax} {go_gctx : GoGlobalCon
    go: deployment_util.go:619:6 *)
 Definition EqualIgnoreHashⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "template1" "template2",
-    exception_do (let: "template2" := (GoAlloc (go.PointerType core_v1.PodTemplateSpec) "template2") in
-    let: "template1" := (GoAlloc (go.PointerType core_v1.PodTemplateSpec) "template1") in
-    let: "t1Copy" := (GoAlloc (go.PointerType core_v1.PodTemplateSpec) (GoZeroVal (go.PointerType core_v1.PodTemplateSpec) #())) in
-    let: "$r0" := ((MethodResolve (go.PointerType core_v1.PodTemplateSpec) "DeepCopy"%go (![go.PointerType core_v1.PodTemplateSpec] "template1")) #()) in
-    do:  ("t1Copy" <-[go.PointerType core_v1.PodTemplateSpec] "$r0");;;
-    let: "t2Copy" := (GoAlloc (go.PointerType core_v1.PodTemplateSpec) (GoZeroVal (go.PointerType core_v1.PodTemplateSpec) #())) in
-    let: "$r0" := ((MethodResolve (go.PointerType core_v1.PodTemplateSpec) "DeepCopy"%go (![go.PointerType core_v1.PodTemplateSpec] "template2")) #()) in
-    do:  ("t2Copy" <-[go.PointerType core_v1.PodTemplateSpec] "$r0");;;
-    do:  (let: "$a0" := (![go.MapType go.string go.string] (StructFieldRef v1.ObjectMeta "Labels"%go (StructFieldRef core_v1.PodTemplateSpec "ObjectMeta"%go (![go.PointerType core_v1.PodTemplateSpec] "t1Copy")))) in
-    let: "$a1" := apps_v1.DefaultDeploymentUniqueLabelKey in
+    exception_do (let: "template2" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.PodTemplateSpec) "template2") in
+    let: "template1" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.PodTemplateSpec) "template1") in
+    let: "t1Copy" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.PodTemplateSpec) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.PodTemplateSpec) #())) in
+    let: "$r0" := ((MethodResolve (go.PointerType code.k8s_io.api.core.v1.v1.PodTemplateSpec) "DeepCopy"%go (![go.PointerType code.k8s_io.api.core.v1.v1.PodTemplateSpec] "template1")) #()) in
+    do:  ("t1Copy" <-[go.PointerType code.k8s_io.api.core.v1.v1.PodTemplateSpec] "$r0");;;
+    let: "t2Copy" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.PodTemplateSpec) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.PodTemplateSpec) #())) in
+    let: "$r0" := ((MethodResolve (go.PointerType code.k8s_io.api.core.v1.v1.PodTemplateSpec) "DeepCopy"%go (![go.PointerType code.k8s_io.api.core.v1.v1.PodTemplateSpec] "template2")) #()) in
+    do:  ("t2Copy" <-[go.PointerType code.k8s_io.api.core.v1.v1.PodTemplateSpec] "$r0");;;
+    do:  (let: "$a0" := (![go.MapType go.string go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Labels"%go (StructFieldRef code.k8s_io.api.core.v1.v1.PodTemplateSpec "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.PodTemplateSpec] "t1Copy")))) in
+    let: "$a1" := code.k8s_io.api.apps.v1.v1.DefaultDeploymentUniqueLabelKey in
     (FuncResolve go.delete [go.MapType go.string go.string] #()) "$a0" "$a1");;;
-    do:  (let: "$a0" := (![go.MapType go.string go.string] (StructFieldRef v1.ObjectMeta "Labels"%go (StructFieldRef core_v1.PodTemplateSpec "ObjectMeta"%go (![go.PointerType core_v1.PodTemplateSpec] "t2Copy")))) in
-    let: "$a1" := apps_v1.DefaultDeploymentUniqueLabelKey in
+    do:  (let: "$a0" := (![go.MapType go.string go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Labels"%go (StructFieldRef code.k8s_io.api.core.v1.v1.PodTemplateSpec "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.PodTemplateSpec] "t2Copy")))) in
+    let: "$a1" := code.k8s_io.api.apps.v1.v1.DefaultDeploymentUniqueLabelKey in
     (FuncResolve go.delete [go.MapType go.string go.string] #()) "$a0" "$a1");;;
-    return: (let: "$a0" := (Convert (go.PointerType core_v1.PodTemplateSpec) (go.InterfaceType []) (![go.PointerType core_v1.PodTemplateSpec] "t1Copy")) in
-     let: "$a1" := (Convert (go.PointerType core_v1.PodTemplateSpec) (go.InterfaceType []) (![go.PointerType core_v1.PodTemplateSpec] "t2Copy")) in
-     (MethodResolve (go.PointerType conversion.Equalities) "DeepEqual"%go (GlobalVarAddr equality.Semantic #())) "$a0" "$a1")).
+    return: (let: "$a0" := (Convert (go.PointerType code.k8s_io.api.core.v1.v1.PodTemplateSpec) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.core.v1.v1.PodTemplateSpec] "t1Copy")) in
+     let: "$a1" := (Convert (go.PointerType code.k8s_io.api.core.v1.v1.PodTemplateSpec) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.core.v1.v1.PodTemplateSpec] "t2Copy")) in
+     (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.conversion.conversion.Equalities) "DeepEqual"%go (GlobalVarAddr code.k8s_io.apimachinery.pkg.api.equality.equality.Semantic #())) "$a0" "$a1")).
 
 #[global] Instance info' : PkgInfo pkg_id.util :=
 {|
@@ -209,9 +209,9 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.util (λ: <>,
-      exception_do (do:  (equality.initialize' #());;;
-      do:  (core_v1.initialize' #());;;
-      do:  (apps_v1.initialize' #());;;
+      exception_do (do:  (code.k8s_io.apimachinery.pkg.api.equality.equality.initialize' #());;;
+      do:  (code.k8s_io.api.core.v1.v1.initialize' #());;;
+      do:  (code.k8s_io.api.apps.v1.v1.initialize' #());;;
       do:  (annotationsToSkip'init #());;;
       do:  (nowFn'init #()))
       ).
@@ -270,8 +270,8 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] podListFunc_instance :: podListFunc_Assumptions;
   #[global] ReplicaSetsByRevision_instance :: ReplicaSetsByRevision_Assumptions;
   #[global] EqualIgnoreHash_unfold :: FuncUnfold EqualIgnoreHash [] (EqualIgnoreHashⁱᵐᵖˡ);
-  #[global] import_apps_v1_Assumption :: apps_v1.Assumptions;
-  #[global] import_core_v1_Assumption :: core_v1.Assumptions;
-  #[global] import_equality_Assumption :: equality.Assumptions;
+  #[global] import_apps_v1_Assumption :: code.k8s_io.api.apps.v1.v1.Assumptions;
+  #[global] import_core_v1_Assumption :: code.k8s_io.api.core.v1.v1.Assumptions;
+  #[global] import_equality_Assumption :: code.k8s_io.apimachinery.pkg.api.equality.equality.Assumptions;
 }.
 End util.

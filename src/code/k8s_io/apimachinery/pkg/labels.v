@@ -365,94 +365,94 @@ Definition ByKey__Lessⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext}
    go: selector.go:184:6 *)
 Definition NewRequirementⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "key" "op" "vals" "opts",
-    exception_do (let: "opts" := (GoAlloc (go.SliceType field.PathOption) "opts") in
+    exception_do (let: "opts" := (GoAlloc (go.SliceType code.k8s_io.apimachinery.pkg.util.validation.field.field.PathOption) "opts") in
     let: "vals" := (GoAlloc (go.SliceType go.string) "vals") in
-    let: "op" := (GoAlloc selection.Operator "op") in
+    let: "op" := (GoAlloc code.k8s_io.apimachinery.pkg.selection.selection.Operator "op") in
     let: "key" := (GoAlloc go.string "key") in
-    let: "allErrs" := (GoAlloc field.ErrorList (GoZeroVal field.ErrorList #())) in
-    let: "path" := (GoAlloc (go.PointerType field.Path) (GoZeroVal (go.PointerType field.Path) #())) in
-    let: "$r0" := (let: "$a0" := (![go.SliceType field.PathOption] "opts") in
-    (FuncResolve field.ToPath [] #()) "$a0") in
-    do:  ("path" <-[go.PointerType field.Path] "$r0");;;
-    (let: "err" := (GoAlloc (go.PointerType field.Error) (GoZeroVal (go.PointerType field.Error) #())) in
+    let: "allErrs" := (GoAlloc code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList (GoZeroVal code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList #())) in
+    let: "path" := (GoAlloc (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path) (GoZeroVal (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path) #())) in
+    let: "$r0" := (let: "$a0" := (![go.SliceType code.k8s_io.apimachinery.pkg.util.validation.field.field.PathOption] "opts") in
+    (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.ToPath [] #()) "$a0") in
+    do:  ("path" <-[go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path] "$r0");;;
+    (let: "err" := (GoAlloc (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) (GoZeroVal (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) #())) in
     let: "$r0" := (let: "$a0" := (![go.string] "key") in
     let: "$a1" := (let: "$a0" := #"key"%go in
     let: "$a1" := #slice.nil in
-    (MethodResolve (go.PointerType field.Path) "Child"%go (![go.PointerType field.Path] "path")) "$a0" "$a1") in
+    (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path) "Child"%go (![go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path] "path")) "$a0" "$a1") in
     (FuncResolve validateLabelKey [] #()) "$a0" "$a1") in
-    do:  ("err" <-[go.PointerType field.Error] "$r0");;;
-    (if: Convert go.untyped_bool go.bool ((![go.PointerType field.Error] "err") ≠⟨go.PointerType field.Error⟩ (Convert go.untyped_nil (go.PointerType field.Error) UntypedNil))
+    do:  ("err" <-[go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error] "$r0");;;
+    (if: Convert go.untyped_bool go.bool ((![go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error] "err") ≠⟨go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) UntypedNil))
     then
-      let: "$r0" := (let: "$a0" := (![field.ErrorList] "allErrs") in
-      let: "$a1" := ((let: "$sl0" := (![go.PointerType field.Error] "err") in
-      CompositeLiteral (go.SliceType (go.PointerType field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType field.Error) "$sl0")]))) in
-      (FuncResolve go.append [field.ErrorList] #()) "$a0" "$a1") in
-      do:  ("allErrs" <-[field.ErrorList] "$r0")
+      let: "$r0" := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "allErrs") in
+      let: "$a1" := ((let: "$sl0" := (![go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error] "err") in
+      CompositeLiteral (go.SliceType (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) "$sl0")]))) in
+      (FuncResolve go.append [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0" "$a1") in
+      do:  ("allErrs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0")
     else do:  #()));;;
-    let: "valuePath" := (GoAlloc (go.PointerType field.Path) (GoZeroVal (go.PointerType field.Path) #())) in
+    let: "valuePath" := (GoAlloc (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path) (GoZeroVal (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path) #())) in
     let: "$r0" := (let: "$a0" := #"values"%go in
     let: "$a1" := #slice.nil in
-    (MethodResolve (go.PointerType field.Path) "Child"%go (![go.PointerType field.Path] "path")) "$a0" "$a1") in
-    do:  ("valuePath" <-[go.PointerType field.Path] "$r0");;;
-    let: "$sw" := (![selection.Operator] "op") in
-    (if: ("$sw" =⟨selection.Operator⟩ selection.NotIn) || ("$sw" =⟨selection.Operator⟩ selection.In)
+    (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path) "Child"%go (![go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path] "path")) "$a0" "$a1") in
+    do:  ("valuePath" <-[go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path] "$r0");;;
+    let: "$sw" := (![code.k8s_io.apimachinery.pkg.selection.selection.Operator] "op") in
+    (if: ("$sw" =⟨code.k8s_io.apimachinery.pkg.selection.selection.Operator⟩ code.k8s_io.apimachinery.pkg.selection.selection.NotIn) || ("$sw" =⟨code.k8s_io.apimachinery.pkg.selection.selection.Operator⟩ code.k8s_io.apimachinery.pkg.selection.selection.In)
     then
       (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![go.SliceType go.string] "vals") in
       (FuncResolve go.len [go.SliceType go.string] #()) "$a0") =⟨go.int⟩ #(W64 0))
       then
-        let: "$r0" := (let: "$a0" := (![field.ErrorList] "allErrs") in
-        let: "$a1" := ((let: "$sl0" := (let: "$a0" := (![go.PointerType field.Path] "valuePath") in
+        let: "$r0" := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "allErrs") in
+        let: "$a1" := ((let: "$sl0" := (let: "$a0" := (![go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path] "valuePath") in
         let: "$a1" := (Convert (go.SliceType go.string) (go.InterfaceType []) (![go.SliceType go.string] "vals")) in
         let: "$a2" := #"for 'in', 'notin' operators, values set can't be empty"%go in
-        (FuncResolve field.Invalid [] #()) "$a0" "$a1" "$a2") in
-        CompositeLiteral (go.SliceType (go.PointerType field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType field.Error) "$sl0")]))) in
-        (FuncResolve go.append [field.ErrorList] #()) "$a0" "$a1") in
-        do:  ("allErrs" <-[field.ErrorList] "$r0")
+        (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.Invalid [] #()) "$a0" "$a1" "$a2") in
+        CompositeLiteral (go.SliceType (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) "$sl0")]))) in
+        (FuncResolve go.append [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0" "$a1") in
+        do:  ("allErrs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0")
       else do:  #())
     else
-      (if: ("$sw" =⟨selection.Operator⟩ selection.NotEquals) || (("$sw" =⟨selection.Operator⟩ selection.DoubleEquals) || ("$sw" =⟨selection.Operator⟩ selection.Equals))
+      (if: ("$sw" =⟨code.k8s_io.apimachinery.pkg.selection.selection.Operator⟩ code.k8s_io.apimachinery.pkg.selection.selection.NotEquals) || (("$sw" =⟨code.k8s_io.apimachinery.pkg.selection.selection.Operator⟩ code.k8s_io.apimachinery.pkg.selection.selection.DoubleEquals) || ("$sw" =⟨code.k8s_io.apimachinery.pkg.selection.selection.Operator⟩ code.k8s_io.apimachinery.pkg.selection.selection.Equals))
       then
         (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![go.SliceType go.string] "vals") in
         (FuncResolve go.len [go.SliceType go.string] #()) "$a0") ≠⟨go.int⟩ #(W64 1))
         then
-          let: "$r0" := (let: "$a0" := (![field.ErrorList] "allErrs") in
-          let: "$a1" := ((let: "$sl0" := (let: "$a0" := (![go.PointerType field.Path] "valuePath") in
+          let: "$r0" := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "allErrs") in
+          let: "$a1" := ((let: "$sl0" := (let: "$a0" := (![go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path] "valuePath") in
           let: "$a1" := (Convert (go.SliceType go.string) (go.InterfaceType []) (![go.SliceType go.string] "vals")) in
           let: "$a2" := #"exact-match compatibility requires one single value"%go in
-          (FuncResolve field.Invalid [] #()) "$a0" "$a1" "$a2") in
-          CompositeLiteral (go.SliceType (go.PointerType field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType field.Error) "$sl0")]))) in
-          (FuncResolve go.append [field.ErrorList] #()) "$a0" "$a1") in
-          do:  ("allErrs" <-[field.ErrorList] "$r0")
+          (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.Invalid [] #()) "$a0" "$a1" "$a2") in
+          CompositeLiteral (go.SliceType (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) "$sl0")]))) in
+          (FuncResolve go.append [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0" "$a1") in
+          do:  ("allErrs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0")
         else do:  #())
       else
-        (if: ("$sw" =⟨selection.Operator⟩ selection.DoesNotExist) || ("$sw" =⟨selection.Operator⟩ selection.Exists)
+        (if: ("$sw" =⟨code.k8s_io.apimachinery.pkg.selection.selection.Operator⟩ code.k8s_io.apimachinery.pkg.selection.selection.DoesNotExist) || ("$sw" =⟨code.k8s_io.apimachinery.pkg.selection.selection.Operator⟩ code.k8s_io.apimachinery.pkg.selection.selection.Exists)
         then
           (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![go.SliceType go.string] "vals") in
           (FuncResolve go.len [go.SliceType go.string] #()) "$a0") ≠⟨go.int⟩ #(W64 0))
           then
-            let: "$r0" := (let: "$a0" := (![field.ErrorList] "allErrs") in
-            let: "$a1" := ((let: "$sl0" := (let: "$a0" := (![go.PointerType field.Path] "valuePath") in
+            let: "$r0" := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "allErrs") in
+            let: "$a1" := ((let: "$sl0" := (let: "$a0" := (![go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path] "valuePath") in
             let: "$a1" := (Convert (go.SliceType go.string) (go.InterfaceType []) (![go.SliceType go.string] "vals")) in
             let: "$a2" := #"values set must be empty for exists and does not exist"%go in
-            (FuncResolve field.Invalid [] #()) "$a0" "$a1" "$a2") in
-            CompositeLiteral (go.SliceType (go.PointerType field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType field.Error) "$sl0")]))) in
-            (FuncResolve go.append [field.ErrorList] #()) "$a0" "$a1") in
-            do:  ("allErrs" <-[field.ErrorList] "$r0")
+            (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.Invalid [] #()) "$a0" "$a1" "$a2") in
+            CompositeLiteral (go.SliceType (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) "$sl0")]))) in
+            (FuncResolve go.append [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0" "$a1") in
+            do:  ("allErrs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0")
           else do:  #())
         else
-          (if: ("$sw" =⟨selection.Operator⟩ selection.LessThan) || ("$sw" =⟨selection.Operator⟩ selection.GreaterThan)
+          (if: ("$sw" =⟨code.k8s_io.apimachinery.pkg.selection.selection.Operator⟩ code.k8s_io.apimachinery.pkg.selection.selection.LessThan) || ("$sw" =⟨code.k8s_io.apimachinery.pkg.selection.selection.Operator⟩ code.k8s_io.apimachinery.pkg.selection.selection.GreaterThan)
           then
             (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![go.SliceType go.string] "vals") in
             (FuncResolve go.len [go.SliceType go.string] #()) "$a0") ≠⟨go.int⟩ #(W64 1))
             then
-              let: "$r0" := (let: "$a0" := (![field.ErrorList] "allErrs") in
-              let: "$a1" := ((let: "$sl0" := (let: "$a0" := (![go.PointerType field.Path] "valuePath") in
+              let: "$r0" := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "allErrs") in
+              let: "$a1" := ((let: "$sl0" := (let: "$a0" := (![go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path] "valuePath") in
               let: "$a1" := (Convert (go.SliceType go.string) (go.InterfaceType []) (![go.SliceType go.string] "vals")) in
               let: "$a2" := #"for 'Gt', 'Lt' operators, exactly one value is required"%go in
-              (FuncResolve field.Invalid [] #()) "$a0" "$a1" "$a2") in
-              CompositeLiteral (go.SliceType (go.PointerType field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType field.Error) "$sl0")]))) in
-              (FuncResolve go.append [field.ErrorList] #()) "$a0" "$a1") in
-              do:  ("allErrs" <-[field.ErrorList] "$r0")
+              (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.Invalid [] #()) "$a0" "$a1" "$a2") in
+              CompositeLiteral (go.SliceType (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) "$sl0")]))) in
+              (FuncResolve go.append [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0" "$a1") in
+              do:  ("allErrs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0")
             else do:  #());;;
             let: "$range" := (![go.SliceType go.string] "vals") in
             (let: "i" := (GoAlloc go.int (GoZeroVal go.int #())) in
@@ -462,57 +462,57 @@ Definition NewRequirementⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
               let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] (IndexRef (go.SliceType go.string) (![go.SliceType go.string] "vals", ![go.int] "i"))) in
               let: "$a1" := #(W64 10) in
               let: "$a2" := #(W64 64) in
-              (FuncResolve strconv.ParseInt [] #()) "$a0" "$a1" "$a2") in
+              (FuncResolve code.strconv.strconv.ParseInt [] #()) "$a0" "$a1" "$a2") in
               let: "$r0" := "$ret0" in
               let: "$r1" := "$ret1" in
               do:  "$r0";;;
               do:  ("err" <-[go.error] "$r1");;;
               (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
               then
-                let: "$r0" := (let: "$a0" := (![field.ErrorList] "allErrs") in
+                let: "$r0" := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "allErrs") in
                 let: "$a1" := ((let: "$sl0" := (let: "$a0" := (let: "$a0" := (![go.int] "i") in
-                (MethodResolve (go.PointerType field.Path) "Index"%go (![go.PointerType field.Path] "valuePath")) "$a0") in
+                (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path) "Index"%go (![go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path] "valuePath")) "$a0") in
                 let: "$a1" := (Convert go.string (go.InterfaceType []) (![go.string] (IndexRef (go.SliceType go.string) (![go.SliceType go.string] "vals", ![go.int] "i")))) in
                 let: "$a2" := #"for 'Gt', 'Lt' operators, the value must be an integer"%go in
-                (FuncResolve field.Invalid [] #()) "$a0" "$a1" "$a2") in
-                CompositeLiteral (go.SliceType (go.PointerType field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType field.Error) "$sl0")]))) in
-                (FuncResolve go.append [field.ErrorList] #()) "$a0" "$a1") in
-                do:  ("allErrs" <-[field.ErrorList] "$r0")
+                (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.Invalid [] #()) "$a0" "$a1" "$a2") in
+                CompositeLiteral (go.SliceType (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) "$sl0")]))) in
+                (FuncResolve go.append [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0" "$a1") in
+                do:  ("allErrs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0")
               else do:  #()))))
           else
-            let: "$r0" := (let: "$a0" := (![field.ErrorList] "allErrs") in
+            let: "$r0" := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "allErrs") in
             let: "$a1" := ((let: "$sl0" := (let: "$a0" := (let: "$a0" := #"operator"%go in
             let: "$a1" := #slice.nil in
-            (MethodResolve (go.PointerType field.Path) "Child"%go (![go.PointerType field.Path] "path")) "$a0" "$a1") in
-            let: "$a1" := (Convert selection.Operator (go.InterfaceType []) (![selection.Operator] "op")) in
+            (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path) "Child"%go (![go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path] "path")) "$a0" "$a1") in
+            let: "$a1" := (Convert code.k8s_io.apimachinery.pkg.selection.selection.Operator (go.InterfaceType []) (![code.k8s_io.apimachinery.pkg.selection.selection.Operator] "op")) in
             let: "$a2" := (![go.SliceType go.string] (GlobalVarAddr validRequirementOperators #())) in
-            (FuncResolve field.NotSupported [go.string] #()) "$a0" "$a1" "$a2") in
-            CompositeLiteral (go.SliceType (go.PointerType field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType field.Error) "$sl0")]))) in
-            (FuncResolve go.append [field.ErrorList] #()) "$a0" "$a1") in
-            do:  ("allErrs" <-[field.ErrorList] "$r0")))));;;
+            (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.NotSupported [go.string] #()) "$a0" "$a1" "$a2") in
+            CompositeLiteral (go.SliceType (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) "$sl0")]))) in
+            (FuncResolve go.append [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0" "$a1") in
+            do:  ("allErrs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0")))));;;
     let: "$range" := (![go.SliceType go.string] "vals") in
     (let: "i" := (GoAlloc go.int (GoZeroVal go.int #())) in
     slice.for_range go.string "$range" (λ: "$key" "$value",
       do:  ("i" <-[go.int] "$key");;;
-      (let: "err" := (GoAlloc (go.PointerType field.Error) (GoZeroVal (go.PointerType field.Error) #())) in
+      (let: "err" := (GoAlloc (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) (GoZeroVal (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) #())) in
       let: "$r0" := (let: "$a0" := (![go.string] "key") in
       let: "$a1" := (![go.string] (IndexRef (go.SliceType go.string) (![go.SliceType go.string] "vals", ![go.int] "i"))) in
       let: "$a2" := (let: "$a0" := (![go.int] "i") in
-      (MethodResolve (go.PointerType field.Path) "Index"%go (![go.PointerType field.Path] "valuePath")) "$a0") in
+      (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path) "Index"%go (![go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path] "valuePath")) "$a0") in
       (FuncResolve validateLabelValue [] #()) "$a0" "$a1" "$a2") in
-      do:  ("err" <-[go.PointerType field.Error] "$r0");;;
-      (if: Convert go.untyped_bool go.bool ((![go.PointerType field.Error] "err") ≠⟨go.PointerType field.Error⟩ (Convert go.untyped_nil (go.PointerType field.Error) UntypedNil))
+      do:  ("err" <-[go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error] "$r0");;;
+      (if: Convert go.untyped_bool go.bool ((![go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error] "err") ≠⟨go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) UntypedNil))
       then
-        let: "$r0" := (let: "$a0" := (![field.ErrorList] "allErrs") in
-        let: "$a1" := ((let: "$sl0" := (![go.PointerType field.Error] "err") in
-        CompositeLiteral (go.SliceType (go.PointerType field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType field.Error) "$sl0")]))) in
-        (FuncResolve go.append [field.ErrorList] #()) "$a0" "$a1") in
-        do:  ("allErrs" <-[field.ErrorList] "$r0")
+        let: "$r0" := (let: "$a0" := (![code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "allErrs") in
+        let: "$a1" := ((let: "$sl0" := (![go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error] "err") in
+        CompositeLiteral (go.SliceType (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) "$sl0")]))) in
+        (FuncResolve go.append [code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] #()) "$a0" "$a1") in
+        do:  ("allErrs" <-[code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList] "$r0")
       else do:  #()))));;;
     return: (GoAlloc Requirement (let: "$v0" := (![go.string] "key") in
-     let: "$v1" := (![selection.Operator] "op") in
+     let: "$v1" := (![code.k8s_io.apimachinery.pkg.selection.selection.Operator] "op") in
      let: "$v2" := (![go.SliceType go.string] "vals") in
-     CompositeLiteral Requirement (LiteralValue [KeyedElement (Some (KeyField "key"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "operator"%go)) (ElementExpression selection.Operator "$v1"); KeyedElement (Some (KeyField "strValues"%go)) (ElementExpression (go.SliceType go.string) "$v2")])), Convert errors.Aggregate go.error ((MethodResolve (go.PointerType field.ErrorList) "ToAggregate"%go "allErrs") #()))).
+     CompositeLiteral Requirement (LiteralValue [KeyedElement (Some (KeyField "key"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "operator"%go)) (ElementExpression code.k8s_io.apimachinery.pkg.selection.selection.Operator "$v1"); KeyedElement (Some (KeyField "strValues"%go)) (ElementExpression (go.SliceType go.string) "$v2")])), Convert code.k8s_io.apimachinery.pkg.util.errors.errors.Aggregate go.error ((MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.ErrorList) "ToAggregate"%go "allErrs") #()))).
 
 (* go: selector.go:226:23 *)
 Definition Requirement__hasValueⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
@@ -545,8 +545,8 @@ Definition Requirement__Matchesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
   λ: "r" "ls",
     exception_do (let: "r" := (GoAlloc (go.PointerType Requirement) "r") in
     let: "ls" := (GoAlloc Labels "ls") in
-    let: "$sw" := (![selection.Operator] (StructFieldRef Requirement "operator"%go (![go.PointerType Requirement] "r"))) in
-    (if: ("$sw" =⟨selection.Operator⟩ selection.DoubleEquals) || (("$sw" =⟨selection.Operator⟩ selection.Equals) || ("$sw" =⟨selection.Operator⟩ selection.In))
+    let: "$sw" := (![code.k8s_io.apimachinery.pkg.selection.selection.Operator] (StructFieldRef Requirement "operator"%go (![go.PointerType Requirement] "r"))) in
+    (if: ("$sw" =⟨code.k8s_io.apimachinery.pkg.selection.selection.Operator⟩ code.k8s_io.apimachinery.pkg.selection.selection.DoubleEquals) || (("$sw" =⟨code.k8s_io.apimachinery.pkg.selection.selection.Operator⟩ code.k8s_io.apimachinery.pkg.selection.selection.Equals) || ("$sw" =⟨code.k8s_io.apimachinery.pkg.selection.selection.Operator⟩ code.k8s_io.apimachinery.pkg.selection.selection.In))
     then
       let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
       let: "val" := (GoAlloc go.string (GoZeroVal go.string #())) in
@@ -562,7 +562,7 @@ Definition Requirement__Matchesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
       return: (let: "$a0" := (![go.string] "val") in
        (MethodResolve (go.PointerType Requirement) "hasValue"%go (![go.PointerType Requirement] "r")) "$a0")
     else
-      (if: ("$sw" =⟨selection.Operator⟩ selection.NotEquals) || ("$sw" =⟨selection.Operator⟩ selection.NotIn)
+      (if: ("$sw" =⟨code.k8s_io.apimachinery.pkg.selection.selection.Operator⟩ code.k8s_io.apimachinery.pkg.selection.selection.NotEquals) || ("$sw" =⟨code.k8s_io.apimachinery.pkg.selection.selection.Operator⟩ code.k8s_io.apimachinery.pkg.selection.selection.NotIn)
       then
         let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
         let: "val" := (GoAlloc go.string (GoZeroVal go.string #())) in
@@ -578,17 +578,17 @@ Definition Requirement__Matchesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
         return: ((⟨go.bool⟩! (let: "$a0" := (![go.string] "val") in
          (MethodResolve (go.PointerType Requirement) "hasValue"%go (![go.PointerType Requirement] "r")) "$a0")))
       else
-        (if: "$sw" =⟨selection.Operator⟩ selection.Exists
+        (if: "$sw" =⟨code.k8s_io.apimachinery.pkg.selection.selection.Operator⟩ code.k8s_io.apimachinery.pkg.selection.selection.Exists
         then
           return: (let: "$a0" := (![go.string] (StructFieldRef Requirement "key"%go (![go.PointerType Requirement] "r"))) in
            (MethodResolve Labels "Has"%go (![Labels] "ls")) "$a0")
         else
-          (if: "$sw" =⟨selection.Operator⟩ selection.DoesNotExist
+          (if: "$sw" =⟨code.k8s_io.apimachinery.pkg.selection.selection.Operator⟩ code.k8s_io.apimachinery.pkg.selection.selection.DoesNotExist
           then
             return: ((⟨go.bool⟩! (let: "$a0" := (![go.string] (StructFieldRef Requirement "key"%go (![go.PointerType Requirement] "r"))) in
              (MethodResolve Labels "Has"%go (![Labels] "ls")) "$a0")))
           else
-            (if: ("$sw" =⟨selection.Operator⟩ selection.LessThan) || ("$sw" =⟨selection.Operator⟩ selection.GreaterThan)
+            (if: ("$sw" =⟨code.k8s_io.apimachinery.pkg.selection.selection.Operator⟩ code.k8s_io.apimachinery.pkg.selection.selection.LessThan) || ("$sw" =⟨code.k8s_io.apimachinery.pkg.selection.selection.Operator⟩ code.k8s_io.apimachinery.pkg.selection.selection.GreaterThan)
             then
               let: "exists" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
               let: "val" := (GoAlloc go.string (GoZeroVal go.string #())) in
@@ -606,7 +606,7 @@ Definition Requirement__Matchesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
               let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] "val") in
               let: "$a1" := #(W64 10) in
               let: "$a2" := #(W64 64) in
-              (FuncResolve strconv.ParseInt [] #()) "$a0" "$a1" "$a2") in
+              (FuncResolve code.strconv.strconv.ParseInt [] #()) "$a0" "$a1" "$a2") in
               let: "$r0" := "$ret0" in
               let: "$r1" := "$ret1" in
               do:  ("lsValue" <-[go.int64] "$r0");;;
@@ -618,8 +618,8 @@ Definition Requirement__Matchesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
                 let: "$sl1" := (Convert Labels (go.InterfaceType []) (![Labels] "ls")) in
                 let: "$sl2" := (Convert go.error (go.InterfaceType []) (![go.error] "err")) in
                 CompositeLiteral (go.SliceType (go.InterfaceType [])) (LiteralValue [KeyedElement None (ElementExpression (go.InterfaceType []) "$sl0"); KeyedElement None (ElementExpression (go.InterfaceType []) "$sl1"); KeyedElement None (ElementExpression (go.InterfaceType []) "$sl2")]))) in
-                (MethodResolve klog.Verbose "Infof"%go (let: "$a0" := #(W32 10) in
-                (FuncResolve klog.V [] #()) "$a0")) "$a0" "$a1");;;
+                (MethodResolve code.k8s_io.klog.v2.klog.Verbose "Infof"%go (let: "$a0" := #(W32 10) in
+                (FuncResolve code.k8s_io.klog.v2.klog.V [] #()) "$a0")) "$a0" "$a1");;;
                 return: (#false)
               else do:  #());;;
               (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![go.SliceType go.string] (StructFieldRef Requirement "strValues"%go (![go.PointerType Requirement] "r"))) in
@@ -630,8 +630,8 @@ Definition Requirement__Matchesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
                 (FuncResolve go.len [go.SliceType go.string] #()) "$a0")) in
                 let: "$sl1" := (Convert (go.PointerType Requirement) (go.InterfaceType []) (![go.PointerType Requirement] "r")) in
                 CompositeLiteral (go.SliceType (go.InterfaceType [])) (LiteralValue [KeyedElement None (ElementExpression (go.InterfaceType []) "$sl0"); KeyedElement None (ElementExpression (go.InterfaceType []) "$sl1")]))) in
-                (MethodResolve klog.Verbose "Infof"%go (let: "$a0" := #(W32 10) in
-                (FuncResolve klog.V [] #()) "$a0")) "$a0" "$a1");;;
+                (MethodResolve code.k8s_io.klog.v2.klog.Verbose "Infof"%go (let: "$a0" := #(W32 10) in
+                (FuncResolve code.k8s_io.klog.v2.klog.V [] #()) "$a0")) "$a0" "$a1");;;
                 return: (#false)
               else do:  #());;;
               let: "rValue" := (GoAlloc go.int64 (GoZeroVal go.int64 #())) in
@@ -642,7 +642,7 @@ Definition Requirement__Matchesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
                 let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] (IndexRef (go.SliceType go.string) (![go.SliceType go.string] (StructFieldRef Requirement "strValues"%go (![go.PointerType Requirement] "r")), ![go.int] "i"))) in
                 let: "$a1" := #(W64 10) in
                 let: "$a2" := #(W64 64) in
-                (FuncResolve strconv.ParseInt [] #()) "$a0" "$a1" "$a2") in
+                (FuncResolve code.strconv.strconv.ParseInt [] #()) "$a0" "$a1" "$a2") in
                 let: "$r0" := "$ret0" in
                 let: "$r1" := "$ret1" in
                 do:  ("rValue" <-[go.int64] "$r0");;;
@@ -653,11 +653,11 @@ Definition Requirement__Matchesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
                   let: "$a1" := ((let: "$sl0" := (Convert go.string (go.InterfaceType []) (![go.string] (IndexRef (go.SliceType go.string) (![go.SliceType go.string] (StructFieldRef Requirement "strValues"%go (![go.PointerType Requirement] "r")), ![go.int] "i")))) in
                   let: "$sl1" := (Convert (go.PointerType Requirement) (go.InterfaceType []) (![go.PointerType Requirement] "r")) in
                   CompositeLiteral (go.SliceType (go.InterfaceType [])) (LiteralValue [KeyedElement None (ElementExpression (go.InterfaceType []) "$sl0"); KeyedElement None (ElementExpression (go.InterfaceType []) "$sl1")]))) in
-                  (MethodResolve klog.Verbose "Infof"%go (let: "$a0" := #(W32 10) in
-                  (FuncResolve klog.V [] #()) "$a0")) "$a0" "$a1");;;
+                  (MethodResolve code.k8s_io.klog.v2.klog.Verbose "Infof"%go (let: "$a0" := #(W32 10) in
+                  (FuncResolve code.k8s_io.klog.v2.klog.V [] #()) "$a0")) "$a0" "$a1");;;
                   return: (#false)
                 else do:  #())));;;
-              return: ((((![selection.Operator] (StructFieldRef Requirement "operator"%go (![go.PointerType Requirement] "r"))) =⟨selection.Operator⟩ selection.GreaterThan) && ((![go.int64] "lsValue") >⟨go.int64⟩ (![go.int64] "rValue"))) || (((![selection.Operator] (StructFieldRef Requirement "operator"%go (![go.PointerType Requirement] "r"))) =⟨selection.Operator⟩ selection.LessThan) && ((![go.int64] "lsValue") <⟨go.int64⟩ (![go.int64] "rValue"))))
+              return: ((((![code.k8s_io.apimachinery.pkg.selection.selection.Operator] (StructFieldRef Requirement "operator"%go (![go.PointerType Requirement] "r"))) =⟨code.k8s_io.apimachinery.pkg.selection.selection.Operator⟩ code.k8s_io.apimachinery.pkg.selection.selection.GreaterThan) && ((![go.int64] "lsValue") >⟨go.int64⟩ (![go.int64] "rValue"))) || (((![code.k8s_io.apimachinery.pkg.selection.selection.Operator] (StructFieldRef Requirement "operator"%go (![go.PointerType Requirement] "r"))) =⟨code.k8s_io.apimachinery.pkg.selection.selection.Operator⟩ code.k8s_io.apimachinery.pkg.selection.selection.LessThan) && ((![go.int64] "lsValue") <⟨go.int64⟩ (![go.int64] "rValue"))))
             else return: (#false))))))).
 
 (* Empty returns true if the internalSelector doesn't restrict selection space
@@ -692,8 +692,8 @@ Definition internalSelector__Addⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
     let: "$a1" := (![go.SliceType Requirement] "reqs") in
     (FuncResolve go.append [internalSelector] #()) "$a0" "$a1") in
     do:  ("ret" <-[internalSelector] "$r0");;;
-    do:  (let: "$a0" := (Convert ByKey sort.Interface (![internalSelector] "ret")) in
-    (FuncResolve sort.Sort [] #()) "$a0");;;
+    do:  (let: "$a0" := (Convert ByKey code.sort.sort.Interface (![internalSelector] "ret")) in
+    (FuncResolve code.sort.sort.Sort [] #()) "$a0");;;
     return: (Convert internalSelector Selector (![internalSelector] "ret"))).
 
 (* Matches for a internalSelector returns true if all
@@ -743,7 +743,7 @@ Definition internalSelector__Stringⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
       do:  ("reqs" <-[go.SliceType go.string] "$r0")));;;
     return: (let: "$a0" := (![go.SliceType go.string] "reqs") in
      let: "$a1" := #","%go in
-     (FuncResolve strings.Join [] #()) "$a0" "$a1")).
+     (FuncResolve code.strings.strings.Join [] #()) "$a0" "$a1")).
 
 (* RequiresExactMatch introspects whether a given selector requires a single specific field
    to be set, and if so returns the value it requires.
@@ -761,8 +761,8 @@ Definition internalSelector__RequiresExactMatchⁱᵐᵖˡ {ext : ffi_syntax} {g
       do:  ("ix" <-[go.int] "$key");;;
       (if: Convert go.untyped_bool go.bool ((![go.string] (StructFieldRef Requirement "key"%go (IndexRef internalSelector (![internalSelector] "s", ![go.int] "ix")))) =⟨go.string⟩ (![go.string] "label"))
       then
-        let: "$sw" := (![selection.Operator] (StructFieldRef Requirement "operator"%go (IndexRef internalSelector (![internalSelector] "s", ![go.int] "ix")))) in
-        (if: ("$sw" =⟨selection.Operator⟩ selection.In) || (("$sw" =⟨selection.Operator⟩ selection.DoubleEquals) || ("$sw" =⟨selection.Operator⟩ selection.Equals))
+        let: "$sw" := (![code.k8s_io.apimachinery.pkg.selection.selection.Operator] (StructFieldRef Requirement "operator"%go (IndexRef internalSelector (![internalSelector] "s", ![go.int] "ix")))) in
+        (if: ("$sw" =⟨code.k8s_io.apimachinery.pkg.selection.selection.Operator⟩ code.k8s_io.apimachinery.pkg.selection.selection.In) || (("$sw" =⟨code.k8s_io.apimachinery.pkg.selection.selection.Operator⟩ code.k8s_io.apimachinery.pkg.selection.selection.DoubleEquals) || ("$sw" =⟨code.k8s_io.apimachinery.pkg.selection.selection.Operator⟩ code.k8s_io.apimachinery.pkg.selection.selection.Equals))
         then
           (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![go.SliceType go.string] (StructFieldRef Requirement "strValues"%go (IndexRef internalSelector (![internalSelector] "s", ![go.int] "ix")))) in
           (FuncResolve go.len [go.SliceType go.string] #()) "$a0") =⟨go.int⟩ #(W64 1))
@@ -776,46 +776,46 @@ Definition internalSelector__RequiresExactMatchⁱᵐᵖˡ {ext : ffi_syntax} {g
 (* go: selector.go:929:6 *)
 Definition validateLabelKeyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "k" "path",
-    exception_do (let: "path" := (GoAlloc (go.PointerType field.Path) "path") in
+    exception_do (let: "path" := (GoAlloc (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path) "path") in
     let: "k" := (GoAlloc go.string "k") in
     (let: "errs" := (GoAlloc (go.SliceType go.string) (GoZeroVal (go.SliceType go.string) #())) in
     let: "$r0" := (let: "$a0" := (![go.string] "k") in
-    (FuncResolve validation.IsQualifiedName [] #()) "$a0") in
+    (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.validation.IsQualifiedName [] #()) "$a0") in
     do:  ("errs" <-[go.SliceType go.string] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![go.SliceType go.string] "errs") in
     (FuncResolve go.len [go.SliceType go.string] #()) "$a0") ≠⟨go.int⟩ #(W64 0))
     then
-      return: (let: "$a0" := (![go.PointerType field.Path] "path") in
+      return: (let: "$a0" := (![go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path] "path") in
        let: "$a1" := (Convert go.string (go.InterfaceType []) (![go.string] "k")) in
        let: "$a2" := (let: "$a0" := (![go.SliceType go.string] "errs") in
        let: "$a1" := #"; "%go in
-       (FuncResolve strings.Join [] #()) "$a0" "$a1") in
-       (FuncResolve field.Invalid [] #()) "$a0" "$a1" "$a2")
+       (FuncResolve code.strings.strings.Join [] #()) "$a0" "$a1") in
+       (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.Invalid [] #()) "$a0" "$a1" "$a2")
     else do:  #()));;;
-    return: (Convert go.untyped_nil (go.PointerType field.Error) UntypedNil)).
+    return: (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) UntypedNil)).
 
 (* go: selector.go:936:6 *)
 Definition validateLabelValueⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "k" "v" "path",
-    exception_do (let: "path" := (GoAlloc (go.PointerType field.Path) "path") in
+    exception_do (let: "path" := (GoAlloc (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path) "path") in
     let: "v" := (GoAlloc go.string "v") in
     let: "k" := (GoAlloc go.string "k") in
     (let: "errs" := (GoAlloc (go.SliceType go.string) (GoZeroVal (go.SliceType go.string) #())) in
     let: "$r0" := (let: "$a0" := (![go.string] "v") in
-    (FuncResolve validation.IsValidLabelValue [] #()) "$a0") in
+    (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.validation.IsValidLabelValue [] #()) "$a0") in
     do:  ("errs" <-[go.SliceType go.string] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![go.SliceType go.string] "errs") in
     (FuncResolve go.len [go.SliceType go.string] #()) "$a0") ≠⟨go.int⟩ #(W64 0))
     then
       return: (let: "$a0" := (let: "$a0" := (![go.string] "k") in
-       (MethodResolve (go.PointerType field.Path) "Key"%go (![go.PointerType field.Path] "path")) "$a0") in
+       (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path) "Key"%go (![go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Path] "path")) "$a0") in
        let: "$a1" := (Convert go.string (go.InterfaceType []) (![go.string] "v")) in
        let: "$a2" := (let: "$a0" := (![go.SliceType go.string] "errs") in
        let: "$a1" := #"; "%go in
-       (FuncResolve strings.Join [] #()) "$a0" "$a1") in
-       (FuncResolve field.Invalid [] #()) "$a0" "$a1" "$a2")
+       (FuncResolve code.strings.strings.Join [] #()) "$a0" "$a1") in
+       (FuncResolve code.k8s_io.apimachinery.pkg.util.validation.field.field.Invalid [] #()) "$a0" "$a1" "$a2")
     else do:  #()));;;
-    return: (Convert go.untyped_nil (go.PointerType field.Error) UntypedNil)).
+    return: (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.util.validation.field.field.Error) UntypedNil)).
 
 (* SelectorFromValidatedSet returns a Selector which will match exactly the given Set.
    A nil and empty Sets are considered equivalent to Everything().
@@ -843,15 +843,15 @@ Definition SelectorFromValidatedSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
       do:  ("label" <-[go.string] "$key");;;
       let: "$r0" := (let: "$a0" := (![go.SliceType Requirement] "requirements") in
       let: "$a1" := ((let: "$sl0" := (let: "$v0" := (![go.string] "label") in
-      let: "$v1" := selection.Equals in
+      let: "$v1" := code.k8s_io.apimachinery.pkg.selection.selection.Equals in
       let: "$v2" := (let: "$v0" := (![go.string] "value") in
       CompositeLiteral (go.SliceType go.string) (LiteralValue [KeyedElement None (ElementExpression go.string "$v0")])) in
-      CompositeLiteral Requirement (LiteralValue [KeyedElement (Some (KeyField "key"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "operator"%go)) (ElementExpression selection.Operator "$v1"); KeyedElement (Some (KeyField "strValues"%go)) (ElementExpression (go.SliceType go.string) "$v2")])) in
+      CompositeLiteral Requirement (LiteralValue [KeyedElement (Some (KeyField "key"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "operator"%go)) (ElementExpression code.k8s_io.apimachinery.pkg.selection.selection.Operator "$v1"); KeyedElement (Some (KeyField "strValues"%go)) (ElementExpression (go.SliceType go.string) "$v2")])) in
       CompositeLiteral (go.SliceType Requirement) (LiteralValue [KeyedElement None (ElementExpression Requirement "$sl0")]))) in
       (FuncResolve go.append [go.SliceType Requirement] #()) "$a0" "$a1") in
       do:  ("requirements" <-[go.SliceType Requirement] "$r0")));;;
-    do:  (let: "$a0" := (Convert ByKey sort.Interface (![go.SliceType Requirement] "requirements")) in
-    (FuncResolve sort.Sort [] #()) "$a0");;;
+    do:  (let: "$a0" := (Convert ByKey code.sort.sort.Interface (![go.SliceType Requirement] "requirements")) in
+    (FuncResolve code.sort.sort.Sort [] #()) "$a0");;;
     return: (Convert internalSelector Selector (![go.SliceType Requirement] "requirements"))).
 
 #[global] Instance info' : PkgInfo pkg_id.labels :=
@@ -866,12 +866,12 @@ Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
     package.init pkg_id.labels (λ: <>,
       exception_do (do:  (go.GlobalAlloc sharedNothingSelector Selector #());;;
       do:  (go.GlobalAlloc sharedEverythingSelector Selector #());;;
-      do:  (validation.initialize' #());;;
-      do:  (selection.initialize' #());;;
-      do:  (klog.initialize' #());;;
-      do:  (strconv.initialize' #());;;
-      do:  (field.initialize' #());;;
-      do:  (sort.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.util.validation.validation.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.selection.selection.initialize' #());;;
+      do:  (code.k8s_io.klog.v2.klog.initialize' #());;;
+      do:  (code.strconv.strconv.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.util.validation.field.field.initialize' #());;;
+      do:  (code.sort.sort.initialize' #());;;
       do:  (unaryOperators'init #());;;
       do:  (binaryOperators'init #());;;
       do:  (validRequirementOperators'init #());;;
@@ -1052,7 +1052,7 @@ Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Record t :=
 mk {
   key' : go_string;
-  operator' : selection.Operator.t;
+  operator' : code.k8s_io.apimachinery.pkg.selection.selection.Operator.t;
   strValues' : slice.t;
 }.
 
@@ -1064,7 +1064,7 @@ End Requirement.
 
 Definition Requirement'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
   (go.FieldDecl "key"%go go.string);
-  (go.FieldDecl "operator"%go selection.Operator);
+  (go.FieldDecl "operator"%go code.k8s_io.apimachinery.pkg.selection.selection.Operator);
   (go.FieldDecl "strValues"%go (go.SliceType go.string))
 ].
 Program Definition Requirement'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (Requirement'fds_unsealed).
@@ -1206,11 +1206,11 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] validateLabelKey_unfold :: FuncUnfold validateLabelKey [] (validateLabelKeyⁱᵐᵖˡ);
   #[global] validateLabelValue_unfold :: FuncUnfold validateLabelValue [] (validateLabelValueⁱᵐᵖˡ);
   #[global] SelectorFromValidatedSet_unfold :: FuncUnfold SelectorFromValidatedSet [] (SelectorFromValidatedSetⁱᵐᵖˡ);
-  #[global] import_sort_Assumption :: sort.Assumptions;
-  #[global] import_field_Assumption :: field.Assumptions;
-  #[global] import_strconv_Assumption :: strconv.Assumptions;
-  #[global] import_klog_Assumption :: klog.Assumptions;
-  #[global] import_selection_Assumption :: selection.Assumptions;
-  #[global] import_validation_Assumption :: validation.Assumptions;
+  #[global] import_sort_Assumption :: code.sort.sort.Assumptions;
+  #[global] import_field_Assumption :: code.k8s_io.apimachinery.pkg.util.validation.field.field.Assumptions;
+  #[global] import_strconv_Assumption :: code.strconv.strconv.Assumptions;
+  #[global] import_klog_Assumption :: code.k8s_io.klog.v2.klog.Assumptions;
+  #[global] import_selection_Assumption :: code.k8s_io.apimachinery.pkg.selection.selection.Assumptions;
+  #[global] import_validation_Assumption :: code.k8s_io.apimachinery.pkg.util.validation.validation.Assumptions;
 }.
 End labels.

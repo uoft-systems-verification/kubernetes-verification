@@ -147,7 +147,7 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.field (λ: <>,
-      exception_do (do:  (errors.initialize' #());;;
+      exception_do (do:  (code.k8s_io.apimachinery.pkg.util.errors.errors.initialize' #());;;
       do:  (_'init #());;;
       do:  (omitValue'init #()))
       ).
@@ -330,6 +330,6 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] PathOption_instance :: PathOption_Assumptions;
   #[global] Path_instance :: Path_Assumptions;
   #[global] NewPath_unfold :: FuncUnfold NewPath [] (NewPathⁱᵐᵖˡ);
-  #[global] import_errors_Assumption :: errors.Assumptions;
+  #[global] import_errors_Assumption :: code.k8s_io.apimachinery.pkg.util.errors.errors.Assumptions;
 }.
 End field.

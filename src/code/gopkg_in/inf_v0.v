@@ -122,7 +122,7 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.inf (λ: <>,
-      exception_do (do:  (big.initialize' #());;;
+      exception_do (do:  (code.math.big.big.initialize' #());;;
       do:  (bigInt'init #());;;
       do:  (exp10cache'init #());;;
       do:  (zeros'init #());;;
@@ -150,7 +150,7 @@ Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Record t :=
 mk {
-  unscaled' : big.Int.t;
+  unscaled' : code.math.big.big.Int.t;
   scale' : inf.Scale.t;
 }.
 
@@ -161,7 +161,7 @@ End def.
 End Dec.
 
 Definition Dec'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
-  (go.FieldDecl "unscaled"%go big.Int);
+  (go.FieldDecl "unscaled"%go code.math.big.big.Int);
   (go.FieldDecl "scale"%go Scale)
 ].
 Program Definition Dec'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (Dec'fds_unsealed).
@@ -286,6 +286,6 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] Rounder_instance :: Rounder_Assumptions;
   #[global] rounder_instance :: rounder_Assumptions;
   #[global] rndr_instance :: rndr_Assumptions;
-  #[global] import_big_Assumption :: big.Assumptions;
+  #[global] import_big_Assumption :: code.math.big.big.Assumptions;
 }.
 End inf.

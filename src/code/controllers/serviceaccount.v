@@ -24,32 +24,32 @@ Definition syncNamespaceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
   λ: "key",
     exception_do (let: "key" := (GoAlloc go.string "key") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-    let: "namespace" := (GoAlloc (go.PointerType core_v1.Namespace) (GoZeroVal (go.PointerType core_v1.Namespace) #())) in
+    let: "namespace" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Namespace) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.Namespace) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] "key") in
-    (MethodResolve (go.PointerType apimodel.State) "NamespaceGet"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0") in
+    (MethodResolve (go.PointerType code.kubernetes_model.apimodel.apimodel.State) "NamespaceGet"%go (![go.PointerType code.kubernetes_model.apimodel.apimodel.State] (GlobalVarAddr code.kubernetes_model.apimodel.apimodel.ModelState #()))) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("namespace" <-[go.PointerType core_v1.Namespace] "$r0");;;
+    do:  ("namespace" <-[go.PointerType code.k8s_io.api.core.v1.v1.Namespace] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: let: "$a0" := (![go.error] "err") in
-    (FuncResolve errors.IsNotFound [] #()) "$a0"
+    (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.IsNotFound [] #()) "$a0"
     then return: (Convert go.untyped_nil go.error UntypedNil)
     else do:  #());;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then return: (![go.error] "err")
     else do:  #());;;
-    (if: Convert go.untyped_bool go.bool ((![core_v1.NamespacePhase] (StructFieldRef core_v1.NamespaceStatus "Phase"%go (StructFieldRef core_v1.Namespace "Status"%go (![go.PointerType core_v1.Namespace] "namespace")))) ≠⟨core_v1.NamespacePhase⟩ core_v1.NamespaceActive)
+    (if: Convert go.untyped_bool go.bool ((![code.k8s_io.api.core.v1.v1.NamespacePhase] (StructFieldRef code.k8s_io.api.core.v1.v1.NamespaceStatus "Phase"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Namespace "Status"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Namespace] "namespace")))) ≠⟨code.k8s_io.api.core.v1.v1.NamespacePhase⟩ code.k8s_io.api.core.v1.v1.NamespaceActive)
     then return: (Convert go.untyped_nil go.error UntypedNil)
     else do:  #());;;
-    let: "$range" := (![go.SliceType core_v1.ServiceAccount] (GlobalVarAddr serviceAccountsToEnsure #())) in
-    (let: "serviceAccount" := (GoAlloc core_v1.ServiceAccount (GoZeroVal core_v1.ServiceAccount #())) in
-    slice.for_range core_v1.ServiceAccount "$range" (λ: "$key" "$value",
-      do:  ("serviceAccount" <-[core_v1.ServiceAccount] "$value");;;
+    let: "$range" := (![go.SliceType code.k8s_io.api.core.v1.v1.ServiceAccount] (GlobalVarAddr serviceAccountsToEnsure #())) in
+    (let: "serviceAccount" := (GoAlloc code.k8s_io.api.core.v1.v1.ServiceAccount (GoZeroVal code.k8s_io.api.core.v1.v1.ServiceAccount #())) in
+    slice.for_range code.k8s_io.api.core.v1.v1.ServiceAccount "$range" (λ: "$key" "$value",
+      do:  ("serviceAccount" <-[code.k8s_io.api.core.v1.v1.ServiceAccount] "$value");;;
       do:  "$key";;;
       let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-      let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef core_v1.Namespace "ObjectMeta"%go (![go.PointerType core_v1.Namespace] "namespace")))) in
-      let: "$a1" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef core_v1.ServiceAccount "ObjectMeta"%go "serviceAccount"))) in
-      (MethodResolve (go.PointerType apimodel.State) "ServiceAccountGet"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1") in
+      let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Name"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Namespace "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Namespace] "namespace")))) in
+      let: "$a1" := (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Name"%go (StructFieldRef code.k8s_io.api.core.v1.v1.ServiceAccount "ObjectMeta"%go "serviceAccount"))) in
+      (MethodResolve (go.PointerType code.kubernetes_model.apimodel.apimodel.State) "ServiceAccountGet"%go (![go.PointerType code.kubernetes_model.apimodel.apimodel.State] (GlobalVarAddr code.kubernetes_model.apimodel.apimodel.ModelState #()))) "$a0" "$a1") in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
       do:  "$r0";;;
@@ -58,20 +58,20 @@ Definition syncNamespaceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
       then continue: #()
       else do:  #());;;
       (if: (⟨go.bool⟩! (let: "$a0" := (![go.error] "err") in
-      (FuncResolve errors.IsNotFound [] #()) "$a0"))
+      (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.IsNotFound [] #()) "$a0"))
       then return: (![go.error] "err")
       else do:  #());;;
-      let: "$r0" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef core_v1.Namespace "ObjectMeta"%go (![go.PointerType core_v1.Namespace] "namespace")))) in
-      do:  ((StructFieldRef meta_v1.ObjectMeta "Namespace"%go (StructFieldRef core_v1.ServiceAccount "ObjectMeta"%go "serviceAccount")) <-[go.string] "$r0");;;
-      let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef core_v1.Namespace "ObjectMeta"%go (![go.PointerType core_v1.Namespace] "namespace")))) in
+      let: "$r0" := (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Name"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Namespace "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Namespace] "namespace")))) in
+      do:  ((StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Namespace"%go (StructFieldRef code.k8s_io.api.core.v1.v1.ServiceAccount "ObjectMeta"%go "serviceAccount")) <-[go.string] "$r0");;;
+      let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Name"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Namespace "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Namespace] "namespace")))) in
       let: "$a1" := "serviceAccount" in
-      (MethodResolve (go.PointerType apimodel.State) "ServiceAccountCreate"%go (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "$a0" "$a1") in
+      (MethodResolve (go.PointerType code.kubernetes_model.apimodel.apimodel.State) "ServiceAccountCreate"%go (![go.PointerType code.kubernetes_model.apimodel.apimodel.State] (GlobalVarAddr code.kubernetes_model.apimodel.apimodel.ModelState #()))) "$a0" "$a1") in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
       do:  "$r0";;;
       do:  ("err" <-[go.error] "$r1");;;
       (if: let: "$a0" := (![go.error] "err") in
-      (FuncResolve errors.IsAlreadyExists [] #()) "$a0"
+      (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.IsAlreadyExists [] #()) "$a0"
       then continue: #()
       else do:  #());;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
@@ -87,23 +87,23 @@ Definition syncNamespaceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.serviceaccount (λ: <>,
-      exception_do (do:  (go.GlobalAlloc serviceAccountsToEnsure (go.SliceType core_v1.ServiceAccount) #());;;
-      do:  (meta_v1.initialize' #());;;
-      do:  (errors.initialize' #());;;
-      do:  (core_v1.initialize' #());;;
-      do:  (apimodel.initialize' #());;;
+      exception_do (do:  (go.GlobalAlloc serviceAccountsToEnsure (go.SliceType code.k8s_io.api.core.v1.v1.ServiceAccount) #());;;
+      do:  (code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.api.errors.errors.initialize' #());;;
+      do:  (code.k8s_io.api.core.v1.v1.initialize' #());;;
+      do:  (code.kubernetes_model.apimodel.apimodel.initialize' #());;;
       let: "$r0" := (let: "$v0" := (let: "$v0" := #"default"%go in
-      CompositeLiteral meta_v1.ObjectMeta (LiteralValue [KeyedElement (Some (KeyField "Name"%go)) (ElementExpression go.string "$v0")])) in
-      CompositeLiteral (go.SliceType core_v1.ServiceAccount) (LiteralValue [KeyedElement None (ElementLiteralValue [KeyedElement (Some (KeyField "ObjectMeta"%go)) (ElementExpression meta_v1.ObjectMeta "$v0")])])) in
-      do:  ((GlobalVarAddr serviceAccountsToEnsure #()) <-[go.SliceType core_v1.ServiceAccount] "$r0"))
+      CompositeLiteral code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta (LiteralValue [KeyedElement (Some (KeyField "Name"%go)) (ElementExpression go.string "$v0")])) in
+      CompositeLiteral (go.SliceType code.k8s_io.api.core.v1.v1.ServiceAccount) (LiteralValue [KeyedElement None (ElementLiteralValue [KeyedElement (Some (KeyField "ObjectMeta"%go)) (ElementExpression code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "$v0")])])) in
+      do:  ((GlobalVarAddr serviceAccountsToEnsure #()) <-[go.SliceType code.k8s_io.api.core.v1.v1.ServiceAccount] "$r0"))
       ).
 
 Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] syncNamespace_unfold :: FuncUnfold syncNamespace [] (syncNamespaceⁱᵐᵖˡ);
-  #[global] import_apimodel_Assumption :: apimodel.Assumptions;
-  #[global] import_core_v1_Assumption :: core_v1.Assumptions;
-  #[global] import_errors_Assumption :: errors.Assumptions;
-  #[global] import_meta_v1_Assumption :: meta_v1.Assumptions;
+  #[global] import_apimodel_Assumption :: code.kubernetes_model.apimodel.apimodel.Assumptions;
+  #[global] import_core_v1_Assumption :: code.k8s_io.api.core.v1.v1.Assumptions;
+  #[global] import_errors_Assumption :: code.k8s_io.apimachinery.pkg.api.errors.errors.Assumptions;
+  #[global] import_meta_v1_Assumption :: code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions;
 }.
 End serviceaccount.

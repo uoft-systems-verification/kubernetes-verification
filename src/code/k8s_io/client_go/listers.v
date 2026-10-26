@@ -30,9 +30,9 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.listers (λ: <>,
-      exception_do (do:  (cache.initialize' #());;;
-      do:  (schema.initialize' #());;;
-      do:  (runtime.initialize' #()))
+      exception_do (do:  (code.k8s_io.client_go.tools.cache.cache.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.runtime.schema.schema.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.runtime.runtime.initialize' #()))
       ).
 
 Module ResourceIndexer.
@@ -40,8 +40,8 @@ Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Record t {T : Type} :=
 mk {
-  indexer' : cache.Indexer.t;
-  resource' : schema.GroupResource.t;
+  indexer' : code.k8s_io.client_go.tools.cache.cache.Indexer.t;
+  resource' : code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupResource.t;
   namespace' : go_string;
 }.
 
@@ -52,8 +52,8 @@ End def.
 End ResourceIndexer.
 
 Definition ResourceIndexer'fds_unsealed (T : go.type) {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
-  (go.FieldDecl "indexer"%go cache.Indexer);
-  (go.FieldDecl "resource"%go schema.GroupResource);
+  (go.FieldDecl "indexer"%go code.k8s_io.client_go.tools.cache.cache.Indexer);
+  (go.FieldDecl "resource"%go code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupResource);
   (go.FieldDecl "namespace"%go go.string)
 ].
 Program Definition ResourceIndexer'fds (T : go.type) {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (ResourceIndexer'fds_unsealed T).
@@ -79,8 +79,8 @@ Class ResourceIndexer_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLo
 Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] ResourceIndexer_instance :: ResourceIndexer_Assumptions;
-  #[global] import_runtime_Assumption :: runtime.Assumptions;
-  #[global] import_schema_Assumption :: schema.Assumptions;
-  #[global] import_cache_Assumption :: cache.Assumptions;
+  #[global] import_runtime_Assumption :: code.k8s_io.apimachinery.pkg.runtime.runtime.Assumptions;
+  #[global] import_schema_Assumption :: code.k8s_io.apimachinery.pkg.runtime.schema.schema.Assumptions;
+  #[global] import_cache_Assumption :: code.k8s_io.client_go.tools.cache.cache.Assumptions;
 }.
 End listers.

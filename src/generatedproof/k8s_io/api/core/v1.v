@@ -20446,7 +20446,7 @@ Proof.
       (fun v x => v <|(v1.PodStatus.PodIPs') := x|>)
       (ltac:(tc_solve)) (ltac:(tc_solve));
     build_generated_struct_field
-      "StartTime" (go.PointerType v1.Time)
+      "StartTime" (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time)
       (fun v => v.(v1.PodStatus.StartTime'))
       (fun v x => v <|(v1.PodStatus.StartTime') := x|>)
       (ltac:(tc_solve)) (ltac:(tc_solve));

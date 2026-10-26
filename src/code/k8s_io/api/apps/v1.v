@@ -477,11 +477,11 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.v1 (λ: <>,
-      exception_do (do:  (go.GlobalAlloc SchemeGroupVersion schema.GroupVersion #());;;
-      do:  (schema.initialize' #());;;
-      do:  (intstr.initialize' #());;;
-      do:  (meta_v1.initialize' #());;;
-      do:  (core_v1.initialize' #());;;
+      exception_do (do:  (go.GlobalAlloc SchemeGroupVersion code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersion #());;;
+      do:  (code.k8s_io.apimachinery.pkg.runtime.schema.schema.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.util.intstr.intstr.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.initialize' #());;;
+      do:  (code.k8s_io.api.core.v1.v1.initialize' #());;;
       do:  (_'init #());;;
       do:  (_'init #());;;
       do:  (_'init #());;;
@@ -491,8 +491,8 @@ Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
       do:  (ErrUnexpectedEndOfGroupGenerated'init #());;;
       let: "$r0" := (let: "$v0" := (Convert go.untyped_string go.string GroupName) in
       let: "$v1" := #"v1"%go in
-      CompositeLiteral schema.GroupVersion (LiteralValue [KeyedElement (Some (KeyField "Group"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Version"%go)) (ElementExpression go.string "$v1")])) in
-      do:  ((GlobalVarAddr SchemeGroupVersion #()) <-[schema.GroupVersion] "$r0");;;
+      CompositeLiteral code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersion (LiteralValue [KeyedElement (Some (KeyField "Group"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Version"%go)) (ElementExpression go.string "$v1")])) in
+      do:  ((GlobalVarAddr SchemeGroupVersion #()) <-[code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersion] "$r0");;;
       do:  (SchemeBuilder'init #());;;
       do:  (localSchemeBuilder'init #());;;
       do:  (AddToScheme'init #());;;
@@ -600,7 +600,7 @@ Record t :=
 mk {
   Replicas' : loc;
   Selector' : loc;
-  Template' : core_v1.PodTemplateSpec.t;
+  Template' : code.k8s_io.api.core.v1.v1.PodTemplateSpec.t;
   VolumeClaimTemplates' : slice.t;
   ServiceName' : go_string;
   PodManagementPolicy' : v1.PodManagementPolicyType.t;
@@ -619,9 +619,9 @@ End StatefulSetSpec.
 
 Definition StatefulSetSpec'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
   (go.FieldDecl "Replicas"%go (go.PointerType go.int32));
-  (go.FieldDecl "Selector"%go (go.PointerType meta_v1.LabelSelector));
-  (go.FieldDecl "Template"%go core_v1.PodTemplateSpec);
-  (go.FieldDecl "VolumeClaimTemplates"%go (go.SliceType core_v1.PersistentVolumeClaim));
+  (go.FieldDecl "Selector"%go (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector));
+  (go.FieldDecl "Template"%go code.k8s_io.api.core.v1.v1.PodTemplateSpec);
+  (go.FieldDecl "VolumeClaimTemplates"%go (go.SliceType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim));
   (go.FieldDecl "ServiceName"%go go.string);
   (go.FieldDecl "PodManagementPolicy"%go PodManagementPolicyType);
   (go.FieldDecl "UpdateStrategy"%go StatefulSetUpdateStrategy);
@@ -736,8 +736,8 @@ Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Record t :=
 mk {
-  TypeMeta' : meta_v1.TypeMeta.t;
-  ObjectMeta' : meta_v1.ObjectMeta.t;
+  TypeMeta' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.TypeMeta.t;
+  ObjectMeta' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta.t;
   Spec' : v1.StatefulSetSpec.t;
   Status' : v1.StatefulSetStatus.t;
 }.
@@ -749,8 +749,8 @@ End def.
 End StatefulSet.
 
 Definition StatefulSet'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
-  (go.EmbeddedField "TypeMeta"%go meta_v1.TypeMeta);
-  (go.EmbeddedField "ObjectMeta"%go meta_v1.ObjectMeta);
+  (go.EmbeddedField "TypeMeta"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.TypeMeta);
+  (go.EmbeddedField "ObjectMeta"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta);
   (go.FieldDecl "Spec"%go StatefulSetSpec);
   (go.FieldDecl "Status"%go StatefulSetStatus)
 ].
@@ -772,25 +772,25 @@ Class StatefulSet_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalC
   #[global] StatefulSet_set_Spec (x : StatefulSet.t) y :: ⟦StructFieldSet (StatefulSetⁱᵐᵖˡ) "Spec", (#x, #y)⟧ ⤳[under] #(x <|StatefulSet.Spec' := y|>);
   #[global] StatefulSet_get_Status (x : StatefulSet.t) :: ⟦StructFieldGet (StatefulSetⁱᵐᵖˡ) "Status", #x⟧ ⤳[under] #x.(StatefulSet.Status');
   #[global] StatefulSet_set_Status (x : StatefulSet.t) y :: ⟦StructFieldSet (StatefulSetⁱᵐᵖˡ) "Status", (#x, #y)⟧ ⤳[under] #(x <|StatefulSet.Status' := y|>);
-  #[global] StatefulSet'ptr_GetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "GetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetDeletionGracePeriodSeconds" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
-  #[global] StatefulSet'ptr_GetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "GetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetDeletionTimestamp" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
-  #[global] StatefulSet'ptr_GetFinalizers_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "GetFinalizers" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetFinalizers" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
-  #[global] StatefulSet'ptr_GetGenerateName_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "GetGenerateName" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetGenerateName" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
-  #[global] StatefulSet'ptr_GetGeneration_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "GetGeneration" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetGeneration" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
-  #[global] StatefulSet'ptr_GetLabels_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "GetLabels" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetLabels" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
-  #[global] StatefulSet'ptr_GetName_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "GetName" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetName" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
-  #[global] StatefulSet'ptr_GetOwnerReferences_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "GetOwnerReferences" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetOwnerReferences" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
-  #[global] StatefulSet'ptr_GetResourceVersion_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "GetResourceVersion" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetResourceVersion" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
-  #[global] StatefulSet'ptr_GetUID_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "GetUID" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetUID" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
-  #[global] StatefulSet'ptr_SetCreationTimestamp_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "SetCreationTimestamp" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetCreationTimestamp" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
-  #[global] StatefulSet'ptr_SetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "SetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetDeletionGracePeriodSeconds" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
-  #[global] StatefulSet'ptr_SetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "SetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetDeletionTimestamp" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
-  #[global] StatefulSet'ptr_SetFinalizers_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "SetFinalizers" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetFinalizers" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
-  #[global] StatefulSet'ptr_SetGeneration_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "SetGeneration" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetGeneration" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
-  #[global] StatefulSet'ptr_SetName_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "SetName" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetName" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
-  #[global] StatefulSet'ptr_SetResourceVersion_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "SetResourceVersion" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetResourceVersion" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
-  #[global] StatefulSet'ptr_SetSelfLink_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "SetSelfLink" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetSelfLink" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
-  #[global] StatefulSet'ptr_SetUID_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "SetUID" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetUID" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
+  #[global] StatefulSet'ptr_GetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "GetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetDeletionGracePeriodSeconds" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
+  #[global] StatefulSet'ptr_GetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "GetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetDeletionTimestamp" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
+  #[global] StatefulSet'ptr_GetFinalizers_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "GetFinalizers" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetFinalizers" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
+  #[global] StatefulSet'ptr_GetGenerateName_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "GetGenerateName" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetGenerateName" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
+  #[global] StatefulSet'ptr_GetGeneration_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "GetGeneration" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetGeneration" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
+  #[global] StatefulSet'ptr_GetLabels_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "GetLabels" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetLabels" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
+  #[global] StatefulSet'ptr_GetName_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "GetName" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetName" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
+  #[global] StatefulSet'ptr_GetOwnerReferences_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "GetOwnerReferences" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetOwnerReferences" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
+  #[global] StatefulSet'ptr_GetResourceVersion_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "GetResourceVersion" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetResourceVersion" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
+  #[global] StatefulSet'ptr_GetUID_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "GetUID" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetUID" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
+  #[global] StatefulSet'ptr_SetCreationTimestamp_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "SetCreationTimestamp" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetCreationTimestamp" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
+  #[global] StatefulSet'ptr_SetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "SetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetDeletionGracePeriodSeconds" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
+  #[global] StatefulSet'ptr_SetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "SetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetDeletionTimestamp" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
+  #[global] StatefulSet'ptr_SetFinalizers_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "SetFinalizers" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetFinalizers" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
+  #[global] StatefulSet'ptr_SetGeneration_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "SetGeneration" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetGeneration" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
+  #[global] StatefulSet'ptr_SetName_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "SetName" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetName" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
+  #[global] StatefulSet'ptr_SetResourceVersion_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "SetResourceVersion" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetResourceVersion" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
+  #[global] StatefulSet'ptr_SetSelfLink_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "SetSelfLink" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetSelfLink" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
+  #[global] StatefulSet'ptr_SetUID_unfold :: MethodUnfold (go.PointerType (StatefulSet)) "SetUID" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetUID" (StructFieldRef StatefulSet "ObjectMeta"%go "$r"));
 }.
 
 Module RollingUpdateStatefulSetStrategy.
@@ -810,7 +810,7 @@ End RollingUpdateStatefulSetStrategy.
 
 Definition RollingUpdateStatefulSetStrategy'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
   (go.FieldDecl "Partition"%go (go.PointerType go.int32));
-  (go.FieldDecl "MaxUnavailable"%go (go.PointerType intstr.IntOrString))
+  (go.FieldDecl "MaxUnavailable"%go (go.PointerType code.k8s_io.apimachinery.pkg.util.intstr.intstr.IntOrString))
 ].
 Program Definition RollingUpdateStatefulSetStrategy'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (RollingUpdateStatefulSetStrategy'fds_unsealed).
 Global Instance equals_unfold_RollingUpdateStatefulSetStrategy {ext : ffi_syntax} {go_gctx : GoGlobalContext} : RollingUpdateStatefulSetStrategy'fds =→ RollingUpdateStatefulSetStrategy'fds_unsealed.
@@ -930,8 +930,8 @@ Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Record t :=
 mk {
   Type' : v1.StatefulSetConditionType.t;
-  Status' : core_v1.ConditionStatus.t;
-  LastTransitionTime' : meta_v1.Time.t;
+  Status' : code.k8s_io.api.core.v1.v1.ConditionStatus.t;
+  LastTransitionTime' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time.t;
   Reason' : go_string;
   Message' : go_string;
 }.
@@ -944,8 +944,8 @@ End StatefulSetCondition.
 
 Definition StatefulSetCondition'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
   (go.FieldDecl "Type"%go StatefulSetConditionType);
-  (go.FieldDecl "Status"%go core_v1.ConditionStatus);
-  (go.FieldDecl "LastTransitionTime"%go meta_v1.Time);
+  (go.FieldDecl "Status"%go code.k8s_io.api.core.v1.v1.ConditionStatus);
+  (go.FieldDecl "LastTransitionTime"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time);
   (go.FieldDecl "Reason"%go go.string);
   (go.FieldDecl "Message"%go go.string)
 ].
@@ -1044,7 +1044,7 @@ Record t :=
 mk {
   Replicas' : loc;
   Selector' : loc;
-  Template' : core_v1.PodTemplateSpec.t;
+  Template' : code.k8s_io.api.core.v1.v1.PodTemplateSpec.t;
   Strategy' : v1.DeploymentStrategy.t;
   MinReadySeconds' : w32;
   RevisionHistoryLimit' : loc;
@@ -1060,8 +1060,8 @@ End DeploymentSpec.
 
 Definition DeploymentSpec'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
   (go.FieldDecl "Replicas"%go (go.PointerType go.int32));
-  (go.FieldDecl "Selector"%go (go.PointerType meta_v1.LabelSelector));
-  (go.FieldDecl "Template"%go core_v1.PodTemplateSpec);
+  (go.FieldDecl "Selector"%go (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector));
+  (go.FieldDecl "Template"%go code.k8s_io.api.core.v1.v1.PodTemplateSpec);
   (go.FieldDecl "Strategy"%go DeploymentStrategy);
   (go.FieldDecl "MinReadySeconds"%go go.int32);
   (go.FieldDecl "RevisionHistoryLimit"%go (go.PointerType go.int32));
@@ -1164,8 +1164,8 @@ Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Record t :=
 mk {
-  TypeMeta' : meta_v1.TypeMeta.t;
-  ObjectMeta' : meta_v1.ObjectMeta.t;
+  TypeMeta' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.TypeMeta.t;
+  ObjectMeta' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta.t;
   Spec' : v1.DeploymentSpec.t;
   Status' : v1.DeploymentStatus.t;
 }.
@@ -1177,8 +1177,8 @@ End def.
 End Deployment.
 
 Definition Deployment'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
-  (go.EmbeddedField "TypeMeta"%go meta_v1.TypeMeta);
-  (go.EmbeddedField "ObjectMeta"%go meta_v1.ObjectMeta);
+  (go.EmbeddedField "TypeMeta"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.TypeMeta);
+  (go.EmbeddedField "ObjectMeta"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta);
   (go.FieldDecl "Spec"%go DeploymentSpec);
   (go.FieldDecl "Status"%go DeploymentStatus)
 ].
@@ -1200,25 +1200,25 @@ Class Deployment_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalCo
   #[global] Deployment_set_Spec (x : Deployment.t) y :: ⟦StructFieldSet (Deploymentⁱᵐᵖˡ) "Spec", (#x, #y)⟧ ⤳[under] #(x <|Deployment.Spec' := y|>);
   #[global] Deployment_get_Status (x : Deployment.t) :: ⟦StructFieldGet (Deploymentⁱᵐᵖˡ) "Status", #x⟧ ⤳[under] #x.(Deployment.Status');
   #[global] Deployment_set_Status (x : Deployment.t) y :: ⟦StructFieldSet (Deploymentⁱᵐᵖˡ) "Status", (#x, #y)⟧ ⤳[under] #(x <|Deployment.Status' := y|>);
-  #[global] Deployment'ptr_GetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetDeletionGracePeriodSeconds" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
-  #[global] Deployment'ptr_GetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetDeletionTimestamp" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
-  #[global] Deployment'ptr_GetFinalizers_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetFinalizers" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetFinalizers" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
-  #[global] Deployment'ptr_GetGenerateName_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetGenerateName" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetGenerateName" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
-  #[global] Deployment'ptr_GetGeneration_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetGeneration" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetGeneration" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
-  #[global] Deployment'ptr_GetLabels_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetLabels" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetLabels" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
-  #[global] Deployment'ptr_GetName_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetName" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetName" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
-  #[global] Deployment'ptr_GetOwnerReferences_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetOwnerReferences" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetOwnerReferences" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
-  #[global] Deployment'ptr_GetResourceVersion_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetResourceVersion" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetResourceVersion" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
-  #[global] Deployment'ptr_GetUID_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetUID" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetUID" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
-  #[global] Deployment'ptr_SetCreationTimestamp_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetCreationTimestamp" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetCreationTimestamp" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
-  #[global] Deployment'ptr_SetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetDeletionGracePeriodSeconds" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
-  #[global] Deployment'ptr_SetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetDeletionTimestamp" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
-  #[global] Deployment'ptr_SetFinalizers_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetFinalizers" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetFinalizers" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
-  #[global] Deployment'ptr_SetGeneration_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetGeneration" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetGeneration" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
-  #[global] Deployment'ptr_SetName_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetName" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetName" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
-  #[global] Deployment'ptr_SetResourceVersion_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetResourceVersion" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetResourceVersion" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
-  #[global] Deployment'ptr_SetSelfLink_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetSelfLink" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetSelfLink" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
-  #[global] Deployment'ptr_SetUID_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetUID" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetUID" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_GetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetDeletionGracePeriodSeconds" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_GetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetDeletionTimestamp" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_GetFinalizers_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetFinalizers" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetFinalizers" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_GetGenerateName_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetGenerateName" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetGenerateName" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_GetGeneration_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetGeneration" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetGeneration" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_GetLabels_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetLabels" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetLabels" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_GetName_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetName" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetName" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_GetOwnerReferences_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetOwnerReferences" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetOwnerReferences" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_GetResourceVersion_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetResourceVersion" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetResourceVersion" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_GetUID_unfold :: MethodUnfold (go.PointerType (Deployment)) "GetUID" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetUID" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_SetCreationTimestamp_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetCreationTimestamp" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetCreationTimestamp" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_SetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetDeletionGracePeriodSeconds" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_SetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetDeletionTimestamp" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_SetFinalizers_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetFinalizers" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetFinalizers" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_SetGeneration_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetGeneration" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetGeneration" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_SetName_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetName" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetName" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_SetResourceVersion_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetResourceVersion" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetResourceVersion" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_SetSelfLink_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetSelfLink" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetSelfLink" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
+  #[global] Deployment'ptr_SetUID_unfold :: MethodUnfold (go.PointerType (Deployment)) "SetUID" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetUID" (StructFieldRef Deployment "ObjectMeta"%go "$r"));
 }.
 
 Module RollingUpdateDeployment.
@@ -1237,8 +1237,8 @@ End def.
 End RollingUpdateDeployment.
 
 Definition RollingUpdateDeployment'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
-  (go.FieldDecl "MaxUnavailable"%go (go.PointerType intstr.IntOrString));
-  (go.FieldDecl "MaxSurge"%go (go.PointerType intstr.IntOrString))
+  (go.FieldDecl "MaxUnavailable"%go (go.PointerType code.k8s_io.apimachinery.pkg.util.intstr.intstr.IntOrString));
+  (go.FieldDecl "MaxSurge"%go (go.PointerType code.k8s_io.apimachinery.pkg.util.intstr.intstr.IntOrString))
 ].
 Program Definition RollingUpdateDeployment'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (RollingUpdateDeployment'fds_unsealed).
 Global Instance equals_unfold_RollingUpdateDeployment {ext : ffi_syntax} {go_gctx : GoGlobalContext} : RollingUpdateDeployment'fds =→ RollingUpdateDeployment'fds_unsealed.
@@ -1277,9 +1277,9 @@ Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Record t :=
 mk {
   Type' : v1.DeploymentConditionType.t;
-  Status' : core_v1.ConditionStatus.t;
-  LastUpdateTime' : meta_v1.Time.t;
-  LastTransitionTime' : meta_v1.Time.t;
+  Status' : code.k8s_io.api.core.v1.v1.ConditionStatus.t;
+  LastUpdateTime' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time.t;
+  LastTransitionTime' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time.t;
   Reason' : go_string;
   Message' : go_string;
 }.
@@ -1292,9 +1292,9 @@ End DeploymentCondition.
 
 Definition DeploymentCondition'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
   (go.FieldDecl "Type"%go DeploymentConditionType);
-  (go.FieldDecl "Status"%go core_v1.ConditionStatus);
-  (go.FieldDecl "LastUpdateTime"%go meta_v1.Time);
-  (go.FieldDecl "LastTransitionTime"%go meta_v1.Time);
+  (go.FieldDecl "Status"%go code.k8s_io.api.core.v1.v1.ConditionStatus);
+  (go.FieldDecl "LastUpdateTime"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time);
+  (go.FieldDecl "LastTransitionTime"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time);
   (go.FieldDecl "Reason"%go go.string);
   (go.FieldDecl "Message"%go go.string)
 ].
@@ -1490,7 +1490,7 @@ mk {
   Replicas' : loc;
   MinReadySeconds' : w32;
   Selector' : loc;
-  Template' : core_v1.PodTemplateSpec.t;
+  Template' : code.k8s_io.api.core.v1.v1.PodTemplateSpec.t;
 }.
 
 #[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
@@ -1502,8 +1502,8 @@ End ReplicaSetSpec.
 Definition ReplicaSetSpec'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
   (go.FieldDecl "Replicas"%go (go.PointerType go.int32));
   (go.FieldDecl "MinReadySeconds"%go go.int32);
-  (go.FieldDecl "Selector"%go (go.PointerType meta_v1.LabelSelector));
-  (go.FieldDecl "Template"%go core_v1.PodTemplateSpec)
+  (go.FieldDecl "Selector"%go (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector));
+  (go.FieldDecl "Template"%go code.k8s_io.api.core.v1.v1.PodTemplateSpec)
 ].
 Program Definition ReplicaSetSpec'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (ReplicaSetSpec'fds_unsealed).
 Global Instance equals_unfold_ReplicaSetSpec {ext : ffi_syntax} {go_gctx : GoGlobalContext} : ReplicaSetSpec'fds =→ ReplicaSetSpec'fds_unsealed.
@@ -1585,8 +1585,8 @@ Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Record t :=
 mk {
-  TypeMeta' : meta_v1.TypeMeta.t;
-  ObjectMeta' : meta_v1.ObjectMeta.t;
+  TypeMeta' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.TypeMeta.t;
+  ObjectMeta' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta.t;
   Spec' : v1.ReplicaSetSpec.t;
   Status' : v1.ReplicaSetStatus.t;
 }.
@@ -1598,8 +1598,8 @@ End def.
 End ReplicaSet.
 
 Definition ReplicaSet'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
-  (go.EmbeddedField "TypeMeta"%go meta_v1.TypeMeta);
-  (go.EmbeddedField "ObjectMeta"%go meta_v1.ObjectMeta);
+  (go.EmbeddedField "TypeMeta"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.TypeMeta);
+  (go.EmbeddedField "ObjectMeta"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta);
   (go.FieldDecl "Spec"%go ReplicaSetSpec);
   (go.FieldDecl "Status"%go ReplicaSetStatus)
 ].
@@ -1621,25 +1621,25 @@ Class ReplicaSet_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalCo
   #[global] ReplicaSet_set_Spec (x : ReplicaSet.t) y :: ⟦StructFieldSet (ReplicaSetⁱᵐᵖˡ) "Spec", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSet.Spec' := y|>);
   #[global] ReplicaSet_get_Status (x : ReplicaSet.t) :: ⟦StructFieldGet (ReplicaSetⁱᵐᵖˡ) "Status", #x⟧ ⤳[under] #x.(ReplicaSet.Status');
   #[global] ReplicaSet_set_Status (x : ReplicaSet.t) y :: ⟦StructFieldSet (ReplicaSetⁱᵐᵖˡ) "Status", (#x, #y)⟧ ⤳[under] #(x <|ReplicaSet.Status' := y|>);
-  #[global] ReplicaSet'ptr_GetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "GetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetDeletionGracePeriodSeconds" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
-  #[global] ReplicaSet'ptr_GetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "GetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetDeletionTimestamp" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
-  #[global] ReplicaSet'ptr_GetFinalizers_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "GetFinalizers" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetFinalizers" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
-  #[global] ReplicaSet'ptr_GetGenerateName_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "GetGenerateName" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetGenerateName" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
-  #[global] ReplicaSet'ptr_GetGeneration_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "GetGeneration" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetGeneration" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
-  #[global] ReplicaSet'ptr_GetLabels_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "GetLabels" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetLabels" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
-  #[global] ReplicaSet'ptr_GetName_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "GetName" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetName" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
-  #[global] ReplicaSet'ptr_GetOwnerReferences_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "GetOwnerReferences" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetOwnerReferences" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
-  #[global] ReplicaSet'ptr_GetResourceVersion_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "GetResourceVersion" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetResourceVersion" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
-  #[global] ReplicaSet'ptr_GetUID_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "GetUID" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "GetUID" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
-  #[global] ReplicaSet'ptr_SetCreationTimestamp_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "SetCreationTimestamp" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetCreationTimestamp" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
-  #[global] ReplicaSet'ptr_SetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "SetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetDeletionGracePeriodSeconds" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
-  #[global] ReplicaSet'ptr_SetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "SetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetDeletionTimestamp" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
-  #[global] ReplicaSet'ptr_SetFinalizers_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "SetFinalizers" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetFinalizers" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
-  #[global] ReplicaSet'ptr_SetGeneration_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "SetGeneration" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetGeneration" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
-  #[global] ReplicaSet'ptr_SetName_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "SetName" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetName" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
-  #[global] ReplicaSet'ptr_SetResourceVersion_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "SetResourceVersion" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetResourceVersion" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
-  #[global] ReplicaSet'ptr_SetSelfLink_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "SetSelfLink" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetSelfLink" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
-  #[global] ReplicaSet'ptr_SetUID_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "SetUID" (λ: "$r", MethodResolve (go.PointerType meta_v1.ObjectMeta) "SetUID" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
+  #[global] ReplicaSet'ptr_GetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "GetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetDeletionGracePeriodSeconds" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
+  #[global] ReplicaSet'ptr_GetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "GetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetDeletionTimestamp" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
+  #[global] ReplicaSet'ptr_GetFinalizers_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "GetFinalizers" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetFinalizers" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
+  #[global] ReplicaSet'ptr_GetGenerateName_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "GetGenerateName" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetGenerateName" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
+  #[global] ReplicaSet'ptr_GetGeneration_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "GetGeneration" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetGeneration" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
+  #[global] ReplicaSet'ptr_GetLabels_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "GetLabels" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetLabels" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
+  #[global] ReplicaSet'ptr_GetName_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "GetName" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetName" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
+  #[global] ReplicaSet'ptr_GetOwnerReferences_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "GetOwnerReferences" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetOwnerReferences" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
+  #[global] ReplicaSet'ptr_GetResourceVersion_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "GetResourceVersion" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetResourceVersion" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
+  #[global] ReplicaSet'ptr_GetUID_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "GetUID" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetUID" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
+  #[global] ReplicaSet'ptr_SetCreationTimestamp_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "SetCreationTimestamp" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetCreationTimestamp" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
+  #[global] ReplicaSet'ptr_SetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "SetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetDeletionGracePeriodSeconds" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
+  #[global] ReplicaSet'ptr_SetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "SetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetDeletionTimestamp" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
+  #[global] ReplicaSet'ptr_SetFinalizers_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "SetFinalizers" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetFinalizers" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
+  #[global] ReplicaSet'ptr_SetGeneration_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "SetGeneration" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetGeneration" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
+  #[global] ReplicaSet'ptr_SetName_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "SetName" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetName" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
+  #[global] ReplicaSet'ptr_SetResourceVersion_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "SetResourceVersion" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetResourceVersion" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
+  #[global] ReplicaSet'ptr_SetSelfLink_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "SetSelfLink" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetSelfLink" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
+  #[global] ReplicaSet'ptr_SetUID_unfold :: MethodUnfold (go.PointerType (ReplicaSet)) "SetUID" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetUID" (StructFieldRef ReplicaSet "ObjectMeta"%go "$r"));
 }.
 
 Module ReplicaSetList.
@@ -1679,8 +1679,8 @@ Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Record t :=
 mk {
   Type' : v1.ReplicaSetConditionType.t;
-  Status' : core_v1.ConditionStatus.t;
-  LastTransitionTime' : meta_v1.Time.t;
+  Status' : code.k8s_io.api.core.v1.v1.ConditionStatus.t;
+  LastTransitionTime' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time.t;
   Reason' : go_string;
   Message' : go_string;
 }.
@@ -1693,8 +1693,8 @@ End ReplicaSetCondition.
 
 Definition ReplicaSetCondition'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
   (go.FieldDecl "Type"%go ReplicaSetConditionType);
-  (go.FieldDecl "Status"%go core_v1.ConditionStatus);
-  (go.FieldDecl "LastTransitionTime"%go meta_v1.Time);
+  (go.FieldDecl "Status"%go code.k8s_io.api.core.v1.v1.ConditionStatus);
+  (go.FieldDecl "LastTransitionTime"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time);
   (go.FieldDecl "Reason"%go go.string);
   (go.FieldDecl "Message"%go go.string)
 ].
@@ -1793,9 +1793,9 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] ReplicaSetCondition_instance :: ReplicaSetCondition_Assumptions;
   #[global] ControllerRevision_instance :: ControllerRevision_Assumptions;
   #[global] ControllerRevisionList_instance :: ControllerRevisionList_Assumptions;
-  #[global] import_core_v1_Assumption :: core_v1.Assumptions;
-  #[global] import_meta_v1_Assumption :: meta_v1.Assumptions;
-  #[global] import_intstr_Assumption :: intstr.Assumptions;
-  #[global] import_schema_Assumption :: schema.Assumptions;
+  #[global] import_core_v1_Assumption :: code.k8s_io.api.core.v1.v1.Assumptions;
+  #[global] import_meta_v1_Assumption :: code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions;
+  #[global] import_intstr_Assumption :: code.k8s_io.apimachinery.pkg.util.intstr.intstr.Assumptions;
+  #[global] import_schema_Assumption :: code.k8s_io.apimachinery.pkg.runtime.schema.schema.Assumptions;
 }.
 End v1.

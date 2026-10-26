@@ -50,7 +50,7 @@ Definition generatePolicyID {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_
 (* go: state.go:51:6 *)
 Definition NewStateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
-    exception_do (return: (GoAlloc State (let: "$v0" := (GoAlloc sync.Mutex (GoZeroVal sync.Mutex #())) in
+    exception_do (return: (GoAlloc State (let: "$v0" := (GoAlloc code.sync.sync.Mutex (GoZeroVal code.sync.sync.Mutex #())) in
      let: "$v1" := ((FuncResolve go.make1 [go.MapType IdentityID (go.MapType PolicyID (go.StructType [
 
       ]))] #()) #()) in
@@ -58,7 +58,7 @@ Definition NewStateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : 
      let: "$v3" := ((FuncResolve go.make1 [go.MapType PolicyID (go.StructType [
 
       ])] #()) #()) in
-     CompositeLiteral State (LiteralValue [KeyedElement (Some (KeyField "mu"%go)) (ElementExpression (go.PointerType sync.Mutex) "$v0"); KeyedElement (Some (KeyField "identities"%go)) (ElementExpression (go.MapType IdentityID (go.MapType PolicyID (go.StructType [
+     CompositeLiteral State (LiteralValue [KeyedElement (Some (KeyField "mu"%go)) (ElementExpression (go.PointerType code.sync.sync.Mutex) "$v0"); KeyedElement (Some (KeyField "identities"%go)) (ElementExpression (go.MapType IdentityID (go.MapType PolicyID (go.StructType [
 
       ]))) "$v1"); KeyedElement (Some (KeyField "policies"%go)) (ElementExpression (go.MapType PolicyID IdentityPolicy) "$v2"); KeyedElement (Some (KeyField "usedPolicyIds"%go)) (ElementExpression (go.MapType PolicyID (go.StructType [
 
@@ -77,10 +77,10 @@ Definition State__CreateIdentityⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
       return: (let: "$a0" := #"%w: empty identity id"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] (GlobalVarAddr ErrInvalidID #()))) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
-    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
+    do:  ((MethodResolve (go.PointerType code.sync.sync.Mutex) "Lock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
+    do:  (let: "$f" := (MethodResolve (go.PointerType code.sync.sync.Mutex) "Unlock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
     "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
     (λ: <>,
       "$f" #();;
@@ -102,7 +102,7 @@ Definition State__CreateIdentityⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
        let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] (GlobalVarAddr ErrAlreadyExists #()))) in
        let: "$sl1" := (Convert IdentityID go.any (![IdentityID] "id")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #()));;;
     let: "$r0" := ((FuncResolve go.make1 [go.MapType PolicyID (go.StructType [
 
@@ -119,8 +119,8 @@ Definition State__CreateIdentityⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
 Definition State__Snapshotⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" <>,
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
-    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
-    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
+    do:  ((MethodResolve (go.PointerType code.sync.sync.Mutex) "Lock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
+    do:  (let: "$f" := (MethodResolve (go.PointerType code.sync.sync.Mutex) "Unlock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
     "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
     (λ: <>,
       "$f" #();;
@@ -230,10 +230,10 @@ Definition State__CreatePolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
       return: (#""%go, let: "$a0" := #"%w: empty resource name"%go in
        let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] (GlobalVarAddr ErrInvalidID #()))) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
-    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
-    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
+    do:  ((MethodResolve (go.PointerType code.sync.sync.Mutex) "Lock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
+    do:  (let: "$f" := (MethodResolve (go.PointerType code.sync.sync.Mutex) "Unlock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
     "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
     (λ: <>,
       "$f" #();;
@@ -252,9 +252,9 @@ Definition State__CreatePolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobal
 Definition generatePolicyIDⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     exception_do (return: (let: "$a0" := #"policy-%d"%go in
-     let: "$a1" := ((let: "$sl0" := (Convert go.int64 go.any ((FuncResolve rand.Int63 [] #()) #())) in
+     let: "$a1" := ((let: "$sl0" := (Convert go.int64 go.any ((FuncResolve code.math.rand.rand.Int63 [] #()) #())) in
      CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
-     (FuncResolve fmt.Sprintf [] #()) "$a0" "$a1")).
+     (FuncResolve code.fmt.fmt.Sprintf [] #()) "$a0" "$a1")).
 
 (* go: state.go:128:17 *)
 Definition State__generateNewPolicyIDAndUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
@@ -294,8 +294,8 @@ Definition State__AttachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
     let: "policyID" := (GoAlloc PolicyID "policyID") in
     let: "identity" := (GoAlloc IdentityID "identity") in
-    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
-    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
+    do:  ((MethodResolve (go.PointerType code.sync.sync.Mutex) "Lock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
+    do:  (let: "$f" := (MethodResolve (go.PointerType code.sync.sync.Mutex) "Unlock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
     "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
     (λ: <>,
       "$f" #();;
@@ -324,7 +324,7 @@ Definition State__AttachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
        let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] (GlobalVarAddr ErrNotFound #()))) in
        let: "$sl1" := (Convert IdentityID go.any (![IdentityID] "identity")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
     (let: ("$ret0", "$ret1") := (map.lookup2 PolicyID IdentityPolicy (![go.MapType PolicyID IdentityPolicy] (StructFieldRef State "policies"%go (![go.PointerType State] "s"))) (![PolicyID] "policyID")) in
     let: "$r0" := "$ret0" in
@@ -337,7 +337,7 @@ Definition State__AttachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
        let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] (GlobalVarAddr ErrNotFound #()))) in
        let: "$sl1" := (Convert PolicyID go.any (![PolicyID] "policyID")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #()));;;
     (let: ("$ret0", "$ret1") := (map.lookup2 PolicyID (go.StructType [
 
@@ -368,8 +368,8 @@ Definition State__DetachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
     with_defer: (let: "s" := (GoAlloc (go.PointerType State) "s") in
     let: "policyID" := (GoAlloc PolicyID "policyID") in
     let: "identity" := (GoAlloc IdentityID "identity") in
-    do:  ((MethodResolve (go.PointerType sync.Mutex) "Lock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
-    do:  (let: "$f" := (MethodResolve (go.PointerType sync.Mutex) "Unlock"%go (![go.PointerType sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
+    do:  ((MethodResolve (go.PointerType code.sync.sync.Mutex) "Lock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) #());;;
+    do:  (let: "$f" := (MethodResolve (go.PointerType code.sync.sync.Mutex) "Unlock"%go (![go.PointerType code.sync.sync.Mutex] (StructFieldRef State "mu"%go (![go.PointerType State] "s")))) in
     "$defer" <-[deferType] (let: "$oldf" := (![deferType] "$defer") in
     (λ: <>,
       "$f" #();;
@@ -398,7 +398,7 @@ Definition State__DetachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
        let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] (GlobalVarAddr ErrNotFound #()))) in
        let: "$sl1" := (Convert IdentityID go.any (![IdentityID] "identity")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
     (let: ("$ret0", "$ret1") := (map.lookup2 PolicyID IdentityPolicy (![go.MapType PolicyID IdentityPolicy] (StructFieldRef State "policies"%go (![go.PointerType State] "s"))) (![PolicyID] "policyID")) in
     let: "$r0" := "$ret0" in
@@ -411,7 +411,7 @@ Definition State__DetachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
        let: "$a1" := ((let: "$sl0" := (Convert go.error go.any (![go.error] (GlobalVarAddr ErrNotFound #()))) in
        let: "$sl1" := (Convert PolicyID go.any (![PolicyID] "policyID")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #()));;;
     (let: ("$ret0", "$ret1") := (map.lookup2 PolicyID (go.StructType [
 
@@ -429,7 +429,7 @@ Definition State__DetachIdentityPolicyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
        let: "$sl1" := (Convert IdentityID go.any (![IdentityID] "identity")) in
        let: "$sl2" := (Convert PolicyID go.any (![PolicyID] "policyID")) in
        CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0"); KeyedElement None (ElementExpression go.any "$sl1"); KeyedElement None (ElementExpression go.any "$sl2")]))) in
-       (FuncResolve fmt.Errorf [] #()) "$a0" "$a1")
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #()));;;
     do:  (let: "$a0" := (![go.MapType PolicyID (go.StructType [
 
@@ -452,18 +452,18 @@ Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
       do:  (go.GlobalAlloc ErrNotFound go.error #());;;
       do:  (go.GlobalAlloc ErrAlreadyExists go.error #());;;
       do:  (go.GlobalAlloc ErrInvalidID go.error #());;;
-      do:  (sync.initialize' #());;;
-      do:  (rand.initialize' #());;;
-      do:  (fmt.initialize' #());;;
-      do:  (errors.initialize' #());;;
+      do:  (code.sync.sync.initialize' #());;;
+      do:  (code.math.rand.rand.initialize' #());;;
+      do:  (code.fmt.fmt.initialize' #());;;
+      do:  (code.errors.errors.initialize' #());;;
       let: "$r0" := (let: "$a0" := #"invalid id"%go in
-      (FuncResolve errors.New [] #()) "$a0") in
+      (FuncResolve code.errors.errors.New [] #()) "$a0") in
       do:  ((GlobalVarAddr ErrInvalidID #()) <-[go.error] "$r0");;;
       let: "$r0" := (let: "$a0" := #"already exists"%go in
-      (FuncResolve errors.New [] #()) "$a0") in
+      (FuncResolve code.errors.errors.New [] #()) "$a0") in
       do:  ((GlobalVarAddr ErrAlreadyExists #()) <-[go.error] "$r0");;;
       let: "$r0" := (let: "$a0" := #"not found"%go in
-      (FuncResolve errors.New [] #()) "$a0") in
+      (FuncResolve code.errors.errors.New [] #()) "$a0") in
       do:  ((GlobalVarAddr ErrNotFound #()) <-[go.error] "$r0");;;
       let: "$r0" := ((FuncResolve NewState [] #()) #()) in
       do:  ((GlobalVarAddr ModelState #()) <-[go.PointerType State] "$r0"))
@@ -567,7 +567,7 @@ End def.
 End State.
 
 Definition State'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
-  (go.FieldDecl "mu"%go (go.PointerType sync.Mutex));
+  (go.FieldDecl "mu"%go (go.PointerType code.sync.sync.Mutex));
   (go.FieldDecl "identities"%go (go.MapType IdentityID (go.MapType PolicyID (go.StructType [
 
   ]))));
@@ -613,9 +613,9 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] copyIdentities_unfold :: FuncUnfold copyIdentities [] (copyIdentitiesⁱᵐᵖˡ);
   #[global] copyPolicies_unfold :: FuncUnfold copyPolicies [] (copyPoliciesⁱᵐᵖˡ);
   #[global] generatePolicyID_unfold :: FuncUnfold generatePolicyID [] (generatePolicyIDⁱᵐᵖˡ);
-  #[global] import_errors_Assumption :: errors.Assumptions;
-  #[global] import_fmt_Assumption :: fmt.Assumptions;
-  #[global] import_rand_Assumption :: rand.Assumptions;
-  #[global] import_sync_Assumption :: sync.Assumptions;
+  #[global] import_errors_Assumption :: code.errors.errors.Assumptions;
+  #[global] import_fmt_Assumption :: code.fmt.fmt.Assumptions;
+  #[global] import_rand_Assumption :: code.math.rand.rand.Assumptions;
+  #[global] import_sync_Assumption :: code.sync.sync.Assumptions;
 }.
 End iammodel.

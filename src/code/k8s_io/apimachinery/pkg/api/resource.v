@@ -250,7 +250,7 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.resource (λ: <>,
-      exception_do (do:  (inf.initialize' #());;;
+      exception_do (do:  (code.gopkg_in.inf_v0.inf.initialize' #());;;
       do:  (Zero'init #());;;
       do:  (zeroBytes'init #());;;
       do:  (_'init #());;;
@@ -341,7 +341,7 @@ End def.
 End infDecAmount.
 
 Definition infDecAmount'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
-  (go.EmbeddedField "Dec"%go (go.PointerType inf.Dec))
+  (go.EmbeddedField "Dec"%go (go.PointerType code.gopkg_in.inf_v0.inf.Dec))
 ].
 Program Definition infDecAmount'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (infDecAmount'fds_unsealed).
 Global Instance equals_unfold_infDecAmount {ext : ffi_syntax} {go_gctx : GoGlobalContext} : infDecAmount'fds =→ infDecAmount'fds_unsealed.
@@ -558,6 +558,6 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] listSuffixer_instance :: listSuffixer_Assumptions;
   #[global] suffixHandler_instance :: suffixHandler_Assumptions;
   #[global] fastLookup_instance :: fastLookup_Assumptions;
-  #[global] import_inf_Assumption :: inf.Assumptions;
+  #[global] import_inf_Assumption :: code.gopkg_in.inf_v0.inf.Assumptions;
 }.
 End resource.

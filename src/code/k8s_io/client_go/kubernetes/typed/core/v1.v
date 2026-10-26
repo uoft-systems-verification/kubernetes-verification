@@ -470,14 +470,14 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.v1 (λ: <>,
-      exception_do (do:  (rest.initialize' #());;;
-      do:  (gentype.initialize' #());;;
-      do:  (applyconfigurations_core_v1.initialize' #());;;
-      do:  (watch.initialize' #());;;
-      do:  (types.initialize' #());;;
-      do:  (apis_meta_v1.initialize' #());;;
-      do:  (api_core_v1.initialize' #());;;
-      do:  (context.initialize' #()))
+      exception_do (do:  (code.k8s_io.client_go.rest.rest.initialize' #());;;
+      do:  (code.k8s_io.client_go.gentype.gentype.initialize' #());;;
+      do:  (code.k8s_io.client_go.applyconfigurations.core.v1.v1.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.watch.watch.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.types.types.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.initialize' #());;;
+      do:  (code.k8s_io.api.core.v1.v1.initialize' #());;;
+      do:  (code.context.context.initialize' #()))
       ).
 
 Module ComponentStatusesGetter.
@@ -584,7 +584,7 @@ Definition t : Type := interface.t.
 End def.
 End CoreV1Interface.
 
-Definition CoreV1Interfaceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "RESTClient"%go (go.Signature [] false [rest.Interface]); go.TypeElem [go.TypeTerm ComponentStatusesGetter]; go.TypeElem [go.TypeTerm ConfigMapsGetter]; go.TypeElem [go.TypeTerm EndpointsGetter]; go.TypeElem [go.TypeTerm EventsGetter]; go.TypeElem [go.TypeTerm LimitRangesGetter]; go.TypeElem [go.TypeTerm NamespacesGetter]; go.TypeElem [go.TypeTerm NodesGetter]; go.TypeElem [go.TypeTerm PersistentVolumesGetter]; go.TypeElem [go.TypeTerm PersistentVolumeClaimsGetter]; go.TypeElem [go.TypeTerm PodsGetter]; go.TypeElem [go.TypeTerm PodTemplatesGetter]; go.TypeElem [go.TypeTerm ReplicationControllersGetter]; go.TypeElem [go.TypeTerm ResourceQuotasGetter]; go.TypeElem [go.TypeTerm SecretsGetter]; go.TypeElem [go.TypeTerm ServicesGetter]; go.TypeElem [go.TypeTerm ServiceAccountsGetter]].
+Definition CoreV1Interfaceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "RESTClient"%go (go.Signature [] false [code.k8s_io.client_go.rest.rest.Interface]); go.TypeElem [go.TypeTerm ComponentStatusesGetter]; go.TypeElem [go.TypeTerm ConfigMapsGetter]; go.TypeElem [go.TypeTerm EndpointsGetter]; go.TypeElem [go.TypeTerm EventsGetter]; go.TypeElem [go.TypeTerm LimitRangesGetter]; go.TypeElem [go.TypeTerm NamespacesGetter]; go.TypeElem [go.TypeTerm NodesGetter]; go.TypeElem [go.TypeTerm PersistentVolumesGetter]; go.TypeElem [go.TypeTerm PersistentVolumeClaimsGetter]; go.TypeElem [go.TypeTerm PodsGetter]; go.TypeElem [go.TypeTerm PodTemplatesGetter]; go.TypeElem [go.TypeTerm ReplicationControllersGetter]; go.TypeElem [go.TypeTerm ResourceQuotasGetter]; go.TypeElem [go.TypeTerm SecretsGetter]; go.TypeElem [go.TypeTerm ServicesGetter]; go.TypeElem [go.TypeTerm ServiceAccountsGetter]].
 
 Class CoreV1Interface_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
@@ -1208,7 +1208,7 @@ Definition t : Type := interface.t.
 End def.
 End PodInterface.
 
-Definition PodInterfaceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "Apply"%go (go.Signature [context.Context; go.PointerType applyconfigurations_core_v1.PodApplyConfiguration; apis_meta_v1.ApplyOptions] false [go.PointerType api_core_v1.Pod; go.error]); go.MethodElem "ApplyStatus"%go (go.Signature [context.Context; go.PointerType applyconfigurations_core_v1.PodApplyConfiguration; apis_meta_v1.ApplyOptions] false [go.PointerType api_core_v1.Pod; go.error]); go.MethodElem "Create"%go (go.Signature [context.Context; go.PointerType api_core_v1.Pod; apis_meta_v1.CreateOptions] false [go.PointerType api_core_v1.Pod; go.error]); go.MethodElem "Delete"%go (go.Signature [context.Context; go.string; apis_meta_v1.DeleteOptions] false [go.error]); go.MethodElem "DeleteCollection"%go (go.Signature [context.Context; apis_meta_v1.DeleteOptions; apis_meta_v1.ListOptions] false [go.error]); go.MethodElem "Get"%go (go.Signature [context.Context; go.string; apis_meta_v1.GetOptions] false [go.PointerType api_core_v1.Pod; go.error]); go.MethodElem "List"%go (go.Signature [context.Context; apis_meta_v1.ListOptions] false [go.PointerType api_core_v1.PodList; go.error]); go.MethodElem "Patch"%go (go.Signature [context.Context; go.string; types.PatchType; go.SliceType go.byte; apis_meta_v1.PatchOptions; go.SliceType go.string] true [go.PointerType api_core_v1.Pod; go.error]); go.MethodElem "Update"%go (go.Signature [context.Context; go.PointerType api_core_v1.Pod; apis_meta_v1.UpdateOptions] false [go.PointerType api_core_v1.Pod; go.error]); go.MethodElem "UpdateEphemeralContainers"%go (go.Signature [context.Context; go.string; go.PointerType api_core_v1.Pod; apis_meta_v1.UpdateOptions] false [go.PointerType api_core_v1.Pod; go.error]); go.MethodElem "UpdateResize"%go (go.Signature [context.Context; go.string; go.PointerType api_core_v1.Pod; apis_meta_v1.UpdateOptions] false [go.PointerType api_core_v1.Pod; go.error]); go.MethodElem "UpdateStatus"%go (go.Signature [context.Context; go.PointerType api_core_v1.Pod; apis_meta_v1.UpdateOptions] false [go.PointerType api_core_v1.Pod; go.error]); go.MethodElem "Watch"%go (go.Signature [context.Context; apis_meta_v1.ListOptions] false [watch.Interface; go.error]); go.TypeElem [go.TypeTerm PodExpansion]].
+Definition PodInterfaceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "Apply"%go (go.Signature [code.context.context.Context; go.PointerType code.k8s_io.client_go.applyconfigurations.core.v1.v1.PodApplyConfiguration; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ApplyOptions] false [go.PointerType code.k8s_io.api.core.v1.v1.Pod; go.error]); go.MethodElem "ApplyStatus"%go (go.Signature [code.context.context.Context; go.PointerType code.k8s_io.client_go.applyconfigurations.core.v1.v1.PodApplyConfiguration; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ApplyOptions] false [go.PointerType code.k8s_io.api.core.v1.v1.Pod; go.error]); go.MethodElem "Create"%go (go.Signature [code.context.context.Context; go.PointerType code.k8s_io.api.core.v1.v1.Pod; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.CreateOptions] false [go.PointerType code.k8s_io.api.core.v1.v1.Pod; go.error]); go.MethodElem "Delete"%go (go.Signature [code.context.context.Context; go.string; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] false [go.error]); go.MethodElem "DeleteCollection"%go (go.Signature [code.context.context.Context; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ListOptions] false [go.error]); go.MethodElem "Get"%go (go.Signature [code.context.context.Context; go.string; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.GetOptions] false [go.PointerType code.k8s_io.api.core.v1.v1.Pod; go.error]); go.MethodElem "List"%go (go.Signature [code.context.context.Context; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ListOptions] false [go.PointerType code.k8s_io.api.core.v1.v1.PodList; go.error]); go.MethodElem "Patch"%go (go.Signature [code.context.context.Context; go.string; code.k8s_io.apimachinery.pkg.types.types.PatchType; go.SliceType go.byte; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.PatchOptions; go.SliceType go.string] true [go.PointerType code.k8s_io.api.core.v1.v1.Pod; go.error]); go.MethodElem "Update"%go (go.Signature [code.context.context.Context; go.PointerType code.k8s_io.api.core.v1.v1.Pod; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions] false [go.PointerType code.k8s_io.api.core.v1.v1.Pod; go.error]); go.MethodElem "UpdateEphemeralContainers"%go (go.Signature [code.context.context.Context; go.string; go.PointerType code.k8s_io.api.core.v1.v1.Pod; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions] false [go.PointerType code.k8s_io.api.core.v1.v1.Pod; go.error]); go.MethodElem "UpdateResize"%go (go.Signature [code.context.context.Context; go.string; go.PointerType code.k8s_io.api.core.v1.v1.Pod; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions] false [go.PointerType code.k8s_io.api.core.v1.v1.Pod; go.error]); go.MethodElem "UpdateStatus"%go (go.Signature [code.context.context.Context; go.PointerType code.k8s_io.api.core.v1.v1.Pod; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions] false [go.PointerType code.k8s_io.api.core.v1.v1.Pod; go.error]); go.MethodElem "Watch"%go (go.Signature [code.context.context.Context; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ListOptions] false [code.k8s_io.apimachinery.pkg.watch.watch.Interface; go.error]); go.TypeElem [go.TypeTerm PodExpansion]].
 
 Class PodInterface_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
@@ -1230,7 +1230,7 @@ End def.
 End pods.
 
 Definition pods'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
-  (go.EmbeddedField "ClientWithListAndApply"%go (go.PointerType (gentype.ClientWithListAndApply (go.PointerType api_core_v1.Pod) (go.PointerType api_core_v1.PodList) (go.PointerType applyconfigurations_core_v1.PodApplyConfiguration))))
+  (go.EmbeddedField "ClientWithListAndApply"%go (go.PointerType (code.k8s_io.client_go.gentype.gentype.ClientWithListAndApply (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (go.PointerType code.k8s_io.api.core.v1.v1.PodList) (go.PointerType code.k8s_io.client_go.applyconfigurations.core.v1.v1.PodApplyConfiguration))))
 ].
 Program Definition pods'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (pods'fds_unsealed).
 Global Instance equals_unfold_pods {ext : ffi_syntax} {go_gctx : GoGlobalContext} : pods'fds =→ pods'fds_unsealed.
@@ -1635,13 +1635,13 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] ServiceAccountsGetter_instance :: ServiceAccountsGetter_Assumptions;
   #[global] ServiceAccountInterface_instance :: ServiceAccountInterface_Assumptions;
   #[global] serviceAccounts_instance :: serviceAccounts_Assumptions;
-  #[global] import_context_Assumption :: context.Assumptions;
-  #[global] import_api_core_v1_Assumption :: api_core_v1.Assumptions;
-  #[global] import_apis_meta_v1_Assumption :: apis_meta_v1.Assumptions;
-  #[global] import_types_Assumption :: types.Assumptions;
-  #[global] import_watch_Assumption :: watch.Assumptions;
-  #[global] import_applyconfigurations_core_v1_Assumption :: applyconfigurations_core_v1.Assumptions;
-  #[global] import_gentype_Assumption :: gentype.Assumptions;
-  #[global] import_rest_Assumption :: rest.Assumptions;
+  #[global] import_context_Assumption :: code.context.context.Assumptions;
+  #[global] import_api_core_v1_Assumption :: code.k8s_io.api.core.v1.v1.Assumptions;
+  #[global] import_apis_meta_v1_Assumption :: code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions;
+  #[global] import_types_Assumption :: code.k8s_io.apimachinery.pkg.types.types.Assumptions;
+  #[global] import_watch_Assumption :: code.k8s_io.apimachinery.pkg.watch.watch.Assumptions;
+  #[global] import_applyconfigurations_core_v1_Assumption :: code.k8s_io.client_go.applyconfigurations.core.v1.v1.Assumptions;
+  #[global] import_gentype_Assumption :: code.k8s_io.client_go.gentype.gentype.Assumptions;
+  #[global] import_rest_Assumption :: code.k8s_io.client_go.rest.rest.Assumptions;
 }.
 End v1.

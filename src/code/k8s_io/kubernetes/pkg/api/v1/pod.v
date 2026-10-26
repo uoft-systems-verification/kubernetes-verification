@@ -103,23 +103,23 @@ Definition CalculatePodConditionObservedGeneration {ext : ffi_syntax} {go_gctx :
    go: util.go:283:6 *)
 Definition IsPodAvailableⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "pod" "minReadySeconds" "now",
-    exception_do (let: "now" := (GoAlloc meta_v1.Time "now") in
+    exception_do (let: "now" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time "now") in
     let: "minReadySeconds" := (GoAlloc go.int32 "minReadySeconds") in
-    let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
-    (if: (⟨go.bool⟩! (let: "$a0" := (![go.PointerType core_v1.Pod] "pod") in
+    let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "pod") in
+    (if: (⟨go.bool⟩! (let: "$a0" := (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod") in
     (FuncResolve IsPodReady [] #()) "$a0"))
     then return: (#false)
     else do:  #());;;
-    let: "c" := (GoAlloc (go.PointerType core_v1.PodCondition) (GoZeroVal (go.PointerType core_v1.PodCondition) #())) in
-    let: "$r0" := (let: "$a0" := (![core_v1.PodStatus] (StructFieldRef core_v1.Pod "Status"%go (![go.PointerType core_v1.Pod] "pod"))) in
+    let: "c" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.PodCondition) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.PodCondition) #())) in
+    let: "$r0" := (let: "$a0" := (![code.k8s_io.api.core.v1.v1.PodStatus] (StructFieldRef code.k8s_io.api.core.v1.v1.Pod "Status"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod"))) in
     (FuncResolve GetPodReadyCondition [] #()) "$a0") in
-    do:  ("c" <-[go.PointerType core_v1.PodCondition] "$r0");;;
-    let: "minReadySecondsDuration" := (GoAlloc time.Duration (GoZeroVal time.Duration #())) in
-    let: "$r0" := ((Convert go.int32 time.Duration (![go.int32] "minReadySeconds")) *⟨time.Duration⟩ time.Second) in
-    do:  ("minReadySecondsDuration" <-[time.Duration] "$r0");;;
-    (if: ((![go.int32] "minReadySeconds") =⟨go.int32⟩ #(W32 0)) || ((⟨go.bool⟩! ((MethodResolve (go.PointerType meta_v1.Time) "IsZero"%go (StructFieldRef core_v1.PodCondition "LastTransitionTime"%go (![go.PointerType core_v1.PodCondition] "c"))) #())) && ((let: "$a0" := (![time.Time] (StructFieldRef meta_v1.Time "Time"%go "now")) in
-    (MethodResolve time.Time "Compare"%go (let: "$a0" := (![time.Duration] "minReadySecondsDuration") in
-    (MethodResolve (go.PointerType meta_v1.Time) "Add"%go (StructFieldRef core_v1.PodCondition "LastTransitionTime"%go (![go.PointerType core_v1.PodCondition] "c"))) "$a0")) "$a0") ≤⟨go.int⟩ #(W64 0)))
+    do:  ("c" <-[go.PointerType code.k8s_io.api.core.v1.v1.PodCondition] "$r0");;;
+    let: "minReadySecondsDuration" := (GoAlloc code.time.time.Duration (GoZeroVal code.time.time.Duration #())) in
+    let: "$r0" := ((Convert go.int32 code.time.time.Duration (![go.int32] "minReadySeconds")) *⟨code.time.time.Duration⟩ code.time.time.Second) in
+    do:  ("minReadySecondsDuration" <-[code.time.time.Duration] "$r0");;;
+    (if: ((![go.int32] "minReadySeconds") =⟨go.int32⟩ #(W32 0)) || ((⟨go.bool⟩! ((MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time) "IsZero"%go (StructFieldRef code.k8s_io.api.core.v1.v1.PodCondition "LastTransitionTime"%go (![go.PointerType code.k8s_io.api.core.v1.v1.PodCondition] "c"))) #())) && ((let: "$a0" := (![code.time.time.Time] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time "Time"%go "now")) in
+    (MethodResolve code.time.time.Time "Compare"%go (let: "$a0" := (![code.time.time.Duration] "minReadySecondsDuration") in
+    (MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time) "Add"%go (StructFieldRef code.k8s_io.api.core.v1.v1.PodCondition "LastTransitionTime"%go (![go.PointerType code.k8s_io.api.core.v1.v1.PodCondition] "c"))) "$a0")) "$a0") ≤⟨go.int⟩ #(W64 0)))
     then return: (#true)
     else do:  #());;;
     return: (#false)).
@@ -129,8 +129,8 @@ Definition IsPodAvailableⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
    go: util.go:297:6 *)
 Definition IsPodReadyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "pod",
-    exception_do (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
-    return: (let: "$a0" := (![core_v1.PodStatus] (StructFieldRef core_v1.Pod "Status"%go (![go.PointerType core_v1.Pod] "pod"))) in
+    exception_do (let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "pod") in
+    return: (let: "$a0" := (![code.k8s_io.api.core.v1.v1.PodStatus] (StructFieldRef code.k8s_io.api.core.v1.v1.Pod "Status"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod"))) in
      (FuncResolve IsPodReadyConditionTrue [] #()) "$a0")).
 
 (* IsPodTerminal returns true if a pod is terminal, all containers are stopped and cannot ever regress.
@@ -138,8 +138,8 @@ Definition IsPodReadyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} 
    go: util.go:302:6 *)
 Definition IsPodTerminalⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "pod",
-    exception_do (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) "pod") in
-    return: (let: "$a0" := (![core_v1.PodPhase] (StructFieldRef core_v1.PodStatus "Phase"%go (StructFieldRef core_v1.Pod "Status"%go (![go.PointerType core_v1.Pod] "pod")))) in
+    exception_do (let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "pod") in
+    return: (let: "$a0" := (![code.k8s_io.api.core.v1.v1.PodPhase] (StructFieldRef code.k8s_io.api.core.v1.v1.PodStatus "Phase"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Pod "Status"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod")))) in
      (FuncResolve IsPodPhaseTerminal [] #()) "$a0")).
 
 (* IsPodReadyConditionTrue returns true if a pod is ready; false otherwise.
@@ -147,12 +147,12 @@ Definition IsPodTerminalⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
    go: util.go:312:6 *)
 Definition IsPodReadyConditionTrueⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "status",
-    exception_do (let: "status" := (GoAlloc core_v1.PodStatus "status") in
-    let: "condition" := (GoAlloc (go.PointerType core_v1.PodCondition) (GoZeroVal (go.PointerType core_v1.PodCondition) #())) in
-    let: "$r0" := (let: "$a0" := (![core_v1.PodStatus] "status") in
+    exception_do (let: "status" := (GoAlloc code.k8s_io.api.core.v1.v1.PodStatus "status") in
+    let: "condition" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.PodCondition) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.PodCondition) #())) in
+    let: "$r0" := (let: "$a0" := (![code.k8s_io.api.core.v1.v1.PodStatus] "status") in
     (FuncResolve GetPodReadyCondition [] #()) "$a0") in
-    do:  ("condition" <-[go.PointerType core_v1.PodCondition] "$r0");;;
-    return: (((![go.PointerType core_v1.PodCondition] "condition") ≠⟨go.PointerType core_v1.PodCondition⟩ (Convert go.untyped_nil (go.PointerType core_v1.PodCondition) UntypedNil)) && ((![core_v1.ConditionStatus] (StructFieldRef core_v1.PodCondition "Status"%go (![go.PointerType core_v1.PodCondition] "condition"))) =⟨core_v1.ConditionStatus⟩ core_v1.ConditionTrue))).
+    do:  ("condition" <-[go.PointerType code.k8s_io.api.core.v1.v1.PodCondition] "$r0");;;
+    return: (((![go.PointerType code.k8s_io.api.core.v1.v1.PodCondition] "condition") ≠⟨go.PointerType code.k8s_io.api.core.v1.v1.PodCondition⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.PodCondition) UntypedNil)) && ((![code.k8s_io.api.core.v1.v1.ConditionStatus] (StructFieldRef code.k8s_io.api.core.v1.v1.PodCondition "Status"%go (![go.PointerType code.k8s_io.api.core.v1.v1.PodCondition] "condition"))) =⟨code.k8s_io.api.core.v1.v1.ConditionStatus⟩ code.k8s_io.api.core.v1.v1.ConditionTrue))).
 
 (* GetPodReadyCondition extracts the pod ready condition from the given status and returns that.
    Returns nil if the condition is not present.
@@ -160,16 +160,16 @@ Definition IsPodReadyConditionTrueⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
    go: util.go:325:6 *)
 Definition GetPodReadyConditionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "status",
-    exception_do (let: "status" := (GoAlloc core_v1.PodStatus "status") in
-    let: "condition" := (GoAlloc (go.PointerType core_v1.PodCondition) (GoZeroVal (go.PointerType core_v1.PodCondition) #())) in
+    exception_do (let: "status" := (GoAlloc code.k8s_io.api.core.v1.v1.PodStatus "status") in
+    let: "condition" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.PodCondition) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.PodCondition) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := "status" in
-    let: "$a1" := core_v1.PodReady in
+    let: "$a1" := code.k8s_io.api.core.v1.v1.PodReady in
     (FuncResolve GetPodCondition [] #()) "$a0" "$a1") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  "$r0";;;
-    do:  ("condition" <-[go.PointerType core_v1.PodCondition] "$r1");;;
-    return: (![go.PointerType core_v1.PodCondition] "condition")).
+    do:  ("condition" <-[go.PointerType code.k8s_io.api.core.v1.v1.PodCondition] "$r1");;;
+    return: (![go.PointerType code.k8s_io.api.core.v1.v1.PodCondition] "condition")).
 
 (* GetPodCondition extracts the provided condition from the given status and returns that.
    Returns nil and -1 if the condition is not present, and the index of the located condition.
@@ -177,13 +177,13 @@ Definition GetPodReadyConditionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
    go: util.go:339:6 *)
 Definition GetPodConditionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "status" "conditionType",
-    exception_do (let: "conditionType" := (GoAlloc core_v1.PodConditionType "conditionType") in
-    let: "status" := (GoAlloc (go.PointerType core_v1.PodStatus) "status") in
-    (if: Convert go.untyped_bool go.bool ((![go.PointerType core_v1.PodStatus] "status") =⟨go.PointerType core_v1.PodStatus⟩ (Convert go.untyped_nil (go.PointerType core_v1.PodStatus) UntypedNil))
-    then return: (Convert go.untyped_int go.int (⟨go.untyped_int⟩- #1), Convert go.untyped_nil (go.PointerType core_v1.PodCondition) UntypedNil)
+    exception_do (let: "conditionType" := (GoAlloc code.k8s_io.api.core.v1.v1.PodConditionType "conditionType") in
+    let: "status" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.PodStatus) "status") in
+    (if: Convert go.untyped_bool go.bool ((![go.PointerType code.k8s_io.api.core.v1.v1.PodStatus] "status") =⟨go.PointerType code.k8s_io.api.core.v1.v1.PodStatus⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.PodStatus) UntypedNil))
+    then return: (Convert go.untyped_int go.int (⟨go.untyped_int⟩- #1), Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.PodCondition) UntypedNil)
     else do:  #());;;
-    let: ("$ret0", "$ret1") := ((let: "$a0" := (![go.SliceType core_v1.PodCondition] (StructFieldRef core_v1.PodStatus "Conditions"%go (![go.PointerType core_v1.PodStatus] "status"))) in
-    let: "$a1" := (![core_v1.PodConditionType] "conditionType") in
+    let: ("$ret0", "$ret1") := ((let: "$a0" := (![go.SliceType code.k8s_io.api.core.v1.v1.PodCondition] (StructFieldRef code.k8s_io.api.core.v1.v1.PodStatus "Conditions"%go (![go.PointerType code.k8s_io.api.core.v1.v1.PodStatus] "status"))) in
+    let: "$a1" := (![code.k8s_io.api.core.v1.v1.PodConditionType] "conditionType") in
     (FuncResolve GetPodConditionFromList [] #()) "$a0" "$a1")) in
     return: ("$ret0", "$ret1")).
 
@@ -193,19 +193,19 @@ Definition GetPodConditionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
    go: util.go:348:6 *)
 Definition GetPodConditionFromListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "conditions" "conditionType",
-    exception_do (let: "conditionType" := (GoAlloc core_v1.PodConditionType "conditionType") in
-    let: "conditions" := (GoAlloc (go.SliceType core_v1.PodCondition) "conditions") in
-    (if: Convert go.untyped_bool go.bool ((![go.SliceType core_v1.PodCondition] "conditions") =⟨go.SliceType core_v1.PodCondition⟩ (Convert go.untyped_nil (go.SliceType core_v1.PodCondition) UntypedNil))
-    then return: (Convert go.untyped_int go.int (⟨go.untyped_int⟩- #1), Convert go.untyped_nil (go.PointerType core_v1.PodCondition) UntypedNil)
+    exception_do (let: "conditionType" := (GoAlloc code.k8s_io.api.core.v1.v1.PodConditionType "conditionType") in
+    let: "conditions" := (GoAlloc (go.SliceType code.k8s_io.api.core.v1.v1.PodCondition) "conditions") in
+    (if: Convert go.untyped_bool go.bool ((![go.SliceType code.k8s_io.api.core.v1.v1.PodCondition] "conditions") =⟨go.SliceType code.k8s_io.api.core.v1.v1.PodCondition⟩ (Convert go.untyped_nil (go.SliceType code.k8s_io.api.core.v1.v1.PodCondition) UntypedNil))
+    then return: (Convert go.untyped_int go.int (⟨go.untyped_int⟩- #1), Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.PodCondition) UntypedNil)
     else do:  #());;;
-    let: "$range" := (![go.SliceType core_v1.PodCondition] "conditions") in
+    let: "$range" := (![go.SliceType code.k8s_io.api.core.v1.v1.PodCondition] "conditions") in
     (let: "i" := (GoAlloc go.int (GoZeroVal go.int #())) in
-    slice.for_range core_v1.PodCondition "$range" (λ: "$key" "$value",
+    slice.for_range code.k8s_io.api.core.v1.v1.PodCondition "$range" (λ: "$key" "$value",
       do:  ("i" <-[go.int] "$key");;;
-      (if: Convert go.untyped_bool go.bool ((![core_v1.PodConditionType] (StructFieldRef core_v1.PodCondition "Type"%go (IndexRef (go.SliceType core_v1.PodCondition) (![go.SliceType core_v1.PodCondition] "conditions", ![go.int] "i")))) =⟨core_v1.PodConditionType⟩ (![core_v1.PodConditionType] "conditionType"))
-      then return: (![go.int] "i", IndexRef (go.SliceType core_v1.PodCondition) (![go.SliceType core_v1.PodCondition] "conditions", ![go.int] "i"))
+      (if: Convert go.untyped_bool go.bool ((![code.k8s_io.api.core.v1.v1.PodConditionType] (StructFieldRef code.k8s_io.api.core.v1.v1.PodCondition "Type"%go (IndexRef (go.SliceType code.k8s_io.api.core.v1.v1.PodCondition) (![go.SliceType code.k8s_io.api.core.v1.v1.PodCondition] "conditions", ![go.int] "i")))) =⟨code.k8s_io.api.core.v1.v1.PodConditionType⟩ (![code.k8s_io.api.core.v1.v1.PodConditionType] "conditionType"))
+      then return: (![go.int] "i", IndexRef (go.SliceType code.k8s_io.api.core.v1.v1.PodCondition) (![go.SliceType code.k8s_io.api.core.v1.v1.PodCondition] "conditions", ![go.int] "i"))
       else do:  #())));;;
-    return: (Convert go.untyped_int go.int (⟨go.untyped_int⟩- #1), Convert go.untyped_nil (go.PointerType core_v1.PodCondition) UntypedNil)).
+    return: (Convert go.untyped_int go.int (⟨go.untyped_int⟩- #1), Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.PodCondition) UntypedNil)).
 
 #[global] Instance info' : PkgInfo pkg_id.pod :=
 {|
@@ -217,9 +217,9 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.pod (λ: <>,
-      exception_do (do:  (meta_v1.initialize' #());;;
-      do:  (core_v1.initialize' #());;;
-      do:  (time.initialize' #()))
+      exception_do (do:  (code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.initialize' #());;;
+      do:  (code.k8s_io.api.core.v1.v1.initialize' #());;;
+      do:  (code.time.time.initialize' #()))
       ).
 
 Module ContainerType.
@@ -282,8 +282,8 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] GetPodReadyCondition_unfold :: FuncUnfold GetPodReadyCondition [] (GetPodReadyConditionⁱᵐᵖˡ);
   #[global] GetPodCondition_unfold :: FuncUnfold GetPodCondition [] (GetPodConditionⁱᵐᵖˡ);
   #[global] GetPodConditionFromList_unfold :: FuncUnfold GetPodConditionFromList [] (GetPodConditionFromListⁱᵐᵖˡ);
-  #[global] import_time_Assumption :: time.Assumptions;
-  #[global] import_core_v1_Assumption :: core_v1.Assumptions;
-  #[global] import_meta_v1_Assumption :: meta_v1.Assumptions;
+  #[global] import_time_Assumption :: code.time.time.Assumptions;
+  #[global] import_core_v1_Assumption :: code.k8s_io.api.core.v1.v1.Assumptions;
+  #[global] import_meta_v1_Assumption :: code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions;
 }.
 End pod.

@@ -208,9 +208,9 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.v1 (λ: <>,
-      exception_do (do:  (listers.initialize' #());;;
-      do:  (labels.initialize' #());;;
-      do:  (v1.initialize' #()))
+      exception_do (do:  (code.k8s_io.client_go.listers.listers.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.labels.labels.initialize' #());;;
+      do:  (code.k8s_io.api.apps.v1.v1.initialize' #()))
       ).
 
 Module ControllerRevisionLister.
@@ -509,7 +509,7 @@ Definition t : Type := interface.t.
 End def.
 End ReplicaSetLister.
 
-Definition ReplicaSetListerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "List"%go (go.Signature [labels.Selector] false [go.SliceType (go.PointerType v1.ReplicaSet); go.error]); go.MethodElem "ReplicaSets"%go (go.Signature [go.string] false [ReplicaSetNamespaceLister]); go.TypeElem [go.TypeTerm ReplicaSetListerExpansion]].
+Definition ReplicaSetListerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "List"%go (go.Signature [code.k8s_io.apimachinery.pkg.labels.labels.Selector] false [go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet); go.error]); go.MethodElem "ReplicaSets"%go (go.Signature [go.string] false [ReplicaSetNamespaceLister]); go.TypeElem [go.TypeTerm ReplicaSetListerExpansion]].
 
 Class ReplicaSetLister_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
@@ -541,7 +541,7 @@ Definition t : Type := interface.t.
 End def.
 End ReplicaSetNamespaceLister.
 
-Definition ReplicaSetNamespaceListerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "Get"%go (go.Signature [go.string] false [go.PointerType v1.ReplicaSet; go.error]); go.MethodElem "List"%go (go.Signature [labels.Selector] false [go.SliceType (go.PointerType v1.ReplicaSet); go.error]); go.TypeElem [go.TypeTerm ReplicaSetNamespaceListerExpansion]].
+Definition ReplicaSetNamespaceListerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "Get"%go (go.Signature [go.string] false [go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet; go.error]); go.MethodElem "List"%go (go.Signature [code.k8s_io.apimachinery.pkg.labels.labels.Selector] false [go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet); go.error]); go.TypeElem [go.TypeTerm ReplicaSetNamespaceListerExpansion]].
 
 Class ReplicaSetNamespaceLister_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
@@ -724,8 +724,8 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] statefulSetNamespaceLister_instance :: statefulSetNamespaceLister_Assumptions;
   #[global] StatefulSetListerExpansion_instance :: StatefulSetListerExpansion_Assumptions;
   #[global] StatefulSetNamespaceListerExpansion_instance :: StatefulSetNamespaceListerExpansion_Assumptions;
-  #[global] import_v1_Assumption :: v1.Assumptions;
-  #[global] import_labels_Assumption :: labels.Assumptions;
-  #[global] import_listers_Assumption :: listers.Assumptions;
+  #[global] import_v1_Assumption :: code.k8s_io.api.apps.v1.v1.Assumptions;
+  #[global] import_labels_Assumption :: code.k8s_io.apimachinery.pkg.labels.labels.Assumptions;
+  #[global] import_listers_Assumption :: code.k8s_io.client_go.listers.listers.Assumptions;
 }.
 End v1.

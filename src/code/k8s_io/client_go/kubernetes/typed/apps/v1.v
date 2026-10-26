@@ -179,15 +179,15 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.v1 (λ: <>,
-      exception_do (do:  (applyconfigurations_autoscaling_v1.initialize' #());;;
-      do:  (api_autoscaling_v1.initialize' #());;;
-      do:  (applyconfigurations_apps_v1.initialize' #());;;
-      do:  (watch.initialize' #());;;
-      do:  (types.initialize' #());;;
-      do:  (apis_meta_v1.initialize' #());;;
-      do:  (context.initialize' #());;;
-      do:  (rest.initialize' #());;;
-      do:  (api_apps_v1.initialize' #()))
+      exception_do (do:  (code.k8s_io.client_go.applyconfigurations.autoscaling.v1.v1.initialize' #());;;
+      do:  (code.k8s_io.api.autoscaling.v1.v1.initialize' #());;;
+      do:  (code.k8s_io.client_go.applyconfigurations.apps.v1.v1.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.watch.watch.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.types.types.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.initialize' #());;;
+      do:  (code.context.context.initialize' #());;;
+      do:  (code.k8s_io.client_go.rest.rest.initialize' #());;;
+      do:  (code.k8s_io.api.apps.v1.v1.initialize' #()))
       ).
 
 Module AppsV1Interface.
@@ -198,7 +198,7 @@ Definition t : Type := interface.t.
 End def.
 End AppsV1Interface.
 
-Definition AppsV1Interfaceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "RESTClient"%go (go.Signature [] false [rest.Interface]); go.TypeElem [go.TypeTerm ControllerRevisionsGetter]; go.TypeElem [go.TypeTerm DaemonSetsGetter]; go.TypeElem [go.TypeTerm DeploymentsGetter]; go.TypeElem [go.TypeTerm ReplicaSetsGetter]; go.TypeElem [go.TypeTerm StatefulSetsGetter]].
+Definition AppsV1Interfaceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "RESTClient"%go (go.Signature [] false [code.k8s_io.client_go.rest.rest.Interface]); go.TypeElem [go.TypeTerm ControllerRevisionsGetter]; go.TypeElem [go.TypeTerm DaemonSetsGetter]; go.TypeElem [go.TypeTerm DeploymentsGetter]; go.TypeElem [go.TypeTerm ReplicaSetsGetter]; go.TypeElem [go.TypeTerm StatefulSetsGetter]].
 
 Class AppsV1Interface_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
@@ -469,7 +469,7 @@ Definition t : Type := interface.t.
 End def.
 End ReplicaSetInterface.
 
-Definition ReplicaSetInterfaceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "Apply"%go (go.Signature [context.Context; go.PointerType applyconfigurations_apps_v1.ReplicaSetApplyConfiguration; apis_meta_v1.ApplyOptions] false [go.PointerType api_apps_v1.ReplicaSet; go.error]); go.MethodElem "ApplyScale"%go (go.Signature [context.Context; go.string; go.PointerType applyconfigurations_autoscaling_v1.ScaleApplyConfiguration; apis_meta_v1.ApplyOptions] false [go.PointerType api_autoscaling_v1.Scale; go.error]); go.MethodElem "ApplyStatus"%go (go.Signature [context.Context; go.PointerType applyconfigurations_apps_v1.ReplicaSetApplyConfiguration; apis_meta_v1.ApplyOptions] false [go.PointerType api_apps_v1.ReplicaSet; go.error]); go.MethodElem "Create"%go (go.Signature [context.Context; go.PointerType api_apps_v1.ReplicaSet; apis_meta_v1.CreateOptions] false [go.PointerType api_apps_v1.ReplicaSet; go.error]); go.MethodElem "Delete"%go (go.Signature [context.Context; go.string; apis_meta_v1.DeleteOptions] false [go.error]); go.MethodElem "DeleteCollection"%go (go.Signature [context.Context; apis_meta_v1.DeleteOptions; apis_meta_v1.ListOptions] false [go.error]); go.MethodElem "Get"%go (go.Signature [context.Context; go.string; apis_meta_v1.GetOptions] false [go.PointerType api_apps_v1.ReplicaSet; go.error]); go.MethodElem "GetScale"%go (go.Signature [context.Context; go.string; apis_meta_v1.GetOptions] false [go.PointerType api_autoscaling_v1.Scale; go.error]); go.MethodElem "List"%go (go.Signature [context.Context; apis_meta_v1.ListOptions] false [go.PointerType api_apps_v1.ReplicaSetList; go.error]); go.MethodElem "Patch"%go (go.Signature [context.Context; go.string; types.PatchType; go.SliceType go.byte; apis_meta_v1.PatchOptions; go.SliceType go.string] true [go.PointerType api_apps_v1.ReplicaSet; go.error]); go.MethodElem "Update"%go (go.Signature [context.Context; go.PointerType api_apps_v1.ReplicaSet; apis_meta_v1.UpdateOptions] false [go.PointerType api_apps_v1.ReplicaSet; go.error]); go.MethodElem "UpdateScale"%go (go.Signature [context.Context; go.string; go.PointerType api_autoscaling_v1.Scale; apis_meta_v1.UpdateOptions] false [go.PointerType api_autoscaling_v1.Scale; go.error]); go.MethodElem "UpdateStatus"%go (go.Signature [context.Context; go.PointerType api_apps_v1.ReplicaSet; apis_meta_v1.UpdateOptions] false [go.PointerType api_apps_v1.ReplicaSet; go.error]); go.MethodElem "Watch"%go (go.Signature [context.Context; apis_meta_v1.ListOptions] false [watch.Interface; go.error]); go.TypeElem [go.TypeTerm ReplicaSetExpansion]].
+Definition ReplicaSetInterfaceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "Apply"%go (go.Signature [code.context.context.Context; go.PointerType code.k8s_io.client_go.applyconfigurations.apps.v1.v1.ReplicaSetApplyConfiguration; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ApplyOptions] false [go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet; go.error]); go.MethodElem "ApplyScale"%go (go.Signature [code.context.context.Context; go.string; go.PointerType code.k8s_io.client_go.applyconfigurations.autoscaling.v1.v1.ScaleApplyConfiguration; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ApplyOptions] false [go.PointerType code.k8s_io.api.autoscaling.v1.v1.Scale; go.error]); go.MethodElem "ApplyStatus"%go (go.Signature [code.context.context.Context; go.PointerType code.k8s_io.client_go.applyconfigurations.apps.v1.v1.ReplicaSetApplyConfiguration; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ApplyOptions] false [go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet; go.error]); go.MethodElem "Create"%go (go.Signature [code.context.context.Context; go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.CreateOptions] false [go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet; go.error]); go.MethodElem "Delete"%go (go.Signature [code.context.context.Context; go.string; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] false [go.error]); go.MethodElem "DeleteCollection"%go (go.Signature [code.context.context.Context; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ListOptions] false [go.error]); go.MethodElem "Get"%go (go.Signature [code.context.context.Context; go.string; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.GetOptions] false [go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet; go.error]); go.MethodElem "GetScale"%go (go.Signature [code.context.context.Context; go.string; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.GetOptions] false [go.PointerType code.k8s_io.api.autoscaling.v1.v1.Scale; go.error]); go.MethodElem "List"%go (go.Signature [code.context.context.Context; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ListOptions] false [go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSetList; go.error]); go.MethodElem "Patch"%go (go.Signature [code.context.context.Context; go.string; code.k8s_io.apimachinery.pkg.types.types.PatchType; go.SliceType go.byte; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.PatchOptions; go.SliceType go.string] true [go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet; go.error]); go.MethodElem "Update"%go (go.Signature [code.context.context.Context; go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions] false [go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet; go.error]); go.MethodElem "UpdateScale"%go (go.Signature [code.context.context.Context; go.string; go.PointerType code.k8s_io.api.autoscaling.v1.v1.Scale; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions] false [go.PointerType code.k8s_io.api.autoscaling.v1.v1.Scale; go.error]); go.MethodElem "UpdateStatus"%go (go.Signature [code.context.context.Context; go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions] false [go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet; go.error]); go.MethodElem "Watch"%go (go.Signature [code.context.context.Context; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ListOptions] false [code.k8s_io.apimachinery.pkg.watch.watch.Interface; go.error]); go.TypeElem [go.TypeTerm ReplicaSetExpansion]].
 
 Class ReplicaSetInterface_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
@@ -564,14 +564,14 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] StatefulSetsGetter_instance :: StatefulSetsGetter_Assumptions;
   #[global] StatefulSetInterface_instance :: StatefulSetInterface_Assumptions;
   #[global] statefulSets_instance :: statefulSets_Assumptions;
-  #[global] import_api_apps_v1_Assumption :: api_apps_v1.Assumptions;
-  #[global] import_rest_Assumption :: rest.Assumptions;
-  #[global] import_context_Assumption :: context.Assumptions;
-  #[global] import_apis_meta_v1_Assumption :: apis_meta_v1.Assumptions;
-  #[global] import_types_Assumption :: types.Assumptions;
-  #[global] import_watch_Assumption :: watch.Assumptions;
-  #[global] import_applyconfigurations_apps_v1_Assumption :: applyconfigurations_apps_v1.Assumptions;
-  #[global] import_api_autoscaling_v1_Assumption :: api_autoscaling_v1.Assumptions;
-  #[global] import_applyconfigurations_autoscaling_v1_Assumption :: applyconfigurations_autoscaling_v1.Assumptions;
+  #[global] import_api_apps_v1_Assumption :: code.k8s_io.api.apps.v1.v1.Assumptions;
+  #[global] import_rest_Assumption :: code.k8s_io.client_go.rest.rest.Assumptions;
+  #[global] import_context_Assumption :: code.context.context.Assumptions;
+  #[global] import_apis_meta_v1_Assumption :: code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions;
+  #[global] import_types_Assumption :: code.k8s_io.apimachinery.pkg.types.types.Assumptions;
+  #[global] import_watch_Assumption :: code.k8s_io.apimachinery.pkg.watch.watch.Assumptions;
+  #[global] import_applyconfigurations_apps_v1_Assumption :: code.k8s_io.client_go.applyconfigurations.apps.v1.v1.Assumptions;
+  #[global] import_api_autoscaling_v1_Assumption :: code.k8s_io.api.autoscaling.v1.v1.Assumptions;
+  #[global] import_applyconfigurations_autoscaling_v1_Assumption :: code.k8s_io.client_go.applyconfigurations.autoscaling.v1.v1.Assumptions;
 }.
 End v1.

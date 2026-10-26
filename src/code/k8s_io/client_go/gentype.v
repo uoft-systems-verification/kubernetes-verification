@@ -117,16 +117,16 @@ Definition NewClientⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} (
     exception_do (let: "options" := (GoAlloc (go.SliceType (Option T)) "options") in
     let: "emptyObjectCreator" := (GoAlloc (go.FunctionType (go.Signature [] false [T])) "emptyObjectCreator") in
     let: "namespace" := (GoAlloc go.string "namespace") in
-    let: "parameterCodec" := (GoAlloc runtime.ParameterCodec "parameterCodec") in
-    let: "client" := (GoAlloc rest.Interface "client") in
+    let: "parameterCodec" := (GoAlloc code.k8s_io.apimachinery.pkg.runtime.runtime.ParameterCodec "parameterCodec") in
+    let: "client" := (GoAlloc code.k8s_io.client_go.rest.rest.Interface "client") in
     let: "resource" := (GoAlloc go.string "resource") in
     let: "c" := (GoAlloc (go.PointerType (Client T)) (GoZeroVal (go.PointerType (Client T)) #())) in
     let: "$r0" := (GoAlloc (Client T) (let: "$v0" := (![go.string] "resource") in
-    let: "$v1" := (![rest.Interface] "client") in
-    let: "$v2" := (![runtime.ParameterCodec] "parameterCodec") in
+    let: "$v1" := (![code.k8s_io.client_go.rest.rest.Interface] "client") in
+    let: "$v2" := (![code.k8s_io.apimachinery.pkg.runtime.runtime.ParameterCodec] "parameterCodec") in
     let: "$v3" := (![go.string] "namespace") in
     let: "$v4" := (![go.FunctionType (go.Signature [] false [T])] "emptyObjectCreator") in
-    CompositeLiteral (Client T) (LiteralValue [KeyedElement (Some (KeyField "resource"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "client"%go)) (ElementExpression rest.Interface "$v1"); KeyedElement (Some (KeyField "parameterCodec"%go)) (ElementExpression runtime.ParameterCodec "$v2"); KeyedElement (Some (KeyField "namespace"%go)) (ElementExpression go.string "$v3"); KeyedElement (Some (KeyField "newObject"%go)) (ElementExpression (go.FunctionType (go.Signature [] false [T])) "$v4")]))) in
+    CompositeLiteral (Client T) (LiteralValue [KeyedElement (Some (KeyField "resource"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "client"%go)) (ElementExpression code.k8s_io.client_go.rest.rest.Interface "$v1"); KeyedElement (Some (KeyField "parameterCodec"%go)) (ElementExpression code.k8s_io.apimachinery.pkg.runtime.runtime.ParameterCodec "$v2"); KeyedElement (Some (KeyField "namespace"%go)) (ElementExpression go.string "$v3"); KeyedElement (Some (KeyField "newObject"%go)) (ElementExpression (go.FunctionType (go.Signature [] false [T])) "$v4")]))) in
     do:  ("c" <-[go.PointerType (Client T)] "$r0");;;
     let: "$range" := (![go.SliceType (Option T)] "options") in
     (let: "option" := (GoAlloc (Option T) (GoZeroVal (Option T) #())) in
@@ -146,13 +146,13 @@ Definition NewClientWithListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
     let: "emptyListCreator" := (GoAlloc (go.FunctionType (go.Signature [] false [L])) "emptyListCreator") in
     let: "emptyObjectCreator" := (GoAlloc (go.FunctionType (go.Signature [] false [T])) "emptyObjectCreator") in
     let: "namespace" := (GoAlloc go.string "namespace") in
-    let: "parameterCodec" := (GoAlloc runtime.ParameterCodec "parameterCodec") in
-    let: "client" := (GoAlloc rest.Interface "client") in
+    let: "parameterCodec" := (GoAlloc code.k8s_io.apimachinery.pkg.runtime.runtime.ParameterCodec "parameterCodec") in
+    let: "client" := (GoAlloc code.k8s_io.client_go.rest.rest.Interface "client") in
     let: "resource" := (GoAlloc go.string "resource") in
     let: "typeClient" := (GoAlloc (go.PointerType (Client T)) (GoZeroVal (go.PointerType (Client T)) #())) in
     let: "$r0" := (let: "$a0" := (![go.string] "resource") in
-    let: "$a1" := (![rest.Interface] "client") in
-    let: "$a2" := (![runtime.ParameterCodec] "parameterCodec") in
+    let: "$a1" := (![code.k8s_io.client_go.rest.rest.Interface] "client") in
+    let: "$a2" := (![code.k8s_io.apimachinery.pkg.runtime.runtime.ParameterCodec] "parameterCodec") in
     let: "$a3" := (![go.string] "namespace") in
     let: "$a4" := (![go.FunctionType (go.Signature [] false [T])] "emptyObjectCreator") in
     let: "$a5" := (![go.SliceType (Option T)] "options") in
@@ -172,13 +172,13 @@ Definition NewClientWithApplyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalC
     exception_do (let: "options" := (GoAlloc (go.SliceType (Option T)) "options") in
     let: "emptyObjectCreator" := (GoAlloc (go.FunctionType (go.Signature [] false [T])) "emptyObjectCreator") in
     let: "namespace" := (GoAlloc go.string "namespace") in
-    let: "parameterCodec" := (GoAlloc runtime.ParameterCodec "parameterCodec") in
-    let: "client" := (GoAlloc rest.Interface "client") in
+    let: "parameterCodec" := (GoAlloc code.k8s_io.apimachinery.pkg.runtime.runtime.ParameterCodec "parameterCodec") in
+    let: "client" := (GoAlloc code.k8s_io.client_go.rest.rest.Interface "client") in
     let: "resource" := (GoAlloc go.string "resource") in
     let: "typeClient" := (GoAlloc (go.PointerType (Client T)) (GoZeroVal (go.PointerType (Client T)) #())) in
     let: "$r0" := (let: "$a0" := (![go.string] "resource") in
-    let: "$a1" := (![rest.Interface] "client") in
-    let: "$a2" := (![runtime.ParameterCodec] "parameterCodec") in
+    let: "$a1" := (![code.k8s_io.client_go.rest.rest.Interface] "client") in
+    let: "$a2" := (![code.k8s_io.apimachinery.pkg.runtime.runtime.ParameterCodec] "parameterCodec") in
     let: "$a3" := (![go.string] "namespace") in
     let: "$a4" := (![go.FunctionType (go.Signature [] false [T])] "emptyObjectCreator") in
     let: "$a5" := (![go.SliceType (Option T)] "options") in
@@ -198,13 +198,13 @@ Definition NewClientWithListAndApplyⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : Go
     let: "emptyListCreator" := (GoAlloc (go.FunctionType (go.Signature [] false [L])) "emptyListCreator") in
     let: "emptyObjectCreator" := (GoAlloc (go.FunctionType (go.Signature [] false [T])) "emptyObjectCreator") in
     let: "namespace" := (GoAlloc go.string "namespace") in
-    let: "parameterCodec" := (GoAlloc runtime.ParameterCodec "parameterCodec") in
-    let: "client" := (GoAlloc rest.Interface "client") in
+    let: "parameterCodec" := (GoAlloc code.k8s_io.apimachinery.pkg.runtime.runtime.ParameterCodec "parameterCodec") in
+    let: "client" := (GoAlloc code.k8s_io.client_go.rest.rest.Interface "client") in
     let: "resource" := (GoAlloc go.string "resource") in
     let: "typeClient" := (GoAlloc (go.PointerType (Client T)) (GoZeroVal (go.PointerType (Client T)) #())) in
     let: "$r0" := (let: "$a0" := (![go.string] "resource") in
-    let: "$a1" := (![rest.Interface] "client") in
-    let: "$a2" := (![runtime.ParameterCodec] "parameterCodec") in
+    let: "$a1" := (![code.k8s_io.client_go.rest.rest.Interface] "client") in
+    let: "$a2" := (![code.k8s_io.apimachinery.pkg.runtime.runtime.ParameterCodec] "parameterCodec") in
     let: "$a3" := (![go.string] "namespace") in
     let: "$a4" := (![go.FunctionType (go.Signature [] false [T])] "emptyObjectCreator") in
     let: "$a5" := (![go.SliceType (Option T)] "options") in
@@ -228,9 +228,9 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.gentype (λ: <>,
-      exception_do (do:  (rest.initialize' #());;;
-      do:  (runtime.initialize' #());;;
-      do:  (v1.initialize' #()))
+      exception_do (do:  (code.k8s_io.client_go.rest.rest.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.runtime.runtime.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.initialize' #()))
       ).
 
 Module FakeClient.
@@ -337,7 +337,7 @@ Definition t : Type := interface.t.
 End def.
 End objectWithMeta.
 
-Definition objectWithMetaⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.TypeElem [go.TypeTerm runtime.Object]; go.TypeElem [go.TypeTerm v1.Object]].
+Definition objectWithMetaⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.TypeElem [go.TypeTerm code.k8s_io.apimachinery.pkg.runtime.runtime.Object]; go.TypeElem [go.TypeTerm code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object]].
 
 Class objectWithMeta_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
@@ -366,10 +366,10 @@ Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Record t {T : Type} :=
 mk {
   resource' : go_string;
-  client' : rest.Interface.t;
+  client' : code.k8s_io.client_go.rest.rest.Interface.t;
   namespace' : go_string;
   newObject' : func.t;
-  parameterCodec' : runtime.ParameterCodec.t;
+  parameterCodec' : code.k8s_io.apimachinery.pkg.runtime.runtime.ParameterCodec.t;
   prefersProtobuf' : bool;
 }.
 
@@ -381,10 +381,10 @@ End Client.
 
 Definition Client'fds_unsealed (T : go.type) {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
   (go.FieldDecl "resource"%go go.string);
-  (go.FieldDecl "client"%go rest.Interface);
+  (go.FieldDecl "client"%go code.k8s_io.client_go.rest.rest.Interface);
   (go.FieldDecl "namespace"%go go.string);
   (go.FieldDecl "newObject"%go (go.FunctionType (go.Signature [] false [T])));
-  (go.FieldDecl "parameterCodec"%go runtime.ParameterCodec);
+  (go.FieldDecl "parameterCodec"%go code.k8s_io.apimachinery.pkg.runtime.runtime.ParameterCodec);
   (go.FieldDecl "prefersProtobuf"%go go.bool)
 ].
 Program Definition Client'fds (T : go.type) {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (Client'fds_unsealed T).
@@ -626,8 +626,8 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] NewClientWithList_unfold T L :: FuncUnfold NewClientWithList [T; L] (NewClientWithListⁱᵐᵖˡ T L);
   #[global] NewClientWithApply_unfold T C :: FuncUnfold NewClientWithApply [T; C] (NewClientWithApplyⁱᵐᵖˡ T C);
   #[global] NewClientWithListAndApply_unfold T L C :: FuncUnfold NewClientWithListAndApply [T; L; C] (NewClientWithListAndApplyⁱᵐᵖˡ T L C);
-  #[global] import_v1_Assumption :: v1.Assumptions;
-  #[global] import_runtime_Assumption :: runtime.Assumptions;
-  #[global] import_rest_Assumption :: rest.Assumptions;
+  #[global] import_v1_Assumption :: code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions;
+  #[global] import_runtime_Assumption :: code.k8s_io.apimachinery.pkg.runtime.runtime.Assumptions;
+  #[global] import_rest_Assumption :: code.k8s_io.client_go.rest.rest.Assumptions;
 }.
 End gentype.

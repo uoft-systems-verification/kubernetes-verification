@@ -294,24 +294,24 @@ Definition Accessorⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : 
   λ: "obj",
     exception_do (let: "obj" := (GoAlloc (go.InterfaceType []) "obj") in
     let: "$y" := (![go.InterfaceType []] "obj") in
-    let: ("$x", "$ok") := (TypeAssert2 v1.Object "$y") in
+    let: ("$x", "$ok") := (TypeAssert2 code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "$y") in
     (if: "$ok"
     then
-      let: "t" := (GoAlloc v1.Object "$x") in
-      return: (![v1.Object] "t", Convert go.untyped_nil go.error UntypedNil)
+      let: "t" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "$x") in
+      return: (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "t", Convert go.untyped_nil go.error UntypedNil)
     else
-      let: ("$x", "$ok") := (TypeAssert2 v1.ObjectMetaAccessor "$y") in
+      let: ("$x", "$ok") := (TypeAssert2 code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMetaAccessor "$y") in
       (if: "$ok"
       then
-        let: "t" := (GoAlloc v1.ObjectMetaAccessor "$x") in
-        (let: "m" := (GoAlloc v1.Object (GoZeroVal v1.Object #())) in
-        let: "$r0" := ((MethodResolve v1.ObjectMetaAccessor "GetObjectMeta"%go (![v1.ObjectMetaAccessor] "t")) #()) in
-        do:  ("m" <-[v1.Object] "$r0");;;
-        (if: Convert go.untyped_bool go.bool ((![v1.Object] "m") ≠⟨v1.Object⟩ (Convert go.untyped_nil v1.Object UntypedNil))
-        then return: (![v1.Object] "m", Convert go.untyped_nil go.error UntypedNil)
+        let: "t" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMetaAccessor "$x") in
+        (let: "m" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object #())) in
+        let: "$r0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMetaAccessor "GetObjectMeta"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMetaAccessor] "t")) #()) in
+        do:  ("m" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "$r0");;;
+        (if: Convert go.untyped_bool go.bool ((![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "m") ≠⟨code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object⟩ (Convert go.untyped_nil code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object UntypedNil))
+        then return: (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "m", Convert go.untyped_nil go.error UntypedNil)
         else do:  #()));;;
-        return: (Convert go.untyped_nil v1.Object UntypedNil, ![go.error] (GlobalVarAddr errNotObject #()))
-      else return: (Convert go.untyped_nil v1.Object UntypedNil, ![go.error] (GlobalVarAddr errNotObject #()))))).
+        return: (Convert go.untyped_nil code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object UntypedNil, ![go.error] (GlobalVarAddr errNotObject #()))
+      else return: (Convert go.untyped_nil code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object UntypedNil, ![go.error] (GlobalVarAddr errNotObject #()))))).
 
 #[global] Instance info' : PkgInfo pkg_id.meta :=
 {|
@@ -323,7 +323,7 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.meta (λ: <>,
-      exception_do (do:  (v1.initialize' #());;;
+      exception_do (do:  (code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.initialize' #());;;
       do:  (_'init #());;;
       do:  (isListCache'init #());;;
       do:  (errExpectFieldItems'init #());;;
@@ -754,6 +754,6 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] kindByPreferredGroupVersion_instance :: kindByPreferredGroupVersion_Assumptions;
   #[global] resourceByPreferredGroupVersion_instance :: resourceByPreferredGroupVersion_Assumptions;
   #[global] Accessor_unfold :: FuncUnfold Accessor [] (Accessorⁱᵐᵖˡ);
-  #[global] import_v1_Assumption :: v1.Assumptions;
+  #[global] import_v1_Assumption :: code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions;
 }.
 End meta.

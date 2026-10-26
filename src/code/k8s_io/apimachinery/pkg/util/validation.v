@@ -226,7 +226,7 @@ Definition IsQualifiedNameⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
     let: "parts" := (GoAlloc (go.SliceType go.string) (GoZeroVal (go.SliceType go.string) #())) in
     let: "$r0" := (let: "$a0" := (![go.string] "value") in
     let: "$a1" := #"/"%go in
-    (FuncResolve strings.Split [] #()) "$a0" "$a1") in
+    (FuncResolve code.strings.strings.Split [] #()) "$a0" "$a1") in
     do:  ("parts" <-[go.SliceType go.string] "$r0");;;
     let: "name" := (GoAlloc go.string (GoZeroVal go.string #())) in
     let: "$sw" := (let: "$a0" := (![go.SliceType go.string] "parts") in
@@ -297,7 +297,7 @@ Definition IsQualifiedNameⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
         do:  ("errs" <-[go.SliceType go.string] "$r0")
       else do:  #()));;;
     (if: (⟨go.bool⟩! (let: "$a0" := (![go.string] "name") in
-    (MethodResolve (go.PointerType regexp.Regexp) "MatchString"%go (![go.PointerType regexp.Regexp] (GlobalVarAddr qualifiedNameRegexp #()))) "$a0"))
+    (MethodResolve (go.PointerType code.regexp.regexp.Regexp) "MatchString"%go (![go.PointerType code.regexp.regexp.Regexp] (GlobalVarAddr qualifiedNameRegexp #()))) "$a0"))
     then
       let: "$r0" := (let: "$a0" := (![go.SliceType go.string] "errs") in
       let: "$a1" := ((let: "$sl0" := (#"name part "%go +⟨go.string⟩ (let: "$a0" := qualifiedNameErrMsg in
@@ -333,7 +333,7 @@ Definition IsValidLabelValueⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
       do:  ("errs" <-[go.SliceType go.string] "$r0")
     else do:  #());;;
     (if: (⟨go.bool⟩! (let: "$a0" := (![go.string] "value") in
-    (MethodResolve (go.PointerType regexp.Regexp) "MatchString"%go (![go.PointerType regexp.Regexp] (GlobalVarAddr labelValueRegexp #()))) "$a0"))
+    (MethodResolve (go.PointerType code.regexp.regexp.Regexp) "MatchString"%go (![go.PointerType code.regexp.regexp.Regexp] (GlobalVarAddr labelValueRegexp #()))) "$a0"))
     then
       let: "$r0" := (let: "$a0" := (![go.SliceType go.string] "errs") in
       let: "$a1" := ((let: "$sl0" := (let: "$a0" := labelValueErrMsg in
@@ -359,8 +359,8 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.validation (λ: <>,
-      exception_do (do:  (strings.initialize' #());;;
-      do:  (regexp.initialize' #());;;
+      exception_do (do:  (code.strings.strings.initialize' #());;;
+      do:  (code.regexp.regexp.initialize' #());;;
       do:  (qualifiedNameRegexp'init #());;;
       do:  (httpPathRegexp'init #());;;
       do:  (labelValueRegexp'init #());;;
@@ -381,7 +381,7 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
 {
   #[global] IsQualifiedName_unfold :: FuncUnfold IsQualifiedName [] (IsQualifiedNameⁱᵐᵖˡ);
   #[global] IsValidLabelValue_unfold :: FuncUnfold IsValidLabelValue [] (IsValidLabelValueⁱᵐᵖˡ);
-  #[global] import_regexp_Assumption :: regexp.Assumptions;
-  #[global] import_strings_Assumption :: strings.Assumptions;
+  #[global] import_regexp_Assumption :: code.regexp.regexp.Assumptions;
+  #[global] import_strings_Assumption :: code.strings.strings.Assumptions;
 }.
 End validation.

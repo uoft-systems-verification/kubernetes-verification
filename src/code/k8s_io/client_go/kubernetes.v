@@ -43,8 +43,8 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.kubernetes (λ: <>,
-      exception_do (do:  (core_v1.initialize' #());;;
-      do:  (apps_v1.initialize' #()))
+      exception_do (do:  (code.k8s_io.client_go.kubernetes.typed.core.v1.v1.initialize' #());;;
+      do:  (code.k8s_io.client_go.kubernetes.typed.apps.v1.v1.initialize' #()))
       ).
 
 Module Interface.
@@ -85,7 +85,7 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
 {
   #[global] Interface_instance :: Interface_Assumptions;
   #[global] Clientset_instance :: Clientset_Assumptions;
-  #[global] import_apps_v1_Assumption :: apps_v1.Assumptions;
-  #[global] import_core_v1_Assumption :: core_v1.Assumptions;
+  #[global] import_apps_v1_Assumption :: code.k8s_io.client_go.kubernetes.typed.apps.v1.v1.Assumptions;
+  #[global] import_core_v1_Assumption :: code.k8s_io.client_go.kubernetes.typed.core.v1.v1.Assumptions;
 }.
 End kubernetes.

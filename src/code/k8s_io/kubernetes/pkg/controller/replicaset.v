@@ -68,31 +68,31 @@ Definition NewReplicaSetConditionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
   λ: "condType" "status" "reason" "msg",
     exception_do (let: "msg" := (GoAlloc go.string "msg") in
     let: "reason" := (GoAlloc go.string "reason") in
-    let: "status" := (GoAlloc core_v1.ConditionStatus "status") in
-    let: "condType" := (GoAlloc apps_v1.ReplicaSetConditionType "condType") in
-    return: (let: "$v0" := (![apps_v1.ReplicaSetConditionType] "condType") in
-     let: "$v1" := (![core_v1.ConditionStatus] "status") in
-     let: "$v2" := ((FuncResolve meta_v1.Now [] #()) #()) in
+    let: "status" := (GoAlloc code.k8s_io.api.core.v1.v1.ConditionStatus "status") in
+    let: "condType" := (GoAlloc code.k8s_io.api.apps.v1.v1.ReplicaSetConditionType "condType") in
+    return: (let: "$v0" := (![code.k8s_io.api.apps.v1.v1.ReplicaSetConditionType] "condType") in
+     let: "$v1" := (![code.k8s_io.api.core.v1.v1.ConditionStatus] "status") in
+     let: "$v2" := ((FuncResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Now [] #()) #()) in
      let: "$v3" := (![go.string] "reason") in
      let: "$v4" := (![go.string] "msg") in
-     CompositeLiteral apps_v1.ReplicaSetCondition (LiteralValue [KeyedElement (Some (KeyField "Type"%go)) (ElementExpression apps_v1.ReplicaSetConditionType "$v0"); KeyedElement (Some (KeyField "Status"%go)) (ElementExpression core_v1.ConditionStatus "$v1"); KeyedElement (Some (KeyField "LastTransitionTime"%go)) (ElementExpression meta_v1.Time "$v2"); KeyedElement (Some (KeyField "Reason"%go)) (ElementExpression go.string "$v3"); KeyedElement (Some (KeyField "Message"%go)) (ElementExpression go.string "$v4")]))).
+     CompositeLiteral code.k8s_io.api.apps.v1.v1.ReplicaSetCondition (LiteralValue [KeyedElement (Some (KeyField "Type"%go)) (ElementExpression code.k8s_io.api.apps.v1.v1.ReplicaSetConditionType "$v0"); KeyedElement (Some (KeyField "Status"%go)) (ElementExpression code.k8s_io.api.core.v1.v1.ConditionStatus "$v1"); KeyedElement (Some (KeyField "LastTransitionTime"%go)) (ElementExpression code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time "$v2"); KeyedElement (Some (KeyField "Reason"%go)) (ElementExpression go.string "$v3"); KeyedElement (Some (KeyField "Message"%go)) (ElementExpression go.string "$v4")]))).
 
 (* GetCondition returns a replicaset condition with the provided type if it exists.
 
    go: replica_set_utils.go:158:6 *)
 Definition GetConditionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "status" "condType",
-    exception_do (let: "condType" := (GoAlloc apps_v1.ReplicaSetConditionType "condType") in
-    let: "status" := (GoAlloc apps_v1.ReplicaSetStatus "status") in
-    let: "$range" := (![go.SliceType apps_v1.ReplicaSetCondition] (StructFieldRef apps_v1.ReplicaSetStatus "Conditions"%go "status")) in
-    (let: "c" := (GoAlloc apps_v1.ReplicaSetCondition (GoZeroVal apps_v1.ReplicaSetCondition #())) in
-    slice.for_range apps_v1.ReplicaSetCondition "$range" (λ: "$key" "$value",
-      do:  ("c" <-[apps_v1.ReplicaSetCondition] "$value");;;
+    exception_do (let: "condType" := (GoAlloc code.k8s_io.api.apps.v1.v1.ReplicaSetConditionType "condType") in
+    let: "status" := (GoAlloc code.k8s_io.api.apps.v1.v1.ReplicaSetStatus "status") in
+    let: "$range" := (![go.SliceType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition] (StructFieldRef code.k8s_io.api.apps.v1.v1.ReplicaSetStatus "Conditions"%go "status")) in
+    (let: "c" := (GoAlloc code.k8s_io.api.apps.v1.v1.ReplicaSetCondition (GoZeroVal code.k8s_io.api.apps.v1.v1.ReplicaSetCondition #())) in
+    slice.for_range code.k8s_io.api.apps.v1.v1.ReplicaSetCondition "$range" (λ: "$key" "$value",
+      do:  ("c" <-[code.k8s_io.api.apps.v1.v1.ReplicaSetCondition] "$value");;;
       do:  "$key";;;
-      (if: Convert go.untyped_bool go.bool ((![apps_v1.ReplicaSetConditionType] (StructFieldRef apps_v1.ReplicaSetCondition "Type"%go "c")) =⟨apps_v1.ReplicaSetConditionType⟩ (![apps_v1.ReplicaSetConditionType] "condType"))
+      (if: Convert go.untyped_bool go.bool ((![code.k8s_io.api.apps.v1.v1.ReplicaSetConditionType] (StructFieldRef code.k8s_io.api.apps.v1.v1.ReplicaSetCondition "Type"%go "c")) =⟨code.k8s_io.api.apps.v1.v1.ReplicaSetConditionType⟩ (![code.k8s_io.api.apps.v1.v1.ReplicaSetConditionType] "condType"))
       then return: ("c")
       else do:  #())));;;
-    return: (Convert go.untyped_nil (go.PointerType apps_v1.ReplicaSetCondition) UntypedNil)).
+    return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition) UntypedNil)).
 
 (* SetCondition adds/replaces the given condition in the replicaset status. If the condition that we
    are about to add already exists and has the same status and reason then we are not going to update.
@@ -100,26 +100,26 @@ Definition GetConditionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext
    go: replica_set_utils.go:169:6 *)
 Definition SetConditionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "status" "condition",
-    exception_do (let: "condition" := (GoAlloc apps_v1.ReplicaSetCondition "condition") in
-    let: "status" := (GoAlloc (go.PointerType apps_v1.ReplicaSetStatus) "status") in
-    let: "currentCond" := (GoAlloc (go.PointerType apps_v1.ReplicaSetCondition) (GoZeroVal (go.PointerType apps_v1.ReplicaSetCondition) #())) in
-    let: "$r0" := (let: "$a0" := (![apps_v1.ReplicaSetStatus] (![go.PointerType apps_v1.ReplicaSetStatus] "status")) in
-    let: "$a1" := (![apps_v1.ReplicaSetConditionType] (StructFieldRef apps_v1.ReplicaSetCondition "Type"%go "condition")) in
+    exception_do (let: "condition" := (GoAlloc code.k8s_io.api.apps.v1.v1.ReplicaSetCondition "condition") in
+    let: "status" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSetStatus) "status") in
+    let: "currentCond" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition) #())) in
+    let: "$r0" := (let: "$a0" := (![code.k8s_io.api.apps.v1.v1.ReplicaSetStatus] (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSetStatus] "status")) in
+    let: "$a1" := (![code.k8s_io.api.apps.v1.v1.ReplicaSetConditionType] (StructFieldRef code.k8s_io.api.apps.v1.v1.ReplicaSetCondition "Type"%go "condition")) in
     (FuncResolve GetCondition [] #()) "$a0" "$a1") in
-    do:  ("currentCond" <-[go.PointerType apps_v1.ReplicaSetCondition] "$r0");;;
-    (if: Convert go.untyped_bool go.bool ((((![go.PointerType apps_v1.ReplicaSetCondition] "currentCond") ≠⟨go.PointerType apps_v1.ReplicaSetCondition⟩ (Convert go.untyped_nil (go.PointerType apps_v1.ReplicaSetCondition) UntypedNil)) && ((![core_v1.ConditionStatus] (StructFieldRef apps_v1.ReplicaSetCondition "Status"%go (![go.PointerType apps_v1.ReplicaSetCondition] "currentCond"))) =⟨core_v1.ConditionStatus⟩ (![core_v1.ConditionStatus] (StructFieldRef apps_v1.ReplicaSetCondition "Status"%go "condition")))) && ((![go.string] (StructFieldRef apps_v1.ReplicaSetCondition "Reason"%go (![go.PointerType apps_v1.ReplicaSetCondition] "currentCond"))) =⟨go.string⟩ (![go.string] (StructFieldRef apps_v1.ReplicaSetCondition "Reason"%go "condition"))))
+    do:  ("currentCond" <-[go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition] "$r0");;;
+    (if: Convert go.untyped_bool go.bool ((((![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition] "currentCond") ≠⟨go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition) UntypedNil)) && ((![code.k8s_io.api.core.v1.v1.ConditionStatus] (StructFieldRef code.k8s_io.api.apps.v1.v1.ReplicaSetCondition "Status"%go (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition] "currentCond"))) =⟨code.k8s_io.api.core.v1.v1.ConditionStatus⟩ (![code.k8s_io.api.core.v1.v1.ConditionStatus] (StructFieldRef code.k8s_io.api.apps.v1.v1.ReplicaSetCondition "Status"%go "condition")))) && ((![go.string] (StructFieldRef code.k8s_io.api.apps.v1.v1.ReplicaSetCondition "Reason"%go (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition] "currentCond"))) =⟨go.string⟩ (![go.string] (StructFieldRef code.k8s_io.api.apps.v1.v1.ReplicaSetCondition "Reason"%go "condition"))))
     then return: (#())
     else do:  #());;;
-    let: "newConditions" := (GoAlloc (go.SliceType apps_v1.ReplicaSetCondition) (GoZeroVal (go.SliceType apps_v1.ReplicaSetCondition) #())) in
-    let: "$r0" := (let: "$a0" := (![go.SliceType apps_v1.ReplicaSetCondition] (StructFieldRef apps_v1.ReplicaSetStatus "Conditions"%go (![go.PointerType apps_v1.ReplicaSetStatus] "status"))) in
-    let: "$a1" := (![apps_v1.ReplicaSetConditionType] (StructFieldRef apps_v1.ReplicaSetCondition "Type"%go "condition")) in
+    let: "newConditions" := (GoAlloc (go.SliceType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition) (GoZeroVal (go.SliceType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition) #())) in
+    let: "$r0" := (let: "$a0" := (![go.SliceType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition] (StructFieldRef code.k8s_io.api.apps.v1.v1.ReplicaSetStatus "Conditions"%go (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSetStatus] "status"))) in
+    let: "$a1" := (![code.k8s_io.api.apps.v1.v1.ReplicaSetConditionType] (StructFieldRef code.k8s_io.api.apps.v1.v1.ReplicaSetCondition "Type"%go "condition")) in
     (FuncResolve filterOutCondition [] #()) "$a0" "$a1") in
-    do:  ("newConditions" <-[go.SliceType apps_v1.ReplicaSetCondition] "$r0");;;
-    let: "$r0" := (let: "$a0" := (![go.SliceType apps_v1.ReplicaSetCondition] "newConditions") in
-    let: "$a1" := ((let: "$sl0" := (![apps_v1.ReplicaSetCondition] "condition") in
-    CompositeLiteral (go.SliceType apps_v1.ReplicaSetCondition) (LiteralValue [KeyedElement None (ElementExpression apps_v1.ReplicaSetCondition "$sl0")]))) in
-    (FuncResolve go.append [go.SliceType apps_v1.ReplicaSetCondition] #()) "$a0" "$a1") in
-    do:  ((StructFieldRef apps_v1.ReplicaSetStatus "Conditions"%go (![go.PointerType apps_v1.ReplicaSetStatus] "status")) <-[go.SliceType apps_v1.ReplicaSetCondition] "$r0");;;
+    do:  ("newConditions" <-[go.SliceType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition] "$r0");;;
+    let: "$r0" := (let: "$a0" := (![go.SliceType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition] "newConditions") in
+    let: "$a1" := ((let: "$sl0" := (![code.k8s_io.api.apps.v1.v1.ReplicaSetCondition] "condition") in
+    CompositeLiteral (go.SliceType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition) (LiteralValue [KeyedElement None (ElementExpression code.k8s_io.api.apps.v1.v1.ReplicaSetCondition "$sl0")]))) in
+    (FuncResolve go.append [go.SliceType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition] #()) "$a0" "$a1") in
+    do:  ((StructFieldRef code.k8s_io.api.apps.v1.v1.ReplicaSetStatus "Conditions"%go (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSetStatus] "status")) <-[go.SliceType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition] "$r0");;;
     return: #()).
 
 (* RemoveCondition removes the condition with the provided type from the replicaset status.
@@ -127,12 +127,12 @@ Definition SetConditionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext
    go: replica_set_utils.go:179:6 *)
 Definition RemoveConditionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "status" "condType",
-    exception_do (let: "condType" := (GoAlloc apps_v1.ReplicaSetConditionType "condType") in
-    let: "status" := (GoAlloc (go.PointerType apps_v1.ReplicaSetStatus) "status") in
-    let: "$r0" := (let: "$a0" := (![go.SliceType apps_v1.ReplicaSetCondition] (StructFieldRef apps_v1.ReplicaSetStatus "Conditions"%go (![go.PointerType apps_v1.ReplicaSetStatus] "status"))) in
-    let: "$a1" := (![apps_v1.ReplicaSetConditionType] "condType") in
+    exception_do (let: "condType" := (GoAlloc code.k8s_io.api.apps.v1.v1.ReplicaSetConditionType "condType") in
+    let: "status" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSetStatus) "status") in
+    let: "$r0" := (let: "$a0" := (![go.SliceType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition] (StructFieldRef code.k8s_io.api.apps.v1.v1.ReplicaSetStatus "Conditions"%go (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSetStatus] "status"))) in
+    let: "$a1" := (![code.k8s_io.api.apps.v1.v1.ReplicaSetConditionType] "condType") in
     (FuncResolve filterOutCondition [] #()) "$a0" "$a1") in
-    do:  ((StructFieldRef apps_v1.ReplicaSetStatus "Conditions"%go (![go.PointerType apps_v1.ReplicaSetStatus] "status")) <-[go.SliceType apps_v1.ReplicaSetCondition] "$r0");;;
+    do:  ((StructFieldRef code.k8s_io.api.apps.v1.v1.ReplicaSetStatus "Conditions"%go (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSetStatus] "status")) <-[go.SliceType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition] "$r0");;;
     return: #()).
 
 (* filterOutCondition returns a new slice of replicaset conditions without conditions with the provided type.
@@ -140,23 +140,23 @@ Definition RemoveConditionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
    go: replica_set_utils.go:184:6 *)
 Definition filterOutConditionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "conditions" "condType",
-    exception_do (let: "condType" := (GoAlloc apps_v1.ReplicaSetConditionType "condType") in
-    let: "conditions" := (GoAlloc (go.SliceType apps_v1.ReplicaSetCondition) "conditions") in
-    let: "newConditions" := (GoAlloc (go.SliceType apps_v1.ReplicaSetCondition) (GoZeroVal (go.SliceType apps_v1.ReplicaSetCondition) #())) in
-    let: "$range" := (![go.SliceType apps_v1.ReplicaSetCondition] "conditions") in
-    (let: "c" := (GoAlloc apps_v1.ReplicaSetCondition (GoZeroVal apps_v1.ReplicaSetCondition #())) in
-    slice.for_range apps_v1.ReplicaSetCondition "$range" (λ: "$key" "$value",
-      do:  ("c" <-[apps_v1.ReplicaSetCondition] "$value");;;
+    exception_do (let: "condType" := (GoAlloc code.k8s_io.api.apps.v1.v1.ReplicaSetConditionType "condType") in
+    let: "conditions" := (GoAlloc (go.SliceType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition) "conditions") in
+    let: "newConditions" := (GoAlloc (go.SliceType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition) (GoZeroVal (go.SliceType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition) #())) in
+    let: "$range" := (![go.SliceType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition] "conditions") in
+    (let: "c" := (GoAlloc code.k8s_io.api.apps.v1.v1.ReplicaSetCondition (GoZeroVal code.k8s_io.api.apps.v1.v1.ReplicaSetCondition #())) in
+    slice.for_range code.k8s_io.api.apps.v1.v1.ReplicaSetCondition "$range" (λ: "$key" "$value",
+      do:  ("c" <-[code.k8s_io.api.apps.v1.v1.ReplicaSetCondition] "$value");;;
       do:  "$key";;;
-      (if: Convert go.untyped_bool go.bool ((![apps_v1.ReplicaSetConditionType] (StructFieldRef apps_v1.ReplicaSetCondition "Type"%go "c")) =⟨apps_v1.ReplicaSetConditionType⟩ (![apps_v1.ReplicaSetConditionType] "condType"))
+      (if: Convert go.untyped_bool go.bool ((![code.k8s_io.api.apps.v1.v1.ReplicaSetConditionType] (StructFieldRef code.k8s_io.api.apps.v1.v1.ReplicaSetCondition "Type"%go "c")) =⟨code.k8s_io.api.apps.v1.v1.ReplicaSetConditionType⟩ (![code.k8s_io.api.apps.v1.v1.ReplicaSetConditionType] "condType"))
       then continue: #()
       else do:  #());;;
-      let: "$r0" := (let: "$a0" := (![go.SliceType apps_v1.ReplicaSetCondition] "newConditions") in
-      let: "$a1" := ((let: "$sl0" := (![apps_v1.ReplicaSetCondition] "c") in
-      CompositeLiteral (go.SliceType apps_v1.ReplicaSetCondition) (LiteralValue [KeyedElement None (ElementExpression apps_v1.ReplicaSetCondition "$sl0")]))) in
-      (FuncResolve go.append [go.SliceType apps_v1.ReplicaSetCondition] #()) "$a0" "$a1") in
-      do:  ("newConditions" <-[go.SliceType apps_v1.ReplicaSetCondition] "$r0")));;;
-    return: (![go.SliceType apps_v1.ReplicaSetCondition] "newConditions")).
+      let: "$r0" := (let: "$a0" := (![go.SliceType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition] "newConditions") in
+      let: "$a1" := ((let: "$sl0" := (![code.k8s_io.api.apps.v1.v1.ReplicaSetCondition] "c") in
+      CompositeLiteral (go.SliceType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition) (LiteralValue [KeyedElement None (ElementExpression code.k8s_io.api.apps.v1.v1.ReplicaSetCondition "$sl0")]))) in
+      (FuncResolve go.append [go.SliceType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition] #()) "$a0" "$a1") in
+      do:  ("newConditions" <-[go.SliceType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition] "$r0")));;;
+    return: (![go.SliceType code.k8s_io.api.apps.v1.v1.ReplicaSetCondition] "newConditions")).
 
 #[global] Instance info' : PkgInfo pkg_id.replicaset :=
 {|
@@ -168,9 +168,9 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.replicaset (λ: <>,
-      exception_do (do:  (meta_v1.initialize' #());;;
-      do:  (core_v1.initialize' #());;;
-      do:  (apps_v1.initialize' #()))
+      exception_do (do:  (code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.initialize' #());;;
+      do:  (code.k8s_io.api.core.v1.v1.initialize' #());;;
+      do:  (code.k8s_io.api.apps.v1.v1.initialize' #()))
       ).
 
 Module ReplicaSetController.
@@ -229,8 +229,8 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] SetCondition_unfold :: FuncUnfold SetCondition [] (SetConditionⁱᵐᵖˡ);
   #[global] RemoveCondition_unfold :: FuncUnfold RemoveCondition [] (RemoveConditionⁱᵐᵖˡ);
   #[global] filterOutCondition_unfold :: FuncUnfold filterOutCondition [] (filterOutConditionⁱᵐᵖˡ);
-  #[global] import_apps_v1_Assumption :: apps_v1.Assumptions;
-  #[global] import_core_v1_Assumption :: core_v1.Assumptions;
-  #[global] import_meta_v1_Assumption :: meta_v1.Assumptions;
+  #[global] import_apps_v1_Assumption :: code.k8s_io.api.apps.v1.v1.Assumptions;
+  #[global] import_core_v1_Assumption :: code.k8s_io.api.core.v1.v1.Assumptions;
+  #[global] import_meta_v1_Assumption :: code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions;
 }.
 End replicaset.

@@ -145,45 +145,45 @@ Definition validateIndexers {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_
    go: store.go:565:6 *)
 Definition ShouldDeleteDuringUpdateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "key" "obj" "existing",
-    exception_do (let: "existing" := (GoAlloc pkg_runtime.Object "existing") in
-    let: "obj" := (GoAlloc pkg_runtime.Object "obj") in
+    exception_do (let: "existing" := (GoAlloc code.k8s_io.apimachinery.pkg.runtime.runtime.Object "existing") in
+    let: "obj" := (GoAlloc code.k8s_io.apimachinery.pkg.runtime.runtime.Object "obj") in
     let: "key" := (GoAlloc go.string "key") in
-    let: "ctx" := (GoAlloc context.Context "ctx") in
+    let: "ctx" := (GoAlloc code.context.context.Context "ctx") in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-    let: "newMeta" := (GoAlloc v1.Object (GoZeroVal v1.Object #())) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (Convert pkg_runtime.Object (go.InterfaceType []) (![pkg_runtime.Object] "obj")) in
-    (FuncResolve meta.Accessor [] #()) "$a0") in
+    let: "newMeta" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (Convert code.k8s_io.apimachinery.pkg.runtime.runtime.Object (go.InterfaceType []) (![code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "obj")) in
+    (FuncResolve code.k8s_io.apimachinery.pkg.api.meta.meta.Accessor [] #()) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("newMeta" <-[v1.Object] "$r0");;;
+    do:  ("newMeta" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then
       do:  (let: "$a0" := (![go.error] "err") in
-      (FuncResolve util_runtime.HandleError [] #()) "$a0");;;
+      (FuncResolve code.k8s_io.apimachinery.pkg.util.runtime.runtime.HandleError [] #()) "$a0");;;
       return: (#false)
     else do:  #());;;
-    let: "oldMeta" := (GoAlloc v1.Object (GoZeroVal v1.Object #())) in
-    let: ("$ret0", "$ret1") := (let: "$a0" := (Convert pkg_runtime.Object (go.InterfaceType []) (![pkg_runtime.Object] "existing")) in
-    (FuncResolve meta.Accessor [] #()) "$a0") in
+    let: "oldMeta" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := (Convert code.k8s_io.apimachinery.pkg.runtime.runtime.Object (go.InterfaceType []) (![code.k8s_io.apimachinery.pkg.runtime.runtime.Object] "existing")) in
+    (FuncResolve code.k8s_io.apimachinery.pkg.api.meta.meta.Accessor [] #()) "$a0") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
-    do:  ("oldMeta" <-[v1.Object] "$r0");;;
+    do:  ("oldMeta" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "$r0");;;
     do:  ("err" <-[go.error] "$r1");;;
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then
       do:  (let: "$a0" := (![go.error] "err") in
-      (FuncResolve util_runtime.HandleError [] #()) "$a0");;;
+      (FuncResolve code.k8s_io.apimachinery.pkg.util.runtime.runtime.HandleError [] #()) "$a0");;;
       return: (#false)
     else do:  #());;;
-    (if: Convert go.untyped_bool go.bool ((let: "$a0" := ((MethodResolve v1.Object "GetFinalizers"%go (![v1.Object] "newMeta")) #()) in
+    (if: Convert go.untyped_bool go.bool ((let: "$a0" := ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetFinalizers"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "newMeta")) #()) in
     (FuncResolve go.len [go.SliceType go.string] #()) "$a0") >⟨go.int⟩ #(W64 0))
     then return: (#false)
     else do:  #());;;
-    (if: Convert go.untyped_bool go.bool (((MethodResolve v1.Object "GetDeletionTimestamp"%go (![v1.Object] "oldMeta")) #()) =⟨go.PointerType v1.Time⟩ (Convert go.untyped_nil (go.PointerType v1.Time) UntypedNil))
+    (if: Convert go.untyped_bool go.bool (((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetDeletionTimestamp"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "oldMeta")) #()) =⟨go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time) UntypedNil))
     then return: (#false)
     else do:  #());;;
-    return: ((((MethodResolve v1.Object "GetDeletionGracePeriodSeconds"%go (![v1.Object] "oldMeta")) #()) =⟨go.PointerType go.int64⟩ (Convert go.untyped_nil (go.PointerType go.int64) UntypedNil)) || ((![go.int64] ((MethodResolve v1.Object "GetDeletionGracePeriodSeconds"%go (![v1.Object] "oldMeta")) #())) =⟨go.int64⟩ #(W64 0)))).
+    return: ((((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetDeletionGracePeriodSeconds"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "oldMeta")) #()) =⟨go.PointerType go.int64⟩ (Convert go.untyped_nil (go.PointerType go.int64) UntypedNil)) || ((![go.int64] ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetDeletionGracePeriodSeconds"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "oldMeta")) #())) =⟨go.int64⟩ #(W64 0)))).
 
 #[global] Instance info' : PkgInfo pkg_id.registry :=
 {|
@@ -195,11 +195,11 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.registry (λ: <>,
-      exception_do (do:  (util_runtime.initialize' #());;;
-      do:  (meta.initialize' #());;;
-      do:  (pkg_runtime.initialize' #());;;
-      do:  (v1.initialize' #());;;
-      do:  (context.initialize' #());;;
+      exception_do (do:  (code.k8s_io.apimachinery.pkg.util.runtime.runtime.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.api.meta.meta.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.runtime.runtime.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.initialize' #());;;
+      do:  (code.context.context.initialize' #());;;
       do:  (_'init #());;;
       do:  (_'init #());;;
       do:  (_'init #());;;
@@ -403,10 +403,10 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] GenericStore_instance :: GenericStore_Assumptions;
   #[global] Store_instance :: Store_Assumptions;
   #[global] ShouldDeleteDuringUpdate_unfold :: FuncUnfold ShouldDeleteDuringUpdate [] (ShouldDeleteDuringUpdateⁱᵐᵖˡ);
-  #[global] import_context_Assumption :: context.Assumptions;
-  #[global] import_v1_Assumption :: v1.Assumptions;
-  #[global] import_pkg_runtime_Assumption :: pkg_runtime.Assumptions;
-  #[global] import_meta_Assumption :: meta.Assumptions;
-  #[global] import_util_runtime_Assumption :: util_runtime.Assumptions;
+  #[global] import_context_Assumption :: code.context.context.Assumptions;
+  #[global] import_v1_Assumption :: code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions;
+  #[global] import_pkg_runtime_Assumption :: code.k8s_io.apimachinery.pkg.runtime.runtime.Assumptions;
+  #[global] import_meta_Assumption :: code.k8s_io.apimachinery.pkg.api.meta.meta.Assumptions;
+  #[global] import_util_runtime_Assumption :: code.k8s_io.apimachinery.pkg.util.runtime.runtime.Assumptions;
 }.
 End registry.

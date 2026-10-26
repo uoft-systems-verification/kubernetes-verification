@@ -29,4 +29,4 @@ require (
 	golang.org/x/tools v0.49.0 // indirect
 )
 
-replace github.com/mit-pdos/perennial => github.com/uoft-systems-verification/perennial v0.0.0-20260818164834-45eb46d2bc53
+replace github.com/mit-pdos/perennial => github.com/uoft-systems-verification/perennial v0.0.0-20261025160942-c3b7ecff27c1

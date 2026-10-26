@@ -3792,9 +3792,9 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.v1 (λ: <>,
-      exception_do (do:  (intstr.initialize' #());;;
-      do:  (v1.initialize' #());;;
-      do:  (resource.initialize' #());;;
+      exception_do (do:  (code.k8s_io.apimachinery.pkg.util.intstr.intstr.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.api.resource.resource.initialize' #());;;
       do:  (_'init #());;;
       do:  (_'init #());;;
       do:  (_'init #());;;
@@ -4396,7 +4396,7 @@ Definition t : Type := map.t.
 End def.
 End ResourceList.
 
-Definition ResourceListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.MapType ResourceName resource.Quantity.
+Definition ResourceListⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.MapType ResourceName code.k8s_io.apimachinery.pkg.api.resource.resource.Quantity.
 
 Class ResourceList_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
@@ -4462,7 +4462,7 @@ End PersistentVolumeClaimSpec.
 
 Definition PersistentVolumeClaimSpec'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
   (go.FieldDecl "AccessModes"%go (go.SliceType PersistentVolumeAccessMode));
-  (go.FieldDecl "Selector"%go (go.PointerType v1.LabelSelector));
+  (go.FieldDecl "Selector"%go (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector));
   (go.FieldDecl "Resources"%go VolumeResourceRequirements);
   (go.FieldDecl "VolumeName"%go go.string);
   (go.FieldDecl "StorageClassName"%go (go.PointerType go.string));
@@ -4580,8 +4580,8 @@ Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Record t :=
 mk {
-  TypeMeta' : v1.TypeMeta.t;
-  ObjectMeta' : v1.ObjectMeta.t;
+  TypeMeta' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.TypeMeta.t;
+  ObjectMeta' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta.t;
   Spec' : v1.PersistentVolumeClaimSpec.t;
   Status' : v1.PersistentVolumeClaimStatus.t;
 }.
@@ -4593,8 +4593,8 @@ End def.
 End PersistentVolumeClaim.
 
 Definition PersistentVolumeClaim'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
-  (go.EmbeddedField "TypeMeta"%go v1.TypeMeta);
-  (go.EmbeddedField "ObjectMeta"%go v1.ObjectMeta);
+  (go.EmbeddedField "TypeMeta"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.TypeMeta);
+  (go.EmbeddedField "ObjectMeta"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta);
   (go.FieldDecl "Spec"%go PersistentVolumeClaimSpec);
   (go.FieldDecl "Status"%go PersistentVolumeClaimStatus)
 ].
@@ -4616,25 +4616,25 @@ Class PersistentVolumeClaim_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `
   #[global] PersistentVolumeClaim_set_Spec (x : PersistentVolumeClaim.t) y :: ⟦StructFieldSet (PersistentVolumeClaimⁱᵐᵖˡ) "Spec", (#x, #y)⟧ ⤳[under] #(x <|PersistentVolumeClaim.Spec' := y|>);
   #[global] PersistentVolumeClaim_get_Status (x : PersistentVolumeClaim.t) :: ⟦StructFieldGet (PersistentVolumeClaimⁱᵐᵖˡ) "Status", #x⟧ ⤳[under] #x.(PersistentVolumeClaim.Status');
   #[global] PersistentVolumeClaim_set_Status (x : PersistentVolumeClaim.t) y :: ⟦StructFieldSet (PersistentVolumeClaimⁱᵐᵖˡ) "Status", (#x, #y)⟧ ⤳[under] #(x <|PersistentVolumeClaim.Status' := y|>);
-  #[global] PersistentVolumeClaim'ptr_GetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "GetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "GetDeletionGracePeriodSeconds" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
-  #[global] PersistentVolumeClaim'ptr_GetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "GetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "GetDeletionTimestamp" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
-  #[global] PersistentVolumeClaim'ptr_GetFinalizers_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "GetFinalizers" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "GetFinalizers" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
-  #[global] PersistentVolumeClaim'ptr_GetGenerateName_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "GetGenerateName" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "GetGenerateName" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
-  #[global] PersistentVolumeClaim'ptr_GetGeneration_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "GetGeneration" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "GetGeneration" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
-  #[global] PersistentVolumeClaim'ptr_GetLabels_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "GetLabels" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "GetLabels" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
-  #[global] PersistentVolumeClaim'ptr_GetName_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "GetName" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "GetName" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
-  #[global] PersistentVolumeClaim'ptr_GetOwnerReferences_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "GetOwnerReferences" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "GetOwnerReferences" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
-  #[global] PersistentVolumeClaim'ptr_GetResourceVersion_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "GetResourceVersion" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "GetResourceVersion" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
-  #[global] PersistentVolumeClaim'ptr_GetUID_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "GetUID" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "GetUID" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
-  #[global] PersistentVolumeClaim'ptr_SetCreationTimestamp_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "SetCreationTimestamp" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "SetCreationTimestamp" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
-  #[global] PersistentVolumeClaim'ptr_SetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "SetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "SetDeletionGracePeriodSeconds" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
-  #[global] PersistentVolumeClaim'ptr_SetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "SetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "SetDeletionTimestamp" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
-  #[global] PersistentVolumeClaim'ptr_SetFinalizers_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "SetFinalizers" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "SetFinalizers" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
-  #[global] PersistentVolumeClaim'ptr_SetGeneration_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "SetGeneration" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "SetGeneration" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
-  #[global] PersistentVolumeClaim'ptr_SetName_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "SetName" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "SetName" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
-  #[global] PersistentVolumeClaim'ptr_SetResourceVersion_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "SetResourceVersion" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "SetResourceVersion" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
-  #[global] PersistentVolumeClaim'ptr_SetSelfLink_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "SetSelfLink" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "SetSelfLink" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
-  #[global] PersistentVolumeClaim'ptr_SetUID_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "SetUID" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "SetUID" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
+  #[global] PersistentVolumeClaim'ptr_GetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "GetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetDeletionGracePeriodSeconds" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
+  #[global] PersistentVolumeClaim'ptr_GetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "GetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetDeletionTimestamp" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
+  #[global] PersistentVolumeClaim'ptr_GetFinalizers_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "GetFinalizers" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetFinalizers" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
+  #[global] PersistentVolumeClaim'ptr_GetGenerateName_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "GetGenerateName" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetGenerateName" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
+  #[global] PersistentVolumeClaim'ptr_GetGeneration_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "GetGeneration" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetGeneration" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
+  #[global] PersistentVolumeClaim'ptr_GetLabels_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "GetLabels" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetLabels" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
+  #[global] PersistentVolumeClaim'ptr_GetName_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "GetName" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetName" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
+  #[global] PersistentVolumeClaim'ptr_GetOwnerReferences_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "GetOwnerReferences" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetOwnerReferences" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
+  #[global] PersistentVolumeClaim'ptr_GetResourceVersion_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "GetResourceVersion" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetResourceVersion" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
+  #[global] PersistentVolumeClaim'ptr_GetUID_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "GetUID" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetUID" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
+  #[global] PersistentVolumeClaim'ptr_SetCreationTimestamp_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "SetCreationTimestamp" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetCreationTimestamp" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
+  #[global] PersistentVolumeClaim'ptr_SetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "SetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetDeletionGracePeriodSeconds" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
+  #[global] PersistentVolumeClaim'ptr_SetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "SetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetDeletionTimestamp" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
+  #[global] PersistentVolumeClaim'ptr_SetFinalizers_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "SetFinalizers" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetFinalizers" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
+  #[global] PersistentVolumeClaim'ptr_SetGeneration_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "SetGeneration" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetGeneration" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
+  #[global] PersistentVolumeClaim'ptr_SetName_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "SetName" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetName" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
+  #[global] PersistentVolumeClaim'ptr_SetResourceVersion_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "SetResourceVersion" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetResourceVersion" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
+  #[global] PersistentVolumeClaim'ptr_SetSelfLink_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "SetSelfLink" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetSelfLink" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
+  #[global] PersistentVolumeClaim'ptr_SetUID_unfold :: MethodUnfold (go.PointerType (PersistentVolumeClaim)) "SetUID" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetUID" (StructFieldRef PersistentVolumeClaim "ObjectMeta"%go "$r"));
 }.
 
 Module PersistentVolumeClaimList.
@@ -4798,8 +4798,8 @@ Record t :=
 mk {
   Type' : v1.PersistentVolumeClaimConditionType.t;
   Status' : v1.ConditionStatus.t;
-  LastProbeTime' : v1.Time.t;
-  LastTransitionTime' : v1.Time.t;
+  LastProbeTime' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time.t;
+  LastTransitionTime' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time.t;
   Reason' : go_string;
   Message' : go_string;
 }.
@@ -4813,8 +4813,8 @@ End PersistentVolumeClaimCondition.
 Definition PersistentVolumeClaimCondition'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
   (go.FieldDecl "Type"%go PersistentVolumeClaimConditionType);
   (go.FieldDecl "Status"%go ConditionStatus);
-  (go.FieldDecl "LastProbeTime"%go v1.Time);
-  (go.FieldDecl "LastTransitionTime"%go v1.Time);
+  (go.FieldDecl "LastProbeTime"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time);
+  (go.FieldDecl "LastTransitionTime"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time);
   (go.FieldDecl "Reason"%go go.string);
   (go.FieldDecl "Message"%go go.string)
 ].
@@ -4955,7 +4955,7 @@ End EmptyDirVolumeSource.
 
 Definition EmptyDirVolumeSource'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
   (go.FieldDecl "Medium"%go StorageMedium);
-  (go.FieldDecl "SizeLimit"%go (go.PointerType resource.Quantity))
+  (go.FieldDecl "SizeLimit"%go (go.PointerType code.k8s_io.apimachinery.pkg.api.resource.resource.Quantity))
 ].
 Program Definition EmptyDirVolumeSource'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (EmptyDirVolumeSource'fds_unsealed).
 Global Instance equals_unfold_EmptyDirVolumeSource {ext : ffi_syntax} {go_gctx : GoGlobalContext} : EmptyDirVolumeSource'fds =→ EmptyDirVolumeSource'fds_unsealed.
@@ -6361,7 +6361,7 @@ End ClusterTrustBundleProjection.
 Definition ClusterTrustBundleProjection'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
   (go.FieldDecl "Name"%go (go.PointerType go.string));
   (go.FieldDecl "SignerName"%go (go.PointerType go.string));
-  (go.FieldDecl "LabelSelector"%go (go.PointerType v1.LabelSelector));
+  (go.FieldDecl "LabelSelector"%go (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector));
   (go.FieldDecl "Optional"%go (go.PointerType go.bool));
   (go.FieldDecl "Path"%go go.string)
 ].
@@ -6678,7 +6678,7 @@ Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Record t :=
 mk {
-  ObjectMeta' : v1.ObjectMeta.t;
+  ObjectMeta' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta.t;
   Spec' : v1.PersistentVolumeClaimSpec.t;
 }.
 
@@ -6689,7 +6689,7 @@ End def.
 End PersistentVolumeClaimTemplate.
 
 Definition PersistentVolumeClaimTemplate'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
-  (go.EmbeddedField "ObjectMeta"%go v1.ObjectMeta);
+  (go.EmbeddedField "ObjectMeta"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta);
   (go.FieldDecl "Spec"%go PersistentVolumeClaimSpec)
 ].
 Program Definition PersistentVolumeClaimTemplate'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (PersistentVolumeClaimTemplate'fds_unsealed).
@@ -7046,7 +7046,7 @@ Record t :=
 mk {
   ContainerName' : go_string;
   Resource' : go_string;
-  Divisor' : resource.Quantity.t;
+  Divisor' : code.k8s_io.apimachinery.pkg.api.resource.resource.Quantity.t;
 }.
 
 #[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _)|}.
@@ -7058,7 +7058,7 @@ End ResourceFieldSelector.
 Definition ResourceFieldSelector'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
   (go.FieldDecl "ContainerName"%go go.string);
   (go.FieldDecl "Resource"%go go.string);
-  (go.FieldDecl "Divisor"%go resource.Quantity)
+  (go.FieldDecl "Divisor"%go code.k8s_io.apimachinery.pkg.api.resource.resource.Quantity)
 ].
 Program Definition ResourceFieldSelector'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (ResourceFieldSelector'fds_unsealed).
 Global Instance equals_unfold_ResourceFieldSelector {ext : ffi_syntax} {go_gctx : GoGlobalContext} : ResourceFieldSelector'fds =→ ResourceFieldSelector'fds_unsealed.
@@ -7321,7 +7321,7 @@ Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Record t :=
 mk {
   Path' : go_string;
-  Port' : intstr.IntOrString.t;
+  Port' : code.k8s_io.apimachinery.pkg.util.intstr.intstr.IntOrString.t;
   Host' : go_string;
   Scheme' : v1.URIScheme.t;
   HTTPHeaders' : slice.t;
@@ -7335,7 +7335,7 @@ End HTTPGetAction.
 
 Definition HTTPGetAction'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
   (go.FieldDecl "Path"%go go.string);
-  (go.FieldDecl "Port"%go intstr.IntOrString);
+  (go.FieldDecl "Port"%go code.k8s_io.apimachinery.pkg.util.intstr.intstr.IntOrString);
   (go.FieldDecl "Host"%go go.string);
   (go.FieldDecl "Scheme"%go URIScheme);
   (go.FieldDecl "HTTPHeaders"%go (go.SliceType HTTPHeader))
@@ -7367,7 +7367,7 @@ Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Record t :=
 mk {
-  Port' : intstr.IntOrString.t;
+  Port' : code.k8s_io.apimachinery.pkg.util.intstr.intstr.IntOrString.t;
   Host' : go_string;
 }.
 
@@ -7378,7 +7378,7 @@ End def.
 End TCPSocketAction.
 
 Definition TCPSocketAction'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
-  (go.FieldDecl "Port"%go intstr.IntOrString);
+  (go.FieldDecl "Port"%go code.k8s_io.apimachinery.pkg.util.intstr.intstr.IntOrString);
   (go.FieldDecl "Host"%go go.string)
 ].
 Program Definition TCPSocketAction'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (TCPSocketAction'fds_unsealed).
@@ -8090,7 +8090,7 @@ Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Record t :=
 mk {
-  StartedAt' : v1.Time.t;
+  StartedAt' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time.t;
 }.
 
 #[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _)|}.
@@ -8100,7 +8100,7 @@ End def.
 End ContainerStateRunning.
 
 Definition ContainerStateRunning'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
-  (go.FieldDecl "StartedAt"%go v1.Time)
+  (go.FieldDecl "StartedAt"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time)
 ].
 Program Definition ContainerStateRunning'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (ContainerStateRunning'fds_unsealed).
 Global Instance equals_unfold_ContainerStateRunning {ext : ffi_syntax} {go_gctx : GoGlobalContext} : ContainerStateRunning'fds =→ ContainerStateRunning'fds_unsealed.
@@ -8125,8 +8125,8 @@ mk {
   Signal' : w32;
   Reason' : go_string;
   Message' : go_string;
-  StartedAt' : v1.Time.t;
-  FinishedAt' : v1.Time.t;
+  StartedAt' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time.t;
+  FinishedAt' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time.t;
   ContainerID' : go_string;
 }.
 
@@ -8141,8 +8141,8 @@ Definition ContainerStateTerminated'fds_unsealed {ext : ffi_syntax} {go_gctx : G
   (go.FieldDecl "Signal"%go go.int32);
   (go.FieldDecl "Reason"%go go.string);
   (go.FieldDecl "Message"%go go.string);
-  (go.FieldDecl "StartedAt"%go v1.Time);
-  (go.FieldDecl "FinishedAt"%go v1.Time);
+  (go.FieldDecl "StartedAt"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time);
+  (go.FieldDecl "FinishedAt"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time);
   (go.FieldDecl "ContainerID"%go go.string)
 ].
 Program Definition ContainerStateTerminated'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (ContainerStateTerminated'fds_unsealed).
@@ -8505,8 +8505,8 @@ mk {
   Type' : v1.PodConditionType.t;
   ObservedGeneration' : w64;
   Status' : v1.ConditionStatus.t;
-  LastProbeTime' : v1.Time.t;
-  LastTransitionTime' : v1.Time.t;
+  LastProbeTime' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time.t;
+  LastTransitionTime' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time.t;
   Reason' : go_string;
   Message' : go_string;
 }.
@@ -8521,8 +8521,8 @@ Definition PodCondition'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalConte
   (go.FieldDecl "Type"%go PodConditionType);
   (go.FieldDecl "ObservedGeneration"%go go.int64);
   (go.FieldDecl "Status"%go ConditionStatus);
-  (go.FieldDecl "LastProbeTime"%go v1.Time);
-  (go.FieldDecl "LastTransitionTime"%go v1.Time);
+  (go.FieldDecl "LastProbeTime"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time);
+  (go.FieldDecl "LastTransitionTime"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time);
   (go.FieldDecl "Reason"%go go.string);
   (go.FieldDecl "Message"%go go.string)
 ].
@@ -9036,10 +9036,10 @@ End def.
 End PodAffinityTerm.
 
 Definition PodAffinityTerm'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
-  (go.FieldDecl "LabelSelector"%go (go.PointerType v1.LabelSelector));
+  (go.FieldDecl "LabelSelector"%go (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector));
   (go.FieldDecl "Namespaces"%go (go.SliceType go.string));
   (go.FieldDecl "TopologyKey"%go go.string);
-  (go.FieldDecl "NamespaceSelector"%go (go.PointerType v1.LabelSelector));
+  (go.FieldDecl "NamespaceSelector"%go (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector));
   (go.FieldDecl "MatchLabelKeys"%go (go.SliceType go.string));
   (go.FieldDecl "MismatchLabelKeys"%go (go.SliceType go.string))
 ].
@@ -9767,7 +9767,7 @@ Definition TopologySpreadConstraint'fds_unsealed {ext : ffi_syntax} {go_gctx : G
   (go.FieldDecl "MaxSkew"%go go.int32);
   (go.FieldDecl "TopologyKey"%go go.string);
   (go.FieldDecl "WhenUnsatisfiable"%go UnsatisfiableConstraintAction);
-  (go.FieldDecl "LabelSelector"%go (go.PointerType v1.LabelSelector));
+  (go.FieldDecl "LabelSelector"%go (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector));
   (go.FieldDecl "MinDomains"%go (go.PointerType go.int32));
   (go.FieldDecl "NodeAffinityPolicy"%go (go.PointerType NodeInclusionPolicy));
   (go.FieldDecl "NodeTaintsPolicy"%go (go.PointerType NodeInclusionPolicy));
@@ -10415,7 +10415,7 @@ Definition PodStatus'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext}
   (go.FieldDecl "HostIPs"%go (go.SliceType HostIP));
   (go.FieldDecl "PodIP"%go go.string);
   (go.FieldDecl "PodIPs"%go (go.SliceType PodIP));
-  (go.FieldDecl "StartTime"%go (go.PointerType v1.Time));
+  (go.FieldDecl "StartTime"%go (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Time));
   (go.FieldDecl "InitContainerStatuses"%go (go.SliceType ContainerStatus));
   (go.FieldDecl "ContainerStatuses"%go (go.SliceType ContainerStatus));
   (go.FieldDecl "QOSClass"%go PodQOSClass);
@@ -10493,8 +10493,8 @@ Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Record t :=
 mk {
-  TypeMeta' : v1.TypeMeta.t;
-  ObjectMeta' : v1.ObjectMeta.t;
+  TypeMeta' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.TypeMeta.t;
+  ObjectMeta' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta.t;
   Spec' : v1.PodSpec.t;
   Status' : v1.PodStatus.t;
 }.
@@ -10506,8 +10506,8 @@ End def.
 End Pod.
 
 Definition Pod'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
-  (go.EmbeddedField "TypeMeta"%go v1.TypeMeta);
-  (go.EmbeddedField "ObjectMeta"%go v1.ObjectMeta);
+  (go.EmbeddedField "TypeMeta"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.TypeMeta);
+  (go.EmbeddedField "ObjectMeta"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta);
   (go.FieldDecl "Spec"%go PodSpec);
   (go.FieldDecl "Status"%go PodStatus)
 ].
@@ -10529,25 +10529,25 @@ Class Pod_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} 
   #[global] Pod_set_Spec (x : Pod.t) y :: ⟦StructFieldSet (Podⁱᵐᵖˡ) "Spec", (#x, #y)⟧ ⤳[under] #(x <|Pod.Spec' := y|>);
   #[global] Pod_get_Status (x : Pod.t) :: ⟦StructFieldGet (Podⁱᵐᵖˡ) "Status", #x⟧ ⤳[under] #x.(Pod.Status');
   #[global] Pod_set_Status (x : Pod.t) y :: ⟦StructFieldSet (Podⁱᵐᵖˡ) "Status", (#x, #y)⟧ ⤳[under] #(x <|Pod.Status' := y|>);
-  #[global] Pod'ptr_GetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (Pod)) "GetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "GetDeletionGracePeriodSeconds" (StructFieldRef Pod "ObjectMeta"%go "$r"));
-  #[global] Pod'ptr_GetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (Pod)) "GetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "GetDeletionTimestamp" (StructFieldRef Pod "ObjectMeta"%go "$r"));
-  #[global] Pod'ptr_GetFinalizers_unfold :: MethodUnfold (go.PointerType (Pod)) "GetFinalizers" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "GetFinalizers" (StructFieldRef Pod "ObjectMeta"%go "$r"));
-  #[global] Pod'ptr_GetGenerateName_unfold :: MethodUnfold (go.PointerType (Pod)) "GetGenerateName" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "GetGenerateName" (StructFieldRef Pod "ObjectMeta"%go "$r"));
-  #[global] Pod'ptr_GetGeneration_unfold :: MethodUnfold (go.PointerType (Pod)) "GetGeneration" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "GetGeneration" (StructFieldRef Pod "ObjectMeta"%go "$r"));
-  #[global] Pod'ptr_GetLabels_unfold :: MethodUnfold (go.PointerType (Pod)) "GetLabels" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "GetLabels" (StructFieldRef Pod "ObjectMeta"%go "$r"));
-  #[global] Pod'ptr_GetName_unfold :: MethodUnfold (go.PointerType (Pod)) "GetName" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "GetName" (StructFieldRef Pod "ObjectMeta"%go "$r"));
-  #[global] Pod'ptr_GetOwnerReferences_unfold :: MethodUnfold (go.PointerType (Pod)) "GetOwnerReferences" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "GetOwnerReferences" (StructFieldRef Pod "ObjectMeta"%go "$r"));
-  #[global] Pod'ptr_GetResourceVersion_unfold :: MethodUnfold (go.PointerType (Pod)) "GetResourceVersion" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "GetResourceVersion" (StructFieldRef Pod "ObjectMeta"%go "$r"));
-  #[global] Pod'ptr_GetUID_unfold :: MethodUnfold (go.PointerType (Pod)) "GetUID" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "GetUID" (StructFieldRef Pod "ObjectMeta"%go "$r"));
-  #[global] Pod'ptr_SetCreationTimestamp_unfold :: MethodUnfold (go.PointerType (Pod)) "SetCreationTimestamp" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "SetCreationTimestamp" (StructFieldRef Pod "ObjectMeta"%go "$r"));
-  #[global] Pod'ptr_SetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (Pod)) "SetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "SetDeletionGracePeriodSeconds" (StructFieldRef Pod "ObjectMeta"%go "$r"));
-  #[global] Pod'ptr_SetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (Pod)) "SetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "SetDeletionTimestamp" (StructFieldRef Pod "ObjectMeta"%go "$r"));
-  #[global] Pod'ptr_SetFinalizers_unfold :: MethodUnfold (go.PointerType (Pod)) "SetFinalizers" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "SetFinalizers" (StructFieldRef Pod "ObjectMeta"%go "$r"));
-  #[global] Pod'ptr_SetGeneration_unfold :: MethodUnfold (go.PointerType (Pod)) "SetGeneration" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "SetGeneration" (StructFieldRef Pod "ObjectMeta"%go "$r"));
-  #[global] Pod'ptr_SetName_unfold :: MethodUnfold (go.PointerType (Pod)) "SetName" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "SetName" (StructFieldRef Pod "ObjectMeta"%go "$r"));
-  #[global] Pod'ptr_SetResourceVersion_unfold :: MethodUnfold (go.PointerType (Pod)) "SetResourceVersion" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "SetResourceVersion" (StructFieldRef Pod "ObjectMeta"%go "$r"));
-  #[global] Pod'ptr_SetSelfLink_unfold :: MethodUnfold (go.PointerType (Pod)) "SetSelfLink" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "SetSelfLink" (StructFieldRef Pod "ObjectMeta"%go "$r"));
-  #[global] Pod'ptr_SetUID_unfold :: MethodUnfold (go.PointerType (Pod)) "SetUID" (λ: "$r", MethodResolve (go.PointerType v1.ObjectMeta) "SetUID" (StructFieldRef Pod "ObjectMeta"%go "$r"));
+  #[global] Pod'ptr_GetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (Pod)) "GetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetDeletionGracePeriodSeconds" (StructFieldRef Pod "ObjectMeta"%go "$r"));
+  #[global] Pod'ptr_GetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (Pod)) "GetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetDeletionTimestamp" (StructFieldRef Pod "ObjectMeta"%go "$r"));
+  #[global] Pod'ptr_GetFinalizers_unfold :: MethodUnfold (go.PointerType (Pod)) "GetFinalizers" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetFinalizers" (StructFieldRef Pod "ObjectMeta"%go "$r"));
+  #[global] Pod'ptr_GetGenerateName_unfold :: MethodUnfold (go.PointerType (Pod)) "GetGenerateName" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetGenerateName" (StructFieldRef Pod "ObjectMeta"%go "$r"));
+  #[global] Pod'ptr_GetGeneration_unfold :: MethodUnfold (go.PointerType (Pod)) "GetGeneration" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetGeneration" (StructFieldRef Pod "ObjectMeta"%go "$r"));
+  #[global] Pod'ptr_GetLabels_unfold :: MethodUnfold (go.PointerType (Pod)) "GetLabels" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetLabels" (StructFieldRef Pod "ObjectMeta"%go "$r"));
+  #[global] Pod'ptr_GetName_unfold :: MethodUnfold (go.PointerType (Pod)) "GetName" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetName" (StructFieldRef Pod "ObjectMeta"%go "$r"));
+  #[global] Pod'ptr_GetOwnerReferences_unfold :: MethodUnfold (go.PointerType (Pod)) "GetOwnerReferences" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetOwnerReferences" (StructFieldRef Pod "ObjectMeta"%go "$r"));
+  #[global] Pod'ptr_GetResourceVersion_unfold :: MethodUnfold (go.PointerType (Pod)) "GetResourceVersion" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetResourceVersion" (StructFieldRef Pod "ObjectMeta"%go "$r"));
+  #[global] Pod'ptr_GetUID_unfold :: MethodUnfold (go.PointerType (Pod)) "GetUID" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetUID" (StructFieldRef Pod "ObjectMeta"%go "$r"));
+  #[global] Pod'ptr_SetCreationTimestamp_unfold :: MethodUnfold (go.PointerType (Pod)) "SetCreationTimestamp" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetCreationTimestamp" (StructFieldRef Pod "ObjectMeta"%go "$r"));
+  #[global] Pod'ptr_SetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (Pod)) "SetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetDeletionGracePeriodSeconds" (StructFieldRef Pod "ObjectMeta"%go "$r"));
+  #[global] Pod'ptr_SetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (Pod)) "SetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetDeletionTimestamp" (StructFieldRef Pod "ObjectMeta"%go "$r"));
+  #[global] Pod'ptr_SetFinalizers_unfold :: MethodUnfold (go.PointerType (Pod)) "SetFinalizers" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetFinalizers" (StructFieldRef Pod "ObjectMeta"%go "$r"));
+  #[global] Pod'ptr_SetGeneration_unfold :: MethodUnfold (go.PointerType (Pod)) "SetGeneration" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetGeneration" (StructFieldRef Pod "ObjectMeta"%go "$r"));
+  #[global] Pod'ptr_SetName_unfold :: MethodUnfold (go.PointerType (Pod)) "SetName" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetName" (StructFieldRef Pod "ObjectMeta"%go "$r"));
+  #[global] Pod'ptr_SetResourceVersion_unfold :: MethodUnfold (go.PointerType (Pod)) "SetResourceVersion" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetResourceVersion" (StructFieldRef Pod "ObjectMeta"%go "$r"));
+  #[global] Pod'ptr_SetSelfLink_unfold :: MethodUnfold (go.PointerType (Pod)) "SetSelfLink" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetSelfLink" (StructFieldRef Pod "ObjectMeta"%go "$r"));
+  #[global] Pod'ptr_SetUID_unfold :: MethodUnfold (go.PointerType (Pod)) "SetUID" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetUID" (StructFieldRef Pod "ObjectMeta"%go "$r"));
 }.
 
 Module PodList.
@@ -10571,7 +10571,7 @@ Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Record t :=
 mk {
-  ObjectMeta' : v1.ObjectMeta.t;
+  ObjectMeta' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta.t;
   Spec' : v1.PodSpec.t;
 }.
 
@@ -10582,7 +10582,7 @@ End def.
 End PodTemplateSpec.
 
 Definition PodTemplateSpec'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
-  (go.EmbeddedField "ObjectMeta"%go v1.ObjectMeta);
+  (go.EmbeddedField "ObjectMeta"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta);
   (go.FieldDecl "Spec"%go PodSpec)
 ].
 Program Definition PodTemplateSpec'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (PodTemplateSpec'fds_unsealed).
@@ -10974,8 +10974,8 @@ Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
 Record t :=
 mk {
-  TypeMeta' : v1.TypeMeta.t;
-  ObjectMeta' : v1.ObjectMeta.t;
+  TypeMeta' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.TypeMeta.t;
+  ObjectMeta' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta.t;
   Secrets' : slice.t;
   ImagePullSecrets' : slice.t;
   AutomountServiceAccountToken' : loc;
@@ -10988,8 +10988,8 @@ End def.
 End ServiceAccount.
 
 Definition ServiceAccount'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
-  (go.EmbeddedField "TypeMeta"%go v1.TypeMeta);
-  (go.EmbeddedField "ObjectMeta"%go v1.ObjectMeta);
+  (go.EmbeddedField "TypeMeta"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.TypeMeta);
+  (go.EmbeddedField "ObjectMeta"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta);
   (go.FieldDecl "Secrets"%go (go.SliceType ObjectReference));
   (go.FieldDecl "ImagePullSecrets"%go (go.SliceType LocalObjectReference));
   (go.FieldDecl "AutomountServiceAccountToken"%go (go.PointerType go.bool))
@@ -12997,8 +12997,8 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] PortStatus_instance :: PortStatus_Assumptions;
   #[global] LoadBalancerIPMode_instance :: LoadBalancerIPMode_Assumptions;
   #[global] ImageVolumeSource_instance :: ImageVolumeSource_Assumptions;
-  #[global] import_resource_Assumption :: resource.Assumptions;
-  #[global] import_v1_Assumption :: v1.Assumptions;
-  #[global] import_intstr_Assumption :: intstr.Assumptions;
+  #[global] import_resource_Assumption :: code.k8s_io.apimachinery.pkg.api.resource.resource.Assumptions;
+  #[global] import_v1_Assumption :: code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions;
+  #[global] import_intstr_Assumption :: code.k8s_io.apimachinery.pkg.util.intstr.intstr.Assumptions;
 }.
 End v1.

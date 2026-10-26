@@ -17,90 +17,90 @@ Definition CreateThenDeletePods {ext : ffi_syntax} {go_gctx : GoGlobalContext} :
 (* go: client.go:10:6 *)
 Definition CreateThenDeletePodsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "state" "pods",
-    exception_do (let: "pods" := (GoAlloc (go.SliceType (go.PointerType core_v1.Pod)) "pods") in
-    let: "state" := (GoAlloc (go.PointerType apimodel.State) "state") in
-    let: "createdPodKeys" := (GoAlloc (go.SliceType apimodel.KKey) (GoZeroVal (go.SliceType apimodel.KKey) #())) in
-    let: "$r0" := ((FuncResolve go.make3 [go.SliceType apimodel.KKey] #()) #(W64 0) (let: "$a0" := (![go.SliceType (go.PointerType core_v1.Pod)] "pods") in
-    (FuncResolve go.len [go.SliceType (go.PointerType core_v1.Pod)] #()) "$a0")) in
-    do:  ("createdPodKeys" <-[go.SliceType apimodel.KKey] "$r0");;;
-    let: "$range" := (![go.SliceType (go.PointerType core_v1.Pod)] "pods") in
-    (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) (GoZeroVal (go.PointerType core_v1.Pod) #())) in
-    slice.for_range (go.PointerType core_v1.Pod) "$range" (λ: "$key" "$value",
-      do:  ("pod" <-[go.PointerType core_v1.Pod] "$value");;;
+    exception_do (let: "pods" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)) "pods") in
+    let: "state" := (GoAlloc (go.PointerType code.kubernetes_model.apimodel.apimodel.State) "state") in
+    let: "createdPodKeys" := (GoAlloc (go.SliceType code.kubernetes_model.apimodel.apimodel.KKey) (GoZeroVal (go.SliceType code.kubernetes_model.apimodel.apimodel.KKey) #())) in
+    let: "$r0" := ((FuncResolve go.make3 [go.SliceType code.kubernetes_model.apimodel.apimodel.KKey] #()) #(W64 0) (let: "$a0" := (![go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)] "pods") in
+    (FuncResolve go.len [go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)] #()) "$a0")) in
+    do:  ("createdPodKeys" <-[go.SliceType code.kubernetes_model.apimodel.apimodel.KKey] "$r0");;;
+    let: "$range" := (![go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)] "pods") in
+    (let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.Pod) #())) in
+    slice.for_range (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "$range" (λ: "$key" "$value",
+      do:  ("pod" <-[go.PointerType code.k8s_io.api.core.v1.v1.Pod] "$value");;;
       do:  "$key";;;
-      let: "podToCreate" := (GoAlloc (go.PointerType core_v1.Pod) (GoZeroVal (go.PointerType core_v1.Pod) #())) in
-      let: "$r0" := ((MethodResolve (go.PointerType core_v1.Pod) "DeepCopy"%go (![go.PointerType core_v1.Pod] "pod")) #()) in
-      do:  ("podToCreate" <-[go.PointerType core_v1.Pod] "$r0");;;
+      let: "podToCreate" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.Pod) #())) in
+      let: "$r0" := ((MethodResolve (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "DeepCopy"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod")) #()) in
+      do:  ("podToCreate" <-[go.PointerType code.k8s_io.api.core.v1.v1.Pod] "$r0");;;
       let: "$r0" := #""%go in
-      do:  ((StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "podToCreate"))) <-[go.string] "$r0");;;
+      do:  ((StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Name"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Pod "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "podToCreate"))) <-[go.string] "$r0");;;
       let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-      let: "createdPod" := (GoAlloc (go.PointerType core_v1.Pod) (GoZeroVal (go.PointerType core_v1.Pod) #())) in
-      let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Namespace"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "podToCreate")))) in
-      let: "$a1" := (![go.PointerType core_v1.Pod] "podToCreate") in
-      (MethodResolve (go.PointerType apimodel.State) "PodCreate"%go (![go.PointerType apimodel.State] "state")) "$a0" "$a1") in
+      let: "createdPod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.Pod) #())) in
+      let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Namespace"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Pod "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "podToCreate")))) in
+      let: "$a1" := (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "podToCreate") in
+      (MethodResolve (go.PointerType code.kubernetes_model.apimodel.apimodel.State) "PodCreate"%go (![go.PointerType code.kubernetes_model.apimodel.apimodel.State] "state")) "$a0" "$a1") in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
-      do:  ("createdPod" <-[go.PointerType core_v1.Pod] "$r0");;;
+      do:  ("createdPod" <-[go.PointerType code.k8s_io.api.core.v1.v1.Pod] "$r0");;;
       do:  ("err" <-[go.error] "$r1");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then return: (![go.error] "err")
       else do:  #());;;
-      let: "$r0" := (let: "$a0" := (![go.SliceType apimodel.KKey] "createdPodKeys") in
+      let: "$r0" := (let: "$a0" := (![go.SliceType code.kubernetes_model.apimodel.apimodel.KKey] "createdPodKeys") in
       let: "$a1" := ((let: "$sl0" := (let: "$v0" := #"Pod"%go in
-      let: "$v1" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Namespace"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "createdPod")))) in
-      let: "$v2" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "createdPod")))) in
-      CompositeLiteral apimodel.KKey (LiteralValue [KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Namespace"%go)) (ElementExpression go.string "$v1"); KeyedElement (Some (KeyField "Name"%go)) (ElementExpression go.string "$v2")])) in
-      CompositeLiteral (go.SliceType apimodel.KKey) (LiteralValue [KeyedElement None (ElementExpression apimodel.KKey "$sl0")]))) in
-      (FuncResolve go.append [go.SliceType apimodel.KKey] #()) "$a0" "$a1") in
-      do:  ("createdPodKeys" <-[go.SliceType apimodel.KKey] "$r0")));;;
-    let: "createdPods" := (GoAlloc (go.SliceType (go.PointerType core_v1.Pod)) (GoZeroVal (go.SliceType (go.PointerType core_v1.Pod)) #())) in
-    let: "$r0" := ((FuncResolve go.make3 [go.SliceType (go.PointerType core_v1.Pod)] #()) #(W64 0) (let: "$a0" := (![go.SliceType apimodel.KKey] "createdPodKeys") in
-    (FuncResolve go.len [go.SliceType apimodel.KKey] #()) "$a0")) in
-    do:  ("createdPods" <-[go.SliceType (go.PointerType core_v1.Pod)] "$r0");;;
-    let: "$range" := (![go.SliceType apimodel.KKey] "createdPodKeys") in
-    (let: "key" := (GoAlloc apimodel.KKey (GoZeroVal apimodel.KKey #())) in
-    slice.for_range apimodel.KKey "$range" (λ: "$key" "$value",
-      do:  ("key" <-[apimodel.KKey] "$value");;;
+      let: "$v1" := (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Namespace"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Pod "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "createdPod")))) in
+      let: "$v2" := (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Name"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Pod "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "createdPod")))) in
+      CompositeLiteral code.kubernetes_model.apimodel.apimodel.KKey (LiteralValue [KeyedElement (Some (KeyField "Kind"%go)) (ElementExpression go.string "$v0"); KeyedElement (Some (KeyField "Namespace"%go)) (ElementExpression go.string "$v1"); KeyedElement (Some (KeyField "Name"%go)) (ElementExpression go.string "$v2")])) in
+      CompositeLiteral (go.SliceType code.kubernetes_model.apimodel.apimodel.KKey) (LiteralValue [KeyedElement None (ElementExpression code.kubernetes_model.apimodel.apimodel.KKey "$sl0")]))) in
+      (FuncResolve go.append [go.SliceType code.kubernetes_model.apimodel.apimodel.KKey] #()) "$a0" "$a1") in
+      do:  ("createdPodKeys" <-[go.SliceType code.kubernetes_model.apimodel.apimodel.KKey] "$r0")));;;
+    let: "createdPods" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)) (GoZeroVal (go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)) #())) in
+    let: "$r0" := ((FuncResolve go.make3 [go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)] #()) #(W64 0) (let: "$a0" := (![go.SliceType code.kubernetes_model.apimodel.apimodel.KKey] "createdPodKeys") in
+    (FuncResolve go.len [go.SliceType code.kubernetes_model.apimodel.apimodel.KKey] #()) "$a0")) in
+    do:  ("createdPods" <-[go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)] "$r0");;;
+    let: "$range" := (![go.SliceType code.kubernetes_model.apimodel.apimodel.KKey] "createdPodKeys") in
+    (let: "key" := (GoAlloc code.kubernetes_model.apimodel.apimodel.KKey (GoZeroVal code.kubernetes_model.apimodel.apimodel.KKey #())) in
+    slice.for_range code.kubernetes_model.apimodel.apimodel.KKey "$range" (λ: "$key" "$value",
+      do:  ("key" <-[code.kubernetes_model.apimodel.apimodel.KKey] "$value");;;
       do:  "$key";;;
       let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-      let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) (GoZeroVal (go.PointerType core_v1.Pod) #())) in
-      let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] (StructFieldRef apimodel.KKey "Namespace"%go "key")) in
-      let: "$a1" := (![go.string] (StructFieldRef apimodel.KKey "Name"%go "key")) in
-      (MethodResolve (go.PointerType apimodel.State) "PodGet"%go (![go.PointerType apimodel.State] "state")) "$a0" "$a1") in
+      let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.Pod) #())) in
+      let: ("$ret0", "$ret1") := (let: "$a0" := (![go.string] (StructFieldRef code.kubernetes_model.apimodel.apimodel.KKey "Namespace"%go "key")) in
+      let: "$a1" := (![go.string] (StructFieldRef code.kubernetes_model.apimodel.apimodel.KKey "Name"%go "key")) in
+      (MethodResolve (go.PointerType code.kubernetes_model.apimodel.apimodel.State) "PodGet"%go (![go.PointerType code.kubernetes_model.apimodel.apimodel.State] "state")) "$a0" "$a1") in
       let: "$r0" := "$ret0" in
       let: "$r1" := "$ret1" in
-      do:  ("pod" <-[go.PointerType core_v1.Pod] "$r0");;;
+      do:  ("pod" <-[go.PointerType code.k8s_io.api.core.v1.v1.Pod] "$r0");;;
       do:  ("err" <-[go.error] "$r1");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then return: (![go.error] "err")
       else do:  #());;;
-      let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType core_v1.Pod)] "createdPods") in
-      let: "$a1" := ((let: "$sl0" := (![go.PointerType core_v1.Pod] "pod") in
-      CompositeLiteral (go.SliceType (go.PointerType core_v1.Pod)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType core_v1.Pod) "$sl0")]))) in
-      (FuncResolve go.append [go.SliceType (go.PointerType core_v1.Pod)] #()) "$a0" "$a1") in
-      do:  ("createdPods" <-[go.SliceType (go.PointerType core_v1.Pod)] "$r0")));;;
-    let: "$range" := (![go.SliceType (go.PointerType core_v1.Pod)] "createdPods") in
-    (let: "pod" := (GoAlloc (go.PointerType core_v1.Pod) (GoZeroVal (go.PointerType core_v1.Pod) #())) in
-    slice.for_range (go.PointerType core_v1.Pod) "$range" (λ: "$key" "$value",
-      do:  ("pod" <-[go.PointerType core_v1.Pod] "$value");;;
+      let: "$r0" := (let: "$a0" := (![go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)] "createdPods") in
+      let: "$a1" := ((let: "$sl0" := (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod") in
+      CompositeLiteral (go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)) (LiteralValue [KeyedElement None (ElementExpression (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "$sl0")]))) in
+      (FuncResolve go.append [go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)] #()) "$a0" "$a1") in
+      do:  ("createdPods" <-[go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)] "$r0")));;;
+    let: "$range" := (![go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)] "createdPods") in
+    (let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) (GoZeroVal (go.PointerType code.k8s_io.api.core.v1.v1.Pod) #())) in
+    slice.for_range (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "$range" (λ: "$key" "$value",
+      do:  ("pod" <-[go.PointerType code.k8s_io.api.core.v1.v1.Pod] "$value");;;
       do:  "$key";;;
-      let: "uid" := (GoAlloc types.UID (GoZeroVal types.UID #())) in
-      let: "$r0" := (![types.UID] (StructFieldRef meta_v1.ObjectMeta "UID"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "pod")))) in
-      do:  ("uid" <-[types.UID] "$r0");;;
+      let: "uid" := (GoAlloc code.k8s_io.apimachinery.pkg.types.types.UID (GoZeroVal code.k8s_io.apimachinery.pkg.types.types.UID #())) in
+      let: "$r0" := (![code.k8s_io.apimachinery.pkg.types.types.UID] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "UID"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Pod "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod")))) in
+      do:  ("uid" <-[code.k8s_io.apimachinery.pkg.types.types.UID] "$r0");;;
       let: "resourceVersion" := (GoAlloc go.string (GoZeroVal go.string #())) in
-      let: "$r0" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "ResourceVersion"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "pod")))) in
+      let: "$r0" := (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "ResourceVersion"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Pod "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod")))) in
       do:  ("resourceVersion" <-[go.string] "$r0");;;
-      let: "options" := (GoAlloc meta_v1.DeleteOptions (GoZeroVal meta_v1.DeleteOptions #())) in
-      let: "$r0" := (let: "$v0" := (GoAlloc meta_v1.Preconditions (let: "$v0" := "uid" in
+      let: "options" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions #())) in
+      let: "$r0" := (let: "$v0" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions (let: "$v0" := "uid" in
       let: "$v1" := "resourceVersion" in
-      CompositeLiteral meta_v1.Preconditions (LiteralValue [KeyedElement (Some (KeyField "UID"%go)) (ElementExpression (go.PointerType types.UID) "$v0"); KeyedElement (Some (KeyField "ResourceVersion"%go)) (ElementExpression (go.PointerType go.string) "$v1")]))) in
-      CompositeLiteral meta_v1.DeleteOptions (LiteralValue [KeyedElement (Some (KeyField "Preconditions"%go)) (ElementExpression (go.PointerType meta_v1.Preconditions) "$v0")])) in
-      do:  ("options" <-[meta_v1.DeleteOptions] "$r0");;;
+      CompositeLiteral code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions (LiteralValue [KeyedElement (Some (KeyField "UID"%go)) (ElementExpression (go.PointerType code.k8s_io.apimachinery.pkg.types.types.UID) "$v0"); KeyedElement (Some (KeyField "ResourceVersion"%go)) (ElementExpression (go.PointerType go.string) "$v1")]))) in
+      CompositeLiteral code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions (LiteralValue [KeyedElement (Some (KeyField "Preconditions"%go)) (ElementExpression (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions) "$v0")])) in
+      do:  ("options" <-[code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "$r0");;;
       (let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
-      let: "$r0" := (let: "$a0" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Namespace"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "pod")))) in
-      let: "$a1" := (![go.string] (StructFieldRef meta_v1.ObjectMeta "Name"%go (StructFieldRef core_v1.Pod "ObjectMeta"%go (![go.PointerType core_v1.Pod] "pod")))) in
-      let: "$a2" := (![meta_v1.DeleteOptions] "options") in
-      (MethodResolve (go.PointerType apimodel.State) "PodDelete"%go (![go.PointerType apimodel.State] "state")) "$a0" "$a1" "$a2") in
+      let: "$r0" := (let: "$a0" := (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Namespace"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Pod "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod")))) in
+      let: "$a1" := (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Name"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Pod "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod")))) in
+      let: "$a2" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options") in
+      (MethodResolve (go.PointerType code.kubernetes_model.apimodel.apimodel.State) "PodDelete"%go (![go.PointerType code.kubernetes_model.apimodel.apimodel.State] "state")) "$a0" "$a1" "$a2") in
       do:  ("err" <-[go.error] "$r0");;;
       (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
       then return: (![go.error] "err")
@@ -115,16 +115,16 @@ Definition CreateThenDeletePodsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.client (λ: <>,
-      exception_do (do:  (meta_v1.initialize' #());;;
-      do:  (core_v1.initialize' #());;;
-      do:  (apimodel.initialize' #()))
+      exception_do (do:  (code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.initialize' #());;;
+      do:  (code.k8s_io.api.core.v1.v1.initialize' #());;;
+      do:  (code.kubernetes_model.apimodel.apimodel.initialize' #()))
       ).
 
 Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] CreateThenDeletePods_unfold :: FuncUnfold CreateThenDeletePods [] (CreateThenDeletePodsⁱᵐᵖˡ);
-  #[global] import_apimodel_Assumption :: apimodel.Assumptions;
-  #[global] import_core_v1_Assumption :: core_v1.Assumptions;
-  #[global] import_meta_v1_Assumption :: meta_v1.Assumptions;
+  #[global] import_apimodel_Assumption :: code.kubernetes_model.apimodel.apimodel.Assumptions;
+  #[global] import_core_v1_Assumption :: code.k8s_io.api.core.v1.v1.Assumptions;
+  #[global] import_meta_v1_Assumption :: code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions;
 }.
 End client.
