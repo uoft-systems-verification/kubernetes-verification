@@ -26,6 +26,14 @@ Definition error_message_spec (err : interface.t) : iProp Σ :=
       {{{ (message : go_string), RET #message; True }}})%I
   end.
 
+(** Trusted standard-library boundary for formatting a nonnegative int64 in
+    base ten. The result describes the actual number, not just parseability. *)
+Lemma wp_FormatInt_decimal (n : w64) :
+  {{{ is_pkg_init strconv ∗ ⌜ 0 ≤ sint.Z n ⌝ }}}
+    @! strconv.FormatInt #n #(W64 10)
+  {{{ RET #(decimal_string (Z.to_nat (sint.Z n))); True }}}.
+Proof. Admitted.
+
 (** Trusted standard-library boundary for base-10 uint64 parsing. *)
 Lemma wp_ParseUint_decimal (s : go_string) :
   {{{ is_pkg_init strconv }}}

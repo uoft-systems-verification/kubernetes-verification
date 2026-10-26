@@ -45,21 +45,6 @@ Lemma wp_storageObjectDeepEqual i1 i2 obj1 obj2 dq1 dq2 :
 Proof.
 Admitted.
 
-Lemma wp_State__generateNewRVAndUpdate l used_rv_l (used_rv : gmap go_string unit) :
-  {{{ is_pkg_init apimodel ∗
-      l.[(apimodel.State.t), "usedRV"] ↦ used_rv_l ∗
-      used_rv_l ↦$ used_rv
-  }}}
-    l @! (go.PointerType apimodel.State) @! "generateNewRVAndUpdate" #()
-  {{{ rv, RET #rv;
-      ⌜ used_rv !! rv = None ⌝ ∗
-      ⌜ valid_resource_version rv ⌝ ∗
-      l.[(apimodel.State.t), "usedRV"] ↦ used_rv_l ∗
-      used_rv_l ↦$ <[rv:=()]> used_rv
-  }}}.
-Proof.
-Admitted.
-
 Lemma wp_validateObjectMeta i (kind : go_string) l o m dq :
   {{{ is_pkg_init apimodel ∗
       ⌜ KObjectV.valid_interface i l o ⌝ ∗
@@ -98,21 +83,6 @@ Proof.
 Admitted.
 
 Context `{!kubernetesModelG Σ}.
-
-Lemma wp_State__generateNewUIDAndUpdate l used_uid_l (used_uid : gmap types.UID.t unit) :
-  {{{ is_pkg_init apimodel ∗
-      l.[(apimodel.State.t), "usedUID"] ↦ used_uid_l ∗
-      used_uid_l ↦$ used_uid
-  }}}
-    l @! (go.PointerType apimodel.State) @! "generateNewUIDAndUpdate" #()
-  {{{ uid, RET #uid;
-      ⌜ used_uid !! uid = None ⌝ ∗
-      ⌜ valid_uid uid ⌝ ∗
-      l.[(apimodel.State.t), "usedUID"] ↦ used_uid_l ∗
-      used_uid_l ↦$ <[uid:=()]> used_uid
-  }}}.
-Proof.
-Admitted.
 
 Lemma wp_State__generateNewName l m_ptr kind namespace generate_name (phys_state : gmap KKey.t interface.t):
   {{{ is_pkg_init apimodel ∗
