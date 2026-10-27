@@ -1,5 +1,5 @@
 From New.proof Require Import prelude empty_ffi.
-From New.object_specs Require Export pod persistentvolumeclaim replicaset statefulset deployment.
+From New.object_specs Require Export pod persistentvolumeclaim replicaset statefulset deployment controllerrevision.
 From New.object_specs Require Import top_level.
 
 Module KObject.
@@ -8,7 +8,8 @@ Inductive t :=
 | ReplicaSet (rs : v1.ReplicaSet.t)
 | PersistentVolumeClaim (pvc : v1.PersistentVolumeClaim.t)
 | StatefulSet (sts : v1.StatefulSet.t)
-| Deployment (d : v1.Deployment.t).
+| Deployment (d : v1.Deployment.t)
+| ControllerRevision (r : v1.ControllerRevision.t).
 
 Definition typemeta o : v1.TypeMeta.t :=
   match o with
@@ -17,6 +18,7 @@ Definition typemeta o : v1.TypeMeta.t :=
   | PersistentVolumeClaim pvc => pvc.(v1.PersistentVolumeClaim.TypeMeta')
   | StatefulSet sts => sts.(v1.StatefulSet.TypeMeta')
   | Deployment d => d.(v1.Deployment.TypeMeta')
+  | ControllerRevision r => r.(v1.ControllerRevision.TypeMeta')
   end.
 
 Definition objectmeta o : v1.ObjectMeta.t :=
@@ -26,6 +28,7 @@ Definition objectmeta o : v1.ObjectMeta.t :=
   | PersistentVolumeClaim pvc => pvc.(v1.PersistentVolumeClaim.ObjectMeta')
   | StatefulSet sts => sts.(v1.StatefulSet.ObjectMeta')
   | Deployment d => d.(v1.Deployment.ObjectMeta')
+  | ControllerRevision r => r.(v1.ControllerRevision.ObjectMeta')
   end.
 
 Definition update_objectmeta o m: t :=
@@ -35,6 +38,7 @@ Definition update_objectmeta o m: t :=
   | PersistentVolumeClaim pvc => PersistentVolumeClaim (pvc <| v1.PersistentVolumeClaim.ObjectMeta' := m |>)
   | StatefulSet sts => StatefulSet (sts <| v1.StatefulSet.ObjectMeta' := m |>)
   | Deployment d => Deployment (d <| v1.Deployment.ObjectMeta' := m |>)
+  | ControllerRevision r => ControllerRevision (r <| v1.ControllerRevision.ObjectMeta' := m |>)
   end.
 
 End KObject.
@@ -52,7 +56,8 @@ Inductive t :=
 | ReplicaSetSpec (rs : ReplicaSetSpecV.t)
 | PersistentVolumeClaimSpec (pvc : PersistentVolumeClaimSpecV.t)
 | StatefulSetSpec (sts : StatefulSetSpecV.t)
-| DeploymentSpec (d : DeploymentSpecV.t).
+| DeploymentSpec (d : DeploymentSpecV.t)
+| ControllerRevisionSpec (r : ControllerRevisionSpecV.t).
 
 Definition valid (v : t) : Prop :=
   match v with
@@ -61,6 +66,7 @@ Definition valid (v : t) : Prop :=
   | PersistentVolumeClaimSpec pvc => PersistentVolumeClaimSpecV.valid pvc
   | StatefulSetSpec sts => StatefulSetSpecV.valid sts
   | DeploymentSpec d => DeploymentSpecV.valid d
+  | ControllerRevisionSpec d => ControllerRevisionSpecV.valid d
   end.
 
 Definition extra_valid (v : t) : Prop :=
@@ -77,6 +83,7 @@ Definition valid_create (input : t) : Prop :=
   | PersistentVolumeClaimSpec input => PersistentVolumeClaimSpecV.valid_create input
   | StatefulSetSpec input => StatefulSetSpecV.valid_create input
   | DeploymentSpec input => DeploymentSpecV.valid_create input
+  | ControllerRevisionSpec input => ControllerRevisionSpecV.valid_create input
   end.
 
 (** Top-level update-validation contract over the stored old spec and
@@ -90,6 +97,7 @@ Definition valid_update (old input : t) : Prop :=
       PersistentVolumeClaimSpecV.valid_update old input
   | StatefulSetSpec old, StatefulSetSpec input => StatefulSetSpecV.valid_update old input
   | DeploymentSpec old, DeploymentSpec input => DeploymentSpecV.valid_update old input
+  | ControllerRevisionSpec old, ControllerRevisionSpec input => ControllerRevisionSpecV.valid_update old input
   | _, _ => False
   end.
 
@@ -105,6 +113,7 @@ Definition created (input stored : t) : Prop :=
       PersistentVolumeClaimSpecV.created input stored
   | StatefulSetSpec input, StatefulSetSpec stored => StatefulSetSpecV.created input stored
   | DeploymentSpec input, DeploymentSpec stored => DeploymentSpecV.created input stored
+  | ControllerRevisionSpec input, ControllerRevisionSpec stored => ControllerRevisionSpecV.created input stored
   | _, _ => False
   end.
 
@@ -116,6 +125,7 @@ Definition updated (old input stored : t) : Prop :=
       PersistentVolumeClaimSpecV.updated input stored
   | _, StatefulSetSpec input, StatefulSetSpec stored => StatefulSetSpecV.updated input stored
   | _, DeploymentSpec input, DeploymentSpec stored => DeploymentSpecV.updated input stored
+  | _, ControllerRevisionSpec input, ControllerRevisionSpec stored => ControllerRevisionSpecV.updated input stored
   | _, _, _ => False
   end.
 
@@ -145,6 +155,7 @@ Definition deepown_l l v dq: iProp Σ :=
   | PersistentVolumeClaimSpec pvc => ∃ c, l ↦{dq} c ∗ PersistentVolumeClaimSpecV.deepown c pvc dq
   | StatefulSetSpec sts => ∃ c, l ↦{dq} c ∗ StatefulSetSpecV.deepown c sts dq
   | DeploymentSpec d => ∃ c, l ↦{dq} c ∗ DeploymentSpecV.deepown c d dq
+  | ControllerRevisionSpec d => ControllerRevisionSpecV.deepown_l l d dq
   end.
 
 End def.
@@ -163,7 +174,8 @@ Inductive t :=
 | ReplicaSetStatus (rs : ReplicaSetStatusV.t)
 | PersistentVolumeClaimStatus (pvc : PersistentVolumeClaimStatusV.t)
 | StatefulSetStatus (sts : StatefulSetStatusV.t)
-| DeploymentStatus (d : DeploymentStatusV.t).
+| DeploymentStatus (d : DeploymentStatusV.t)
+| ControllerRevisionNoStatus.
 
 Definition valid (v : t) : Prop :=
   match v with
@@ -172,6 +184,7 @@ Definition valid (v : t) : Prop :=
   | PersistentVolumeClaimStatus pvc => PersistentVolumeClaimStatusV.valid pvc
   | StatefulSetStatus sts => StatefulSetStatusV.valid sts
   | DeploymentStatus d => DeploymentStatusV.valid d
+  | ControllerRevisionNoStatus => True
   end.
 
 Axiom valid_create : t → Prop.
@@ -186,6 +199,7 @@ Definition valid_update (old input : t) : Prop :=
       PersistentVolumeClaimStatusV.valid_update old input
   | StatefulSetStatus old, StatefulSetStatus input => StatefulSetStatusV.valid_update old input
   | DeploymentStatus old, DeploymentStatus input => DeploymentStatusV.valid_update old input
+  | ControllerRevisionNoStatus, ControllerRevisionNoStatus => False
   | _, _ => False
   end.
 
@@ -200,6 +214,7 @@ Definition created (input stored : t) : Prop :=
     PersistentVolumeClaimStatusV.created input stored
   | StatefulSetStatus input, StatefulSetStatus stored => StatefulSetStatusV.created input stored
   | DeploymentStatus input, DeploymentStatus stored => DeploymentStatusV.created input stored
+  | ControllerRevisionNoStatus, ControllerRevisionNoStatus => True
   | _, _ => False
   end.
 
@@ -211,6 +226,7 @@ Definition updated (input stored : t) : Prop :=
       PersistentVolumeClaimStatusV.updated input stored
   | StatefulSetStatus input, StatefulSetStatus stored => StatefulSetStatusV.updated input stored
   | DeploymentStatus input, DeploymentStatus stored => DeploymentStatusV.updated input stored
+  | ControllerRevisionNoStatus, ControllerRevisionNoStatus => True
   | _, _ => False
   end.
 
@@ -221,6 +237,7 @@ Definition deepown_l l v dq: iProp Σ :=
   | PersistentVolumeClaimStatus pvc => ∃ c, l ↦{dq} c ∗ PersistentVolumeClaimStatusV.deepown c pvc dq
   | StatefulSetStatus sts => ∃ c, l ↦{dq} c ∗ StatefulSetStatusV.deepown c sts dq
   | DeploymentStatus d => ∃ c, l ↦{dq} c ∗ DeploymentStatusV.deepown c d dq
+  | ControllerRevisionNoStatus => True%I
   end.
 
 End def.
@@ -238,7 +255,8 @@ Inductive t :=
 | ReplicaSet (rs : ReplicaSetV.t)
 | PersistentVolumeClaim (pvc : PersistentVolumeClaimV.t)
 | StatefulSet (sts : StatefulSetV.t)
-| Deployment (d : DeploymentV.t).
+| Deployment (d : DeploymentV.t)
+| ControllerRevision (r : ControllerRevisionV.t).
 
 (** Supported objects implement both [metav1.Object] and [runtime.Object].
     These are Go interface-membership facts, not method-call specifications.
@@ -262,6 +280,9 @@ Class ObjectInterfaceAssumptions : Prop := {
   statefulset_is_object :
     go.type_set_contains (go.PointerType v1.StatefulSet) v1.Object = true ∧
     go.type_set_contains (go.PointerType v1.StatefulSet) code.k8s_io.apimachinery.pkg.runtime.runtime.Object = true;
+  controllerrevision_is_object :
+    go.type_set_contains (go.PointerType v1.ControllerRevision) v1.Object = true ∧
+    go.type_set_contains (go.PointerType v1.ControllerRevision) code.k8s_io.apimachinery.pkg.runtime.runtime.Object = true;
   deployment_is_object :
     go.type_set_contains (go.PointerType v1.Deployment) v1.Object = true ∧
     go.type_set_contains (go.PointerType v1.Deployment) code.k8s_io.apimachinery.pkg.runtime.runtime.Object = true;
@@ -274,6 +295,7 @@ Definition typemeta o : v1.TypeMeta.t :=
   | PersistentVolumeClaim pvc => pvc.(PersistentVolumeClaimV.TypeMeta')
   | StatefulSet sts => sts.(StatefulSetV.TypeMeta')
   | Deployment d => d.(DeploymentV.TypeMeta')
+  | ControllerRevision r => r.(ControllerRevisionV.TypeMeta')
   end.
 
 Definition objectmeta o : ObjectMetaV.t :=
@@ -283,6 +305,7 @@ Definition objectmeta o : ObjectMetaV.t :=
   | PersistentVolumeClaim pvc => pvc.(PersistentVolumeClaimV.ObjectMeta')
   | StatefulSet sts => sts.(StatefulSetV.ObjectMeta')
   | Deployment d => d.(DeploymentV.ObjectMeta')
+  | ControllerRevision r => r.(ControllerRevisionV.ObjectMeta')
   end.
 
 Definition spec o: ObjectSpecV.t :=
@@ -292,6 +315,7 @@ Definition spec o: ObjectSpecV.t :=
   | PersistentVolumeClaim pvc => ObjectSpecV.PersistentVolumeClaimSpec pvc.(PersistentVolumeClaimV.Spec')
   | StatefulSet sts => ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')
   | Deployment d => ObjectSpecV.DeploymentSpec d.(DeploymentV.Spec')
+  | ControllerRevision r => ObjectSpecV.ControllerRevisionSpec (ControllerRevisionV.spec r)
   end.
 
 Definition status o: ObjectStatusV.t :=
@@ -301,6 +325,7 @@ Definition status o: ObjectStatusV.t :=
   | PersistentVolumeClaim pvc => ObjectStatusV.PersistentVolumeClaimStatus pvc.(PersistentVolumeClaimV.Status')
   | StatefulSet sts => ObjectStatusV.StatefulSetStatus sts.(StatefulSetV.Status')
   | Deployment d => ObjectStatusV.DeploymentStatus d.(DeploymentV.Status')
+  | ControllerRevision _ => ObjectStatusV.ControllerRevisionNoStatus
   end.
 
 Definition kind o : go_string :=
@@ -310,6 +335,7 @@ Definition kind o : go_string :=
   | PersistentVolumeClaim _ => PersistentVolumeClaimV.kind
   | StatefulSet _ => StatefulSetV.kind
   | Deployment _ => DeploymentV.kind
+  | ControllerRevision _ => ControllerRevisionV.kind
   end.
 
 Definition same_kind (o1 o2 : t) : Prop :=
@@ -319,6 +345,7 @@ Definition same_kind (o1 o2 : t) : Prop :=
   | PersistentVolumeClaim _, PersistentVolumeClaim _ => True
   | StatefulSet _, StatefulSet _ => True
   | Deployment _, Deployment _ => True
+  | ControllerRevision _, ControllerRevision _ => True
   | _, _ => False
   end.
 
@@ -336,6 +363,7 @@ Definition update_objectmeta o m: t :=
   | PersistentVolumeClaim pvc => PersistentVolumeClaim (pvc <| PersistentVolumeClaimV.ObjectMeta' := m |>)
   | StatefulSet sts => StatefulSet (sts <| StatefulSetV.ObjectMeta' := m |>)
   | Deployment d => Deployment (d <| DeploymentV.ObjectMeta' := m |>)
+  | ControllerRevision r => ControllerRevision (r <| ControllerRevisionV.ObjectMeta' := m |>)
   end.
 
 (** [input] is the submitted create request.
@@ -350,6 +378,8 @@ Definition created namespace input stored : Prop :=
       StatefulSetV.created namespace input_sts stored_sts
   | Deployment input_d, Deployment stored_d =>
       DeploymentV.created namespace input_d stored_d
+  | ControllerRevision input_r, ControllerRevision stored_r =>
+      ControllerRevisionV.created namespace input_r stored_r
   | _, _ => False
   end.
 
@@ -364,6 +394,7 @@ Definition updated old_spec input stored : Prop :=
       PersistentVolumeClaimV.updated input_pvc stored_pvc
   | _, StatefulSet input_sts, StatefulSet stored_sts => StatefulSetV.updated input_sts stored_sts
   | _, Deployment input_d, Deployment stored_d => DeploymentV.updated input_d stored_d
+  | _, ControllerRevision input_r, ControllerRevision stored_r => ControllerRevisionV.updated input_r stored_r
   | _, _, _ => False
   end.
 
@@ -416,6 +447,7 @@ Definition valid o : Prop :=
   | PersistentVolumeClaim pvc => PersistentVolumeClaimV.valid pvc
   | StatefulSet sts => StatefulSetV.valid sts
   | Deployment d => DeploymentV.valid d
+  | ControllerRevision r => ControllerRevisionV.valid r
   end.
 
 (** Projections used by the metadata, spec, and status ghost fragments. The
@@ -429,7 +461,7 @@ Lemma valid_components o :
   ObjectSpecV.valid (spec o) ∧ ObjectStatusV.valid (status o).
 Proof.
   destruct o; rewrite /valid /PodV.valid /ReplicaSetV.valid
-    /PersistentVolumeClaimV.valid /StatefulSetV.valid /DeploymentV.valid
+    /PersistentVolumeClaimV.valid /StatefulSetV.valid /DeploymentV.valid /ControllerRevisionV.valid /ControllerRevisionV.spec
     /PodV.valid_body /ObjectSpecV.valid /ObjectStatusV.valid /=; tauto.
 Qed.
 
@@ -441,7 +473,7 @@ Lemma valid_update_objectmeta o meta :
   valid (update_objectmeta o meta).
 Proof.
   destruct o; rewrite /valid /PodV.valid /ReplicaSetV.valid
-    /PersistentVolumeClaimV.valid /StatefulSetV.valid /DeploymentV.valid
+    /PersistentVolumeClaimV.valid /StatefulSetV.valid /DeploymentV.valid /ControllerRevisionV.valid /ControllerRevisionV.spec
     /PodV.valid_body /=; intros Hvalid Hmeta Hrv Hann;
     rewrite ?Hann; tauto.
 Qed.
@@ -451,10 +483,10 @@ Lemma valid_update_resource_version o rv :
   valid (update_objectmeta o (objectmeta o <| ObjectMetaV.ResourceVersion' := rv |>)).
 Proof.
   destruct o as [[tm meta spec status]|[tm meta spec status]|
-    [tm meta spec status]|[tm meta spec status]|[tm meta spec status]];
+    [tm meta spec status]|[tm meta spec status]|[tm meta spec status]|[tm meta spec status]];
     destruct meta;
     rewrite /valid /PodV.valid /ReplicaSetV.valid /PersistentVolumeClaimV.valid
-      /StatefulSetV.valid /DeploymentV.valid /PodV.valid_body /ObjectMetaV.valid /=;
+      /StatefulSetV.valid /DeploymentV.valid /ControllerRevisionV.valid /ControllerRevisionV.spec /PodV.valid_body /ObjectMetaV.valid /=;
     tauto.
 Qed.
 
@@ -469,13 +501,15 @@ Lemma eq_except_resource_version o1 o2 :
     (objectmeta o1 <| ObjectMetaV.ResourceVersion' := (objectmeta o2).(ObjectMetaV.ResourceVersion') |>).
 Proof.
   destruct o1 as [[tm1 meta1 spec1 status1]|[tm1 meta1 spec1 status1]|
-    [tm1 meta1 spec1 status1]|[tm1 meta1 spec1 status1]|[tm1 meta1 spec1 status1]],
+    [tm1 meta1 spec1 status1]|[tm1 meta1 spec1 status1]|[tm1 meta1 spec1 status1]|[tm1 meta1 spec1 status1]],
     o2 as [[tm2 meta2 spec2 status2]|[tm2 meta2 spec2 status2]|
-    [tm2 meta2 spec2 status2]|[tm2 meta2 spec2 status2]|[tm2 meta2 spec2 status2]];
+    [tm2 meta2 spec2 status2]|[tm2 meta2 spec2 status2]|[tm2 meta2 spec2 status2]|[tm2 meta2 spec2 status2]];
     simpl; intros Hkind Htm Hmeta Hspec Hstatus; try contradiction;
-    injection Hspec as Hspec; injection Hstatus as Hstatus;
-    pose proof (ObjectMetaV.equiv_except_resource_version_eq _ _ Hmeta) as Hmeta';
-    subst tm2 spec2 status2; rewrite Hmeta'; done.
+    pose proof (ObjectMetaV.equiv_except_resource_version_eq _ _ Hmeta) as Hmeta'.
+  all: try (injection Hspec as Hspec; injection Hstatus as Hstatus;
+    subst tm2 spec2 status2; rewrite Hmeta'; done).
+  unfold ControllerRevisionV.spec in Hspec. simpl in Hspec.
+  injection Hspec as Hdata Hnumber. subst tm2 spec2 status2. rewrite Hmeta'. done.
 Qed.
 
 Definition valid_create request_kind namespace input : Prop :=
@@ -485,6 +519,7 @@ Definition valid_create request_kind namespace input : Prop :=
   | PersistentVolumeClaim input => PersistentVolumeClaimV.valid_create request_kind namespace input
   | StatefulSet input => StatefulSetV.valid_create request_kind namespace input
   | Deployment input => DeploymentV.valid_create request_kind namespace input
+  | ControllerRevision input => ControllerRevisionV.valid_create request_kind namespace input
   end.
 
 (** Top-level update-validation contract.
@@ -500,6 +535,7 @@ Definition valid_update_input request_kind namespace input : Prop :=
   | PersistentVolumeClaim input => PersistentVolumeClaimV.valid_create request_kind namespace input
   | StatefulSet input => StatefulSetV.valid_create request_kind namespace input
   | Deployment input => DeploymentV.valid_create request_kind namespace input
+  | ControllerRevision input => ControllerRevisionV.valid_create request_kind namespace input
   end.
 
 Definition valid_update request_kind namespace old_meta old_spec input : Prop :=
@@ -514,6 +550,8 @@ Definition valid_update request_kind namespace old_meta old_spec input : Prop :=
       StatefulSetV.valid_update request_kind namespace old_meta old_spec input
   | ObjectSpecV.DeploymentSpec old_spec, Deployment input =>
       DeploymentV.valid_update request_kind namespace old_meta old_spec input
+  | ObjectSpecV.ControllerRevisionSpec old_spec, ControllerRevision input =>
+      ControllerRevisionV.valid_update request_kind namespace old_meta old_spec input
   | _, _ => False
   end.
 
@@ -543,6 +581,7 @@ Definition valid_without_meta o : Prop :=
   | PersistentVolumeClaim pvc => PersistentVolumeClaimV.valid_without_meta pvc
   | StatefulSet sts => StatefulSetV.valid_without_meta sts
   | Deployment d => DeploymentV.valid_without_meta d
+  | ControllerRevision r => ControllerRevisionV.valid_without_meta r
   end.
 
 Definition deepown_l l v dq: iProp Σ :=
@@ -552,6 +591,7 @@ Definition deepown_l l v dq: iProp Σ :=
   | PersistentVolumeClaim v => PersistentVolumeClaimV.deepown_l l v dq
   | StatefulSet v => StatefulSetV.deepown_l l v dq
   | Deployment v => DeploymentV.deepown_l l v dq
+  | ControllerRevision v => ControllerRevisionV.deepown_l l v dq
   end.
 
 #[global]
@@ -574,6 +614,7 @@ Definition deepown_l_without_meta l v dq: iProp Σ :=
   | PersistentVolumeClaim v => PersistentVolumeClaimV.deepown_l_without_meta l v dq
   | StatefulSet v => StatefulSetV.deepown_l_without_meta l v dq
   | Deployment v => DeploymentV.deepown_l_without_meta l v dq
+  | ControllerRevision v => ControllerRevisionV.deepown_l_without_meta l v dq
   end.
 
 Definition valid_interface i (l: loc) v: Prop :=
@@ -599,6 +640,10 @@ Definition valid_interface i (l: loc) v: Prop :=
       i = interface.mk (go.PointerType v1.Deployment) #l ∧
       go.type_set_contains (go.PointerType v1.Deployment) v1.Object = true ∧
       go.type_set_contains (go.PointerType v1.Deployment) code.k8s_io.apimachinery.pkg.runtime.runtime.Object = true
+  | ControllerRevision _ =>
+      i = interface.mk (go.PointerType v1.ControllerRevision) #l ∧
+      go.type_set_contains (go.PointerType v1.ControllerRevision) v1.Object = true ∧
+      go.type_set_contains (go.PointerType v1.ControllerRevision) code.k8s_io.apimachinery.pkg.runtime.runtime.Object = true
   end.
 
 Definition deepown_i i v dq: iProp Σ :=
@@ -633,6 +678,10 @@ Lemma valid_interface_Deployment l d :
     (Deployment d).
 Proof using object_interface_sem. split; [done|apply deployment_is_object]. Qed.
 
+Lemma valid_interface_ControllerRevision l r :
+  valid_interface (interface.mk (go.PointerType v1.ControllerRevision) #l) l (ControllerRevision r).
+Proof using object_interface_sem. split; [done|apply controllerrevision_is_object]. Qed.
+
 End object_interface_assumptions.
 
 Definition typemeta_ptr l v: loc :=
@@ -642,6 +691,7 @@ Definition typemeta_ptr l v: loc :=
   | PersistentVolumeClaim _ => struct_field_ref v1.PersistentVolumeClaim.t "TypeMeta" l
   | StatefulSet _ => struct_field_ref v1.StatefulSet.t "TypeMeta" l
   | Deployment _ => struct_field_ref v1.Deployment.t "TypeMeta" l
+  | ControllerRevision _ => struct_field_ref v1.ControllerRevision.t "TypeMeta" l
   end.
 
 Definition objectmeta_ptr l v: loc :=
@@ -651,6 +701,7 @@ Definition objectmeta_ptr l v: loc :=
   | PersistentVolumeClaim _ => struct_field_ref v1.PersistentVolumeClaim.t "ObjectMeta" l
   | StatefulSet _ => struct_field_ref v1.StatefulSet.t "ObjectMeta" l
   | Deployment _ => struct_field_ref v1.Deployment.t "ObjectMeta" l
+  | ControllerRevision _ => struct_field_ref v1.ControllerRevision.t "ObjectMeta" l
   end.
 
 Definition spec_ptr l v: loc :=
@@ -660,6 +711,7 @@ Definition spec_ptr l v: loc :=
   | PersistentVolumeClaim _ => struct_field_ref v1.PersistentVolumeClaim.t "Spec" l
   | StatefulSet _ => struct_field_ref v1.StatefulSet.t "Spec" l
   | Deployment _ => struct_field_ref v1.Deployment.t "Spec" l
+  | ControllerRevision _ => l
   end.
 
 Definition status_ptr l v: loc :=
@@ -669,6 +721,7 @@ Definition status_ptr l v: loc :=
   | PersistentVolumeClaim _ => struct_field_ref v1.PersistentVolumeClaim.t "Status" l
   | StatefulSet _ => struct_field_ref v1.StatefulSet.t "Status" l
   | Deployment _ => struct_field_ref v1.Deployment.t "Status" l
+  | ControllerRevision _ => null
   end.
 
 End def.
@@ -680,6 +733,8 @@ Context {sem : go.Semantics}
   {core_v1_sem : code.k8s_io.api.core.v1.v1.Assumptions}
   {apps_v1_sem : code.k8s_io.api.apps.v1.v1.Assumptions}.
 
+Local Set Default Proof Using "All".
+
 Lemma deepown_l_split l v dq:
   deepown_l l v dq ⊢
     ⌜ l ≠ null ⌝ ∗
@@ -688,7 +743,7 @@ Lemma deepown_l_split l v dq:
     ObjectSpecV.deepown_l (spec_ptr l v) (spec v) dq ∗
     ObjectStatusV.deepown_l (status_ptr l v) (status v) dq.
 Proof.
-  destruct v as [p|rs|pvc|sts|d]; simpl.
+  destruct v as [p|rs|pvc|sts|d|r]; simpl.
   - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
     iApply PodV.deepown_l_split.
   - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
@@ -699,6 +754,9 @@ Proof.
     iApply StatefulSetV.deepown_l_split.
   - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
     iApply DeploymentV.deepown_l_split.
+  - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
+    iIntros "H".
+    iDestruct (ControllerRevisionV.deepown_l_split with "H") as "($ & $ & $ & $)".
 Qed.
 
 (* TODO: deepown_l_merge is only used for merging updated objectmeta; generalize it later *)
@@ -711,7 +769,7 @@ Lemma deepown_l_merge l v vm dq:
     deepown_l l (update_objectmeta v vm) dq.
 Proof.
   intros Hnot_null.
-  destruct v as [p|rs|pvc|sts|d]; simpl.
+  destruct v as [p|rs|pvc|sts|d|r]; simpl.
   - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
     iApply (PodV.deepown_l_merge l p vm dq Hnot_null).
   - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
@@ -722,6 +780,9 @@ Proof.
     iApply (StatefulSetV.deepown_l_merge l sts vm dq Hnot_null).
   - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
     iApply (DeploymentV.deepown_l_merge l d vm dq Hnot_null).
+  - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
+    iIntros "(Htm & Hmeta & Hbody & _)".
+    iApply (ControllerRevisionV.deepown_l_merge l r vm dq Hnot_null with "[$]").
 Qed.
 
 Lemma deepown_l_restore l v dq:
@@ -733,7 +794,7 @@ Lemma deepown_l_restore l v dq:
     deepown_l l v dq.
 Proof.
   intros Hnot_null.
-  destruct v as [p|rs|pvc|sts|d]; simpl.
+  destruct v as [p|rs|pvc|sts|d|r]; simpl.
   - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
     iApply (PodV.deepown_l_restore l p dq Hnot_null).
   - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
@@ -744,6 +805,9 @@ Proof.
     iApply (StatefulSetV.deepown_l_restore l sts dq Hnot_null).
   - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
     iApply (DeploymentV.deepown_l_restore l d dq Hnot_null).
+  - rewrite /ObjectSpecV.deepown_l /ObjectStatusV.deepown_l.
+    iIntros "(Htm & Hmeta & Hbody & _)".
+    iApply (ControllerRevisionV.deepown_l_restore l r dq Hnot_null with "[$]").
 Qed.
 
 Lemma deepown_i_yields_deepown_l i l v dq:

@@ -150,3 +150,12 @@ A repeated Pod getter experiment reduced total checking time from about 14.3 s
 to 6.8 s (tactic time from 10.6 s to 3.1 s) with large predicates opaque; the
 ObjectMeta getter showed a smaller improvement, from about 6.0 s to 5.2 s. These
 are focused local experiments, not whole-project build speedups.
+
+ControllerRevision is also a root, with an explicit `runtime.RawExtension`
+representation. Interface fields are retained in views and ownership restricts
+both the physical and view interface values to nil. Thus the supported revision
+path uses `Raw` bytes with `Object=nil`; non-nil runtime objects are not silently
+ignored or claimed to be owned. Supporting them would require a dynamic,
+implementation-specific ownership relation. Data and the mutable Revision
+counter belong to the ordinary-update body; the formal status projection is
+empty and has no status-update operation.

@@ -335,8 +335,8 @@ Proof.
     { unfold ObjectMetaV.valid in Hrs_meta_valid. tauto. }
     unfold valid_name, ReplicaSetV.kind in Hrs_name_valid.
     (* Only the [ReplicaSet] kind case is possible. *)
-    destruct Hrs_name_valid as [[Hkind _]|[[Hkind|[Hkind|[Hkind|Hkind]]] Hrs_name_valid]];
-      [discriminate|discriminate| |discriminate|discriminate].
+    destruct Hrs_name_valid as [[Hkind _]|[[Hkind|[Hkind|[Hkind|[Hkind|Hkind]]]] Hrs_name_valid]];
+      [discriminate|discriminate| |discriminate|discriminate|discriminate].
     iAssert (is_pkg_init code.k8s_io.api.apps.v1.pkg_id.v1) as "#Happs_v1_init".
     { iPkgInit. }
     wp_auto_keep.

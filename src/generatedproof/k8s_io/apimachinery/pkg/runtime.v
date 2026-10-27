@@ -1457,13 +1457,48 @@ Context {package_sem' : runtime.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance RawExtension_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (runtime.RawExtension.t). Admitted.
+#[global]Program Instance RawExtension_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (runtime.RawExtension.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "Raw" ∷ l.[(runtime.RawExtension.t), "Raw"] ↦{dq} v.(runtime.RawExtension.Raw') ∗
+      "Object" ∷ l.[(runtime.RawExtension.t), "Object"] ↦{dq} v.(runtime.RawExtension.Object') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance RawExtension_into_val_typed
    :
   IntoValTypedUnderlying (runtime.RawExtension.t) (runtime.RawExtensionⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance RawExtension_access_load_Raw l (v : (runtime.RawExtension.t)) dq :
+  AccessStrict
+    (l.[(runtime.RawExtension.t), "Raw"] ↦{dq} (v.(runtime.RawExtension.Raw')))
+    (l.[(runtime.RawExtension.t), "Raw"] ↦{dq} (v.(runtime.RawExtension.Raw')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance RawExtension_access_store_Raw l (v : (runtime.RawExtension.t)) Raw' :
+  AccessStrict
+    (l.[(runtime.RawExtension.t), "Raw"] ↦ (v.(runtime.RawExtension.Raw')))
+    (l.[(runtime.RawExtension.t), "Raw"] ↦ Raw')
+    (l ↦ v) (l ↦ (v <|(runtime.RawExtension.Raw') := Raw'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance RawExtension_access_load_Object l (v : (runtime.RawExtension.t)) dq :
+  AccessStrict
+    (l.[(runtime.RawExtension.t), "Object"] ↦{dq} (v.(runtime.RawExtension.Object')))
+    (l.[(runtime.RawExtension.t), "Object"] ↦{dq} (v.(runtime.RawExtension.Object')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance RawExtension_access_store_Object l (v : (runtime.RawExtension.t)) Object' :
+  AccessStrict
+    (l.[(runtime.RawExtension.t), "Object"] ↦ (v.(runtime.RawExtension.Object')))
+    (l.[(runtime.RawExtension.t), "Object"] ↦ Object')
+    (l ↦ v) (l ↦ (v <|(runtime.RawExtension.Object') := Object'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End RawExtension.

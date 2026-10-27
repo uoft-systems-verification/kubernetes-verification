@@ -29,6 +29,12 @@ translate = [
     "DefaultDeploymentUniqueLabelKey",
     "StatefulSetPodNameLabel",
     "PodIndexLabel",
+    "StatefulSetRevisionLabel",
+    "ControllerRevisionHashLabelKey",
+    "RollingUpdateStatefulSetStrategyType",
+    "OnDeleteStatefulSetStrategyType",
+    "OrderedReadyPodManagement",
+    "ParallelPodManagement",
     "SchemeGroupVersion",
     "StatefulSet",
     # Promoted ObjectMeta methods used after meta.Accessor returns *StatefulSet.
@@ -94,6 +100,29 @@ translate = [
     "StatefulSetPersistentVolumeClaimRetentionPolicy",
     "StatefulSetUpdateStrategy",
     "StatefulSetUpdateStrategyType",
+
+    # Complete recursive object representations.
+    "ControllerRevision",
+    # Promoted ObjectMeta methods used after meta.Accessor returns *ControllerRevision.
+    "ControllerRevision.GetDeletionGracePeriodSeconds",
+    "ControllerRevision.GetDeletionTimestamp",
+    "ControllerRevision.GetFinalizers",
+    "ControllerRevision.GetGenerateName",
+    "ControllerRevision.GetGeneration",
+    "ControllerRevision.GetLabels",
+    "ControllerRevision.GetName",
+    "ControllerRevision.GetOwnerReferences",
+    "ControllerRevision.GetResourceVersion",
+    "ControllerRevision.GetUID",
+    "ControllerRevision.SetCreationTimestamp",
+    "ControllerRevision.SetDeletionGracePeriodSeconds",
+    "ControllerRevision.SetDeletionTimestamp",
+    "ControllerRevision.SetFinalizers",
+    "ControllerRevision.SetGeneration",
+    "ControllerRevision.SetName",
+    "ControllerRevision.SetResourceVersion",
+    "ControllerRevision.SetSelfLink",
+    "ControllerRevision.SetUID",
 ]
 
 imports = [
@@ -101,4 +130,5 @@ imports = [
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/runtime/schema",
     "k8s.io/apimachinery/pkg/util/intstr",
+    "k8s.io/apimachinery/pkg/runtime",
 ]

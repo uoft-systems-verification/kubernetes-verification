@@ -330,6 +330,10 @@ func (s *TestServer) DeleteDeployment(ctx context.Context, name string, options 
 
 // Cleanup cleans up all resources created by the test server.
 func (s *TestServer) Cleanup(ctx context.Context) error {
+	// ControllerRevisions have no status subresource.
+	if err := s.client.AppsV1().ControllerRevisions(s.namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
+		return err
+	}
 	// Delete all pods in the namespace
 	if err := s.client.CoreV1().Pods(s.namespace).DeleteCollection(
 		ctx, metav1.DeleteOptions{}, metav1.ListOptions{}); err != nil {
@@ -365,4 +369,33 @@ func (s *TestServer) Stop() error {
 		return s.testEnv.Stop()
 	}
 	return nil
+}
+
+// CreateControllerRevision creates a ControllerRevision in the test server.
+func (s *TestServer) CreateControllerRevision(ctx context.Context, d *appsv1.ControllerRevision) (*appsv1.ControllerRevision, error) {
+	d = d.DeepCopy()
+	d.Namespace = s.namespace
+	return s.client.AppsV1().ControllerRevisions(s.namespace).Create(ctx, d, metav1.CreateOptions{})
+}
+
+// GetControllerRevision gets a ControllerRevision from the test server.
+func (s *TestServer) GetControllerRevision(ctx context.Context, name string) (*appsv1.ControllerRevision, error) {
+	return s.client.AppsV1().ControllerRevisions(s.namespace).Get(ctx, name, metav1.GetOptions{})
+}
+
+// UpdateControllerRevision updates a ControllerRevision in the test server.
+func (s *TestServer) UpdateControllerRevision(ctx context.Context, d *appsv1.ControllerRevision) (*appsv1.ControllerRevision, error) {
+	d = d.DeepCopy()
+	d.Namespace = s.namespace
+	return s.client.AppsV1().ControllerRevisions(s.namespace).Update(ctx, d, metav1.UpdateOptions{})
+}
+
+// PatchControllerRevision patches a ControllerRevision in the test server.
+func (s *TestServer) PatchControllerRevision(ctx context.Context, name string, patchType types.PatchType, data []byte, subresources ...string) (*appsv1.ControllerRevision, error) {
+	return s.client.AppsV1().ControllerRevisions(s.namespace).Patch(ctx, name, patchType, data, metav1.PatchOptions{}, subresources...)
+}
+
+// DeleteControllerRevision deletes a ControllerRevision from the test server with optional DeleteOptions.
+func (s *TestServer) DeleteControllerRevision(ctx context.Context, name string, options metav1.DeleteOptions) error {
+	return s.client.AppsV1().ControllerRevisions(s.namespace).Delete(ctx, name, options)
 }

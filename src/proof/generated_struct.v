@@ -536,3 +536,24 @@ Proof.
 Qed.
 
 End generated_struct.
+
+(* A checked field lens for generated struct ownership. Keeping the untouched
+   prefix in one resource avoids rebuilding a large proof-mode environment at
+   every field access. *)
+Section generated_access.
+Context {PROP : bi}.
+Fixpoint generated_access_fields (fields : list PROP) : PROP :=
+  match fields with
+  | [] => True
+  | field :: fields => field ∗ generated_access_fields fields
+  end%I.
+Lemma generated_access_fields_acc prefix field suffix updated :
+  generated_access_fields (prefix ++ field :: suffix) ⊢
+  field ∗ (updated -∗ generated_access_fields (prefix ++ updated :: suffix)).
+Proof.
+  induction prefix as [|p prefix IH]; simpl.
+  - iIntros "[Hfield Hrest]". iFrame "Hfield". iIntros "Hupdated". iFrame.
+  - iIntros "[Hp Hrest]". iDestruct (IH with "Hrest") as "[Hfield Hrest]".
+    iFrame "Hfield". iIntros "Hupdated". iFrame "Hp". by iApply "Hrest".
+Qed.
+End generated_access.

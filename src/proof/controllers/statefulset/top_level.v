@@ -1,4 +1,5 @@
 From New.proof.controllers.statefulset Require Export statefulset_init.
+From New.proof.controllers Require Export common.
 
 (* Pure desired-state definitions used by all three top-level specifications.
    Apart from package initialization, this file imports no other statefulset

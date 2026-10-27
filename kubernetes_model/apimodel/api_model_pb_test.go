@@ -162,7 +162,7 @@ func TestPBT(t *testing.T) {
 
 		// Track existing objects (should match between model and real API)
 		existingObjects := make(map[KKey]bool)
-		kinds := []string{"Pod", "PersistentVolumeClaim", "ReplicaSet", "StatefulSet", "Deployment"}
+		kinds := []string{"Pod", "PersistentVolumeClaim", "ReplicaSet", "StatefulSet", "Deployment", "ControllerRevision"}
 
 		for range 10000 {
 			// Weighted operation selection: favor Create early to build up state.
@@ -316,6 +316,34 @@ func TestPBT(t *testing.T) {
 							return server.GetDeployment(ctx, name)
 						},
 					)
+
+				case "ControllerRevision":
+					testCreate(rt, ctx, state, server, namespace, existingObjects,
+						stats,
+						"ControllerRevision",
+						func(rt *rapid.T) *appsv1.ControllerRevision {
+							switch rapid.IntRange(0, 1).Draw(rt, "validControllerRevisionGenType") {
+							case 0:
+								return generators.MinimalControllerRevisionGen().Draw(rt, "validControllerRevision")
+							default:
+								return generators.ComprehensiveControllerRevisionGen().Draw(rt, "validControllerRevision")
+							}
+						},
+						func(rt *rapid.T) *appsv1.ControllerRevision {
+							return generators.InvalidControllerRevisionGen().Draw(rt, "invalidControllerRevision")
+						},
+						func(d *appsv1.ControllerRevision) *appsv1.ControllerRevision { return d.DeepCopy() },
+						func(ns string, obj *appsv1.ControllerRevision) (*appsv1.ControllerRevision, error) {
+							return state.ControllerRevisionCreate(ns, obj)
+						},
+						func(ctx context.Context, obj *appsv1.ControllerRevision) (*appsv1.ControllerRevision, error) {
+							return server.CreateControllerRevision(ctx, obj)
+						},
+						func(ns, name string) (interface{}, error) { return state.ControllerRevisionGet(ns, name) },
+						func(ctx context.Context, name string) (*appsv1.ControllerRevision, error) {
+							return server.GetControllerRevision(ctx, name)
+						},
+					)
 				}
 			case opRoll < createWeight+updateWeight:
 				kind := rapid.SampledFrom(kinds).Draw(rt, "kind")
@@ -436,9 +464,37 @@ func TestPBT(t *testing.T) {
 						},
 						generators.ComprehensiveDeploymentMut,
 					)
+
+				case "ControllerRevision":
+					testUpdate(
+						rt, ctx, state, server, namespace, existingObjects, stats,
+						"Update", stats.recordUpdate, "ControllerRevision",
+						func(ns, name string) (*appsv1.ControllerRevision, error) {
+							return state.ControllerRevisionGet(ns, name)
+						},
+						func(ctx context.Context, name string) (*appsv1.ControllerRevision, error) {
+							return server.GetControllerRevision(ctx, name)
+						},
+						func(ns string, obj *appsv1.ControllerRevision) (*appsv1.ControllerRevision, error) {
+							return state.ControllerRevisionUpdate(ns, obj)
+						},
+						func(ctx context.Context, obj *appsv1.ControllerRevision) (*appsv1.ControllerRevision, error) {
+							return server.UpdateControllerRevision(ctx, obj)
+						},
+						func(d *appsv1.ControllerRevision) *appsv1.ControllerRevision { return d.DeepCopy() },
+						func(name, namespace string) *appsv1.ControllerRevision {
+							d := generators.MinimalControllerRevisionGen().Example()
+							d.Name = name
+							d.Namespace = namespace
+							return d
+						},
+						generators.ComprehensiveControllerRevisionMut,
+					)
 				}
 			case opRoll < createWeight+updateWeight+updateStatusWeight:
-				kind := rapid.SampledFrom(kinds).Draw(rt, "kind")
+				// ControllerRevision has no status subresource.
+				statusKinds := []string{"Pod", "PersistentVolumeClaim", "ReplicaSet", "StatefulSet", "Deployment"}
+				kind := rapid.SampledFrom(statusKinds).Draw(rt, "kind")
 
 				switch kind {
 				case "Pod":
@@ -637,6 +693,22 @@ func TestPBT(t *testing.T) {
 							return generators.PatchGen("Deployment", false).Draw(rt, "invalidPatch")
 						},
 					)
+
+				case "ControllerRevision":
+					testPatch(
+						rt, ctx, state, server, namespace, existingObjects, stats,
+						"ControllerRevision",
+						state.ControllerRevisionGet,
+						server.GetControllerRevision,
+						state.ControllerRevisionPatch,
+						server.PatchControllerRevision,
+						func(rt *rapid.T) generators.Patch {
+							return generators.PatchGen("ControllerRevision", true).Draw(rt, "validPatch")
+						},
+						func(rt *rapid.T) generators.Patch {
+							return generators.PatchGen("ControllerRevision", false).Draw(rt, "invalidPatch")
+						},
+					)
 				}
 
 			default:
@@ -691,6 +763,16 @@ func TestPBT(t *testing.T) {
 						server.GetDeployment,
 						state.DeploymentDelete,
 						server.DeleteDeployment,
+					)
+
+				case "ControllerRevision":
+					testDelete(
+						rt, ctx, state, server, namespace, existingObjects, stats,
+						"ControllerRevision",
+						state.ControllerRevisionGet,
+						server.GetControllerRevision,
+						state.ControllerRevisionDelete,
+						server.DeleteControllerRevision,
 					)
 				}
 			}

@@ -167,7 +167,7 @@ Lemma wp_allowUnconditionalUpdate_nil_true (kind : go_string) :
 Proof.
   wp_start as "#Hinit".
   wp_auto_keep.
-  do 7 (wp_if_destruct; first (iApply "HΦ"; done)).
+  do 8 (wp_if_destruct; first (iApply "HΦ"; done)).
   wp_apply wp_slice_literal. iSplitR; first done.
   iIntros (args_sl) "[Hargs _]". wp_auto_keep.
   wp_apply (wp_Errorf with "[$Hargs]").

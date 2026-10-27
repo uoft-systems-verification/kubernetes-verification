@@ -531,8 +531,9 @@ Proof.
     apply elem_of_map_to_list in Hin.
     apply map_lookup_filter_Some in Hin as [Hlookup_abs [Hkind _]].
     pose proof (Habs_valid key obj Hlookup_abs) as [Hkey_eq _].
-    destruct obj as [pod|rs|pvc|sts|d].
+    destruct obj as [pod|rs|pvc|sts|d|revision].
     - eexists. done.
+    - exfalso. subst key. simpl in Hkind. done.
     - exfalso. subst key. simpl in Hkind. done.
     - exfalso. subst key. simpl in Hkind. done.
     - exfalso. subst key. simpl in Hkind. done.
@@ -623,7 +624,7 @@ Lemma kobject_list_to_replica_sets objs :
 Proof.
   induction 1 as [|obj objs Hkind _ [replica_sets ->]].
   - exists []. done.
-  - destruct obj as [pod|replica_set|pvc|stateful_set|deployment];
+  - destruct obj as [pod|replica_set|pvc|stateful_set|deployment|revision];
       simpl in Hkind; try discriminate.
     exists (replica_set :: replica_sets). done.
 Qed.

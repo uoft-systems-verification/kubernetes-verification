@@ -184,3 +184,31 @@ func (s *State) ReplicaSetUpdateStatusTx(namespace string, rs *appsv1.ReplicaSet
 
 	return updatedRS, nil
 }
+
+func (s *State) ControllerRevisionUpdateTx(namespace string, rs *appsv1.ControllerRevision) (*appsv1.ControllerRevision, error) {
+	obj, err := s.updateTx("ControllerRevision", namespace, rs)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedRS, ok := obj.(*appsv1.ControllerRevision)
+	if !ok {
+		return nil, fmt.Errorf("transactional update returned unexpected type %T", obj)
+	}
+
+	return updatedRS, nil
+}
+
+func (s *State) StatefulSetUpdateStatusTx(namespace string, rs *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+	obj, err := s.updateStatusTx("StatefulSet", namespace, rs)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedRS, ok := obj.(*appsv1.StatefulSet)
+	if !ok {
+		return nil, fmt.Errorf("transactional status update returned unexpected type %T", obj)
+	}
+
+	return updatedRS, nil
+}

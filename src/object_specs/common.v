@@ -138,7 +138,7 @@ Definition valid_name (kind name : go_string) : Prop :=
   ((kind = "Pod"%go ∨
     kind = "ReplicaSet"%go ∨
     kind = "PersistentVolumeClaim"%go ∨
-    kind = "Deployment"%go) ∧
+    kind = "Deployment"%go ∨ kind = "ControllerRevision"%go) ∧
    valid_dns1123_subdomain name).
 
 (* After resource-specific validation, the API server applies common metadata
@@ -699,5 +699,5 @@ Definition valid_api_version kind api_version : Prop :=
   ((kind = "Pod"%go ∨ kind = "PersistentVolumeClaim"%go) ∧
     api_version = "v1"%go) ∨
   ((kind = "ReplicaSet"%go ∨ kind = "StatefulSet"%go ∨
-    kind = "Deployment"%go) ∧
+    kind = "Deployment"%go ∨ kind = "ControllerRevision"%go) ∧
     api_version = "apps/v1"%go).

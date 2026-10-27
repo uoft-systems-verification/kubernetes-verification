@@ -8,8 +8,9 @@ Goose proofgen emits one `AccessStrict` instance per generated struct field:
 That generic tactic destructs the entire struct ownership with named-prop
 automation and then asks `iFrame` to rebuild it. Large generated structs make
 that path expensive. For structs selected with `--optimize-access`, this script
-rewrites those proof bodies to field-specific proofs that peel only up to the
-accessed field and then rebuild directly.
+rewrites those proof bodies to field-specific applications of a checked lens.
+The lens retains untouched fields together rather than repeatedly rebuilding a
+large proof-mode environment.
 
 For selected structs it can also replace `solve_into_val_typed_struct` with a
 descriptor-based application of `generated_struct_into_val_typed`. The generic
@@ -205,31 +206,34 @@ def qualify_local_types(go_type: str, namespace: str, local_types: set[str]) -> 
     return IDENT_RE.sub(qualify, go_type)
 
 
-def direct_access_proof(field_index: int) -> list[str]:
-    prefix_hyps = [f"H{i}" for i in range(field_index)]
-    frame_hyps = prefix_hyps + ["Hfield", "Hrest"]
-
-    proof = [
-        "Proof.",
-        "  constructor.",
-        '  iIntros "H".',
+def direct_access_proof(field_index: int, fields: list[str], record_ref: str, store: bool) -> list[str]:
+    fraction = "" if store else "{dq}"
+    def prop(field, value=None):
+        value = value or f"v.({record_ref}.{field}')"
+        return f'l.[({record_ref}.t), "{field}"] ↦{fraction} {value}'
+    selected = fields[field_index]
+    before = "; ".join(prop(field) for field in fields[:field_index])
+    after = "; ".join(prop(field) for field in fields[field_index + 1:])
+    old = prop(selected)
+    new = prop(selected, selected + "'") if store else old
+    return [
+        "Proof.", "  constructor.", '  iIntros "H".',
         '  iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.',
         '  iDestruct (typed_pointsto_split with "H") as "H".',
-        "  rewrite /= /named.",
+        f"  pose (prefix := ([{before}] : list (iProp Σ))%I).",
+        f"  pose (suffix := ([{after}] : list (iProp Σ))%I).",
+        f"  iAssert (generated_access_fields (prefix ++ ({old})%I :: suffix))",
+        '    with "[H]" as "Hfields".',
+        '  { unfold prefix, suffix. iExact "H". }',
+        f'  iDestruct (generated_access_fields_acc prefix ({old})%I suffix ({new})%I with "Hfields")',
+        '    as "[Hfield Hrestore]".',
+        '  iSplitL "Hfield"; first iExact "Hfield".',
+        '  iIntros "Hfield".',
+        '  iSpecialize ("Hrestore" with "Hfield").',
+        '  iApply typed_pointsto_combine; first done.',
+        '  unfold prefix, suffix. iExact "Hrestore".',
+        "Qed.",
     ]
-    proof.extend(f'  iDestruct "H" as "[H{i} H]".' for i in range(field_index))
-    proof.extend(
-        [
-            '  iDestruct "H" as "[Hfield Hrest]".',
-            '  iSplitL "Hfield"; first iExact "Hfield".',
-            '  iIntros "Hfield".',
-            "  iApply typed_pointsto_combine; first done.",
-            "  simpl. rewrite /named.",
-            f'  iFrame "{" ".join(frame_hyps)}".',
-            "Qed.",
-        ]
-    )
-    return proof
 
 
 def into_val_proof(
@@ -421,7 +425,8 @@ def rewrite_file(
                     )
                 field_index = fields.index(field_match.group(1))
                 out.extend(block[:-1])
-                out.extend(direct_access_proof(field_index))
+                out.extend(direct_access_proof(field_index, fields, record_ref, "_access_store_" in access_match.group(0)))
+                uses_generated_struct = True
                 access_rewritten += 1
             else:
                 out.extend(block)

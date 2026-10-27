@@ -1317,7 +1317,7 @@ Proof.
   destruct Hmvalid as (_ & Hname_nonempty & _ & _ & _ & Huid_valid & _).
   apply valid_uid_non_empty in Huid_valid.
   rewrite Hkind. split; last done.
-  right. split; first (right; right; done). done.
+  right. split; first (right; right; left; done). done.
 Qed.
 Definition namespace_matches ns_query ns: Prop :=
   ns_query = v1.NamespaceAll ∨ ns_query = ns.

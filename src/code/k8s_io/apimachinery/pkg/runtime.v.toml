@@ -1,6 +1,9 @@
 translate = [
     "Object",
     "ParameterCodec",
+
+    # Complete recursive object representations.
+    "RawExtension",
 ]
 
 imports = [

@@ -318,6 +318,10 @@ func deepCopyAndClear(obj interface{}) interface{} {
 		copy := o.DeepCopy()
 		clearServerAssignedFields(copy)
 		return copy
+	case *appsv1.ControllerRevision:
+		copy := o.DeepCopy()
+		clearServerAssignedFields(copy)
+		return copy
 	case *appsv1.Deployment:
 		copy := o.DeepCopy()
 		clearServerAssignedFields(copy)

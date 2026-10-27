@@ -193,7 +193,7 @@ Proof.
     with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag $Hown_status_frag]").
   iIntros (i kobj) "Hpost". iNamed "Hpost".
   iDestruct "Hpost" as "((Hown_spec_frag & %Hspec_eq) & Hown_status_frag & %Hstatus_eq)".
-  destruct kobj as [pod|rs|pvc|sts|d]; try solve [simpl in Hspec_eq; done].
+  destruct kobj as [pod|rs|pvc|sts|d|revision]; try solve [simpl in Hspec_eq; done].
   simpl in Hvalid', Hkey_eq, Hmeta_eq, Hspec_eq, Hstatus_eq.
   assert (Hspec_eq' : kspec = pod.(PodV.Spec')) by congruence.
   assert (Hstatus_eq' : kstatus = pod.(PodV.Status')) by congruence.
@@ -286,7 +286,7 @@ Proof.
     with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag $Hown_status_frag]").
   iIntros (i kobj) "Hpost". iNamed "Hpost".
   iDestruct "Hpost" as "((Hown_spec_frag & %Hspec_eq) & Hown_status_frag & %Hstatus_eq)".
-  destruct kobj as [pod|rs|pvc|sts|d]; try solve [simpl in Hspec_eq; done].
+  destruct kobj as [pod|rs|pvc|sts|d|revision]; try solve [simpl in Hspec_eq; done].
   simpl in Hvalid', Hkey_eq, Hmeta_eq, Hspec_eq, Hstatus_eq.
   assert (Hspec_eq' : kspec = rs.(ReplicaSetV.Spec')) by congruence.
   assert (Hstatus_eq' : kstatus = rs.(ReplicaSetV.Status')) by congruence.
@@ -384,7 +384,7 @@ Proof.
     with "Hget").
   iIntros (i kobj) "Hpost". iNamed "Hpost".
   iDestruct "Hpost" as "(_ & _)".
-  destruct kobj as [pod|rs|pvc|sts|d];
+  destruct kobj as [pod|rs|pvc|sts|d|revision];
     try solve [
       exfalso;
       apply (f_equal KKey.Kind') in Hkey_eq;
@@ -480,7 +480,7 @@ Proof.
     with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag]").
   iIntros (i kobj) "Hpost". iNamed "Hpost".
   iDestruct "Hpost" as "((Hown_spec_frag & %Hspec_eq) & _)".
-  destruct kobj as [pod|rs|pvc|sts|d];
+  destruct kobj as [pod|rs|pvc|sts|d|revision];
     try solve [simpl in Hspec_eq; done].
   simpl in Hvalid', Hkey_eq, Hmeta_eq, Hspec_eq.
   assert (Hspec_eq' : kspec = sts.(StatefulSetV.Spec')) by congruence.
@@ -573,7 +573,7 @@ Proof.
     with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag]").
   iIntros (i kobj) "Hpost". iNamed "Hpost".
   iDestruct "Hpost" as "((Hown_spec_frag & %Hspec_eq) & _)".
-  destruct kobj as [pod|rs|pvc|sts|d];
+  destruct kobj as [pod|rs|pvc|sts|d|revision];
     try solve [simpl in Hspec_eq; done].
   simpl in Hvalid', Hkey_eq, Hmeta_eq, Hspec_eq.
   assert (Hspec_eq' : kspec = d.(DeploymentV.Spec')) by congruence.

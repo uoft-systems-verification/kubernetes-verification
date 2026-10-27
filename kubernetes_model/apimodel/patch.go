@@ -193,3 +193,12 @@ func (s *State) ClusterRolePatch(name string, patchType types.PatchType, data []
 	}
 	return obj.(*rbacv1.ClusterRole), nil
 }
+
+// ControllerRevisionPatch applies a patch; status subresource requests are rejected.
+func (s *State) ControllerRevisionPatch(namespace, name string, patchType types.PatchType, data []byte, subresources ...string) (*appsv1.ControllerRevision, error) {
+	obj, err := s.patch("ControllerRevision", namespace, name, patchType, data, subresources...)
+	if err != nil {
+		return nil, err
+	}
+	return obj.(*appsv1.ControllerRevision), nil
+}

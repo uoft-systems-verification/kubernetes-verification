@@ -24,6 +24,9 @@ func PatchGen(kind string, valid bool) *rapid.Generator[Patch] {
 		if !valid {
 			modes = []int{4, 5, 6, 9}
 		}
+		if kind == "ControllerRevision" && valid {
+			modes = []int{0, 1, 2, 3, 7, 10, 11, 12}
+		}
 		mode := rapid.SampledFrom(modes).Draw(rt, "patchCase")
 		var document interface{}
 		var subs []string

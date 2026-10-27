@@ -56,8 +56,9 @@ Proof.
         /ObjectMetaV.without_resource_version in Hmeta_fields;
       pose proof (f_equal ObjectMetaV.Generation' Hmeta_fields) as Hgeneration_eq;
       simpl in Hgeneration_eq; rewrite -Hgeneration_eq; exact Hgeneration
-    | injection Hspec_eq as Hspec_field_eq;
-      rewrite -Hspec_field_eq; exact Hspec
+    | first [ injection Hspec_eq as Hspec_field_eq;
+        rewrite -Hspec_field_eq; exact Hspec
+      | unfold ControllerRevisionSpecV.created in *; congruence ]
     | first
         [ exact Hstatus
         | injection Hspec_eq as Hspec_field_eq;

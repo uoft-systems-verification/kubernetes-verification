@@ -3,6 +3,7 @@ Require Export New.proof.proof_prelude.
 From New.proof Require Import generated_struct.
 Require Export New.generatedproof.k8s_io.api.core.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
+Require Export New.generatedproof.k8s_io.apimachinery.pkg.runtime.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.runtime.schema.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.util.intstr.
 Require Export New.golang.theory.
@@ -187,13 +188,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetSpec.t), "Selector"] ↦{dq} v.(v1.StatefulSetSpec.Selector'); l.[(v1.StatefulSetSpec.t), "Template"] ↦{dq} v.(v1.StatefulSetSpec.Template'); l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦{dq} v.(v1.StatefulSetSpec.VolumeClaimTemplates'); l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦{dq} v.(v1.StatefulSetSpec.ServiceName'); l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PodManagementPolicy'); l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦{dq} v.(v1.StatefulSetSpec.UpdateStrategy'); l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦{dq} v.(v1.StatefulSetSpec.RevisionHistoryLimit'); l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦{dq} v.(v1.StatefulSetSpec.MinReadySeconds'); l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy'); l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦{dq} v.(v1.StatefulSetSpec.Ordinals')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetSpec.t), "Replicas"] ↦{dq} v.(v1.StatefulSetSpec.Replicas'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetSpec.t), "Replicas"] ↦{dq} v.(v1.StatefulSetSpec.Replicas'))%I suffix (l.[(v1.StatefulSetSpec.t), "Replicas"] ↦{dq} v.(v1.StatefulSetSpec.Replicas'))%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 
 #[global] Instance StatefulSetSpec_access_store_Replicas l (v : (v1.StatefulSetSpec.t)) Replicas' :
@@ -206,13 +212,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetSpec.t), "Selector"] ↦ v.(v1.StatefulSetSpec.Selector'); l.[(v1.StatefulSetSpec.t), "Template"] ↦ v.(v1.StatefulSetSpec.Template'); l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦ v.(v1.StatefulSetSpec.VolumeClaimTemplates'); l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦ v.(v1.StatefulSetSpec.ServiceName'); l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦ v.(v1.StatefulSetSpec.PodManagementPolicy'); l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦ v.(v1.StatefulSetSpec.UpdateStrategy'); l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦ v.(v1.StatefulSetSpec.RevisionHistoryLimit'); l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦ v.(v1.StatefulSetSpec.MinReadySeconds'); l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦ v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy'); l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦ v.(v1.StatefulSetSpec.Ordinals')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetSpec.t), "Replicas"] ↦ v.(v1.StatefulSetSpec.Replicas'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetSpec.t), "Replicas"] ↦ v.(v1.StatefulSetSpec.Replicas'))%I suffix (l.[(v1.StatefulSetSpec.t), "Replicas"] ↦ Replicas')%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 #[global] Instance StatefulSetSpec_access_load_Selector l (v : (v1.StatefulSetSpec.t)) dq :
   AccessStrict
@@ -224,14 +235,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetSpec.t), "Replicas"] ↦{dq} v.(v1.StatefulSetSpec.Replicas')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetSpec.t), "Template"] ↦{dq} v.(v1.StatefulSetSpec.Template'); l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦{dq} v.(v1.StatefulSetSpec.VolumeClaimTemplates'); l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦{dq} v.(v1.StatefulSetSpec.ServiceName'); l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PodManagementPolicy'); l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦{dq} v.(v1.StatefulSetSpec.UpdateStrategy'); l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦{dq} v.(v1.StatefulSetSpec.RevisionHistoryLimit'); l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦{dq} v.(v1.StatefulSetSpec.MinReadySeconds'); l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy'); l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦{dq} v.(v1.StatefulSetSpec.Ordinals')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetSpec.t), "Selector"] ↦{dq} v.(v1.StatefulSetSpec.Selector'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetSpec.t), "Selector"] ↦{dq} v.(v1.StatefulSetSpec.Selector'))%I suffix (l.[(v1.StatefulSetSpec.t), "Selector"] ↦{dq} v.(v1.StatefulSetSpec.Selector'))%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 
 #[global] Instance StatefulSetSpec_access_store_Selector l (v : (v1.StatefulSetSpec.t)) Selector' :
@@ -244,14 +259,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetSpec.t), "Replicas"] ↦ v.(v1.StatefulSetSpec.Replicas')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetSpec.t), "Template"] ↦ v.(v1.StatefulSetSpec.Template'); l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦ v.(v1.StatefulSetSpec.VolumeClaimTemplates'); l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦ v.(v1.StatefulSetSpec.ServiceName'); l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦ v.(v1.StatefulSetSpec.PodManagementPolicy'); l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦ v.(v1.StatefulSetSpec.UpdateStrategy'); l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦ v.(v1.StatefulSetSpec.RevisionHistoryLimit'); l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦ v.(v1.StatefulSetSpec.MinReadySeconds'); l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦ v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy'); l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦ v.(v1.StatefulSetSpec.Ordinals')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetSpec.t), "Selector"] ↦ v.(v1.StatefulSetSpec.Selector'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetSpec.t), "Selector"] ↦ v.(v1.StatefulSetSpec.Selector'))%I suffix (l.[(v1.StatefulSetSpec.t), "Selector"] ↦ Selector')%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 #[global] Instance StatefulSetSpec_access_load_Template l (v : (v1.StatefulSetSpec.t)) dq :
   AccessStrict
@@ -263,15 +282,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetSpec.t), "Replicas"] ↦{dq} v.(v1.StatefulSetSpec.Replicas'); l.[(v1.StatefulSetSpec.t), "Selector"] ↦{dq} v.(v1.StatefulSetSpec.Selector')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦{dq} v.(v1.StatefulSetSpec.VolumeClaimTemplates'); l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦{dq} v.(v1.StatefulSetSpec.ServiceName'); l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PodManagementPolicy'); l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦{dq} v.(v1.StatefulSetSpec.UpdateStrategy'); l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦{dq} v.(v1.StatefulSetSpec.RevisionHistoryLimit'); l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦{dq} v.(v1.StatefulSetSpec.MinReadySeconds'); l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy'); l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦{dq} v.(v1.StatefulSetSpec.Ordinals')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetSpec.t), "Template"] ↦{dq} v.(v1.StatefulSetSpec.Template'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetSpec.t), "Template"] ↦{dq} v.(v1.StatefulSetSpec.Template'))%I suffix (l.[(v1.StatefulSetSpec.t), "Template"] ↦{dq} v.(v1.StatefulSetSpec.Template'))%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 
 #[global] Instance StatefulSetSpec_access_store_Template l (v : (v1.StatefulSetSpec.t)) Template' :
@@ -284,15 +306,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetSpec.t), "Replicas"] ↦ v.(v1.StatefulSetSpec.Replicas'); l.[(v1.StatefulSetSpec.t), "Selector"] ↦ v.(v1.StatefulSetSpec.Selector')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦ v.(v1.StatefulSetSpec.VolumeClaimTemplates'); l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦ v.(v1.StatefulSetSpec.ServiceName'); l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦ v.(v1.StatefulSetSpec.PodManagementPolicy'); l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦ v.(v1.StatefulSetSpec.UpdateStrategy'); l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦ v.(v1.StatefulSetSpec.RevisionHistoryLimit'); l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦ v.(v1.StatefulSetSpec.MinReadySeconds'); l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦ v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy'); l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦ v.(v1.StatefulSetSpec.Ordinals')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetSpec.t), "Template"] ↦ v.(v1.StatefulSetSpec.Template'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetSpec.t), "Template"] ↦ v.(v1.StatefulSetSpec.Template'))%I suffix (l.[(v1.StatefulSetSpec.t), "Template"] ↦ Template')%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 #[global] Instance StatefulSetSpec_access_load_VolumeClaimTemplates l (v : (v1.StatefulSetSpec.t)) dq :
   AccessStrict
@@ -304,16 +329,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetSpec.t), "Replicas"] ↦{dq} v.(v1.StatefulSetSpec.Replicas'); l.[(v1.StatefulSetSpec.t), "Selector"] ↦{dq} v.(v1.StatefulSetSpec.Selector'); l.[(v1.StatefulSetSpec.t), "Template"] ↦{dq} v.(v1.StatefulSetSpec.Template')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦{dq} v.(v1.StatefulSetSpec.ServiceName'); l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PodManagementPolicy'); l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦{dq} v.(v1.StatefulSetSpec.UpdateStrategy'); l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦{dq} v.(v1.StatefulSetSpec.RevisionHistoryLimit'); l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦{dq} v.(v1.StatefulSetSpec.MinReadySeconds'); l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy'); l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦{dq} v.(v1.StatefulSetSpec.Ordinals')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦{dq} v.(v1.StatefulSetSpec.VolumeClaimTemplates'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦{dq} v.(v1.StatefulSetSpec.VolumeClaimTemplates'))%I suffix (l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦{dq} v.(v1.StatefulSetSpec.VolumeClaimTemplates'))%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 
 #[global] Instance StatefulSetSpec_access_store_VolumeClaimTemplates l (v : (v1.StatefulSetSpec.t)) VolumeClaimTemplates' :
@@ -326,16 +353,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetSpec.t), "Replicas"] ↦ v.(v1.StatefulSetSpec.Replicas'); l.[(v1.StatefulSetSpec.t), "Selector"] ↦ v.(v1.StatefulSetSpec.Selector'); l.[(v1.StatefulSetSpec.t), "Template"] ↦ v.(v1.StatefulSetSpec.Template')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦ v.(v1.StatefulSetSpec.ServiceName'); l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦ v.(v1.StatefulSetSpec.PodManagementPolicy'); l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦ v.(v1.StatefulSetSpec.UpdateStrategy'); l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦ v.(v1.StatefulSetSpec.RevisionHistoryLimit'); l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦ v.(v1.StatefulSetSpec.MinReadySeconds'); l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦ v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy'); l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦ v.(v1.StatefulSetSpec.Ordinals')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦ v.(v1.StatefulSetSpec.VolumeClaimTemplates'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦ v.(v1.StatefulSetSpec.VolumeClaimTemplates'))%I suffix (l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦ VolumeClaimTemplates')%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 #[global] Instance StatefulSetSpec_access_load_ServiceName l (v : (v1.StatefulSetSpec.t)) dq :
   AccessStrict
@@ -347,17 +376,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetSpec.t), "Replicas"] ↦{dq} v.(v1.StatefulSetSpec.Replicas'); l.[(v1.StatefulSetSpec.t), "Selector"] ↦{dq} v.(v1.StatefulSetSpec.Selector'); l.[(v1.StatefulSetSpec.t), "Template"] ↦{dq} v.(v1.StatefulSetSpec.Template'); l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦{dq} v.(v1.StatefulSetSpec.VolumeClaimTemplates')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PodManagementPolicy'); l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦{dq} v.(v1.StatefulSetSpec.UpdateStrategy'); l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦{dq} v.(v1.StatefulSetSpec.RevisionHistoryLimit'); l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦{dq} v.(v1.StatefulSetSpec.MinReadySeconds'); l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy'); l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦{dq} v.(v1.StatefulSetSpec.Ordinals')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦{dq} v.(v1.StatefulSetSpec.ServiceName'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦{dq} v.(v1.StatefulSetSpec.ServiceName'))%I suffix (l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦{dq} v.(v1.StatefulSetSpec.ServiceName'))%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 
 #[global] Instance StatefulSetSpec_access_store_ServiceName l (v : (v1.StatefulSetSpec.t)) ServiceName' :
@@ -370,17 +400,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetSpec.t), "Replicas"] ↦ v.(v1.StatefulSetSpec.Replicas'); l.[(v1.StatefulSetSpec.t), "Selector"] ↦ v.(v1.StatefulSetSpec.Selector'); l.[(v1.StatefulSetSpec.t), "Template"] ↦ v.(v1.StatefulSetSpec.Template'); l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦ v.(v1.StatefulSetSpec.VolumeClaimTemplates')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦ v.(v1.StatefulSetSpec.PodManagementPolicy'); l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦ v.(v1.StatefulSetSpec.UpdateStrategy'); l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦ v.(v1.StatefulSetSpec.RevisionHistoryLimit'); l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦ v.(v1.StatefulSetSpec.MinReadySeconds'); l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦ v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy'); l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦ v.(v1.StatefulSetSpec.Ordinals')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦ v.(v1.StatefulSetSpec.ServiceName'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦ v.(v1.StatefulSetSpec.ServiceName'))%I suffix (l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦ ServiceName')%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 #[global] Instance StatefulSetSpec_access_load_PodManagementPolicy l (v : (v1.StatefulSetSpec.t)) dq :
   AccessStrict
@@ -392,18 +423,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[H4 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetSpec.t), "Replicas"] ↦{dq} v.(v1.StatefulSetSpec.Replicas'); l.[(v1.StatefulSetSpec.t), "Selector"] ↦{dq} v.(v1.StatefulSetSpec.Selector'); l.[(v1.StatefulSetSpec.t), "Template"] ↦{dq} v.(v1.StatefulSetSpec.Template'); l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦{dq} v.(v1.StatefulSetSpec.VolumeClaimTemplates'); l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦{dq} v.(v1.StatefulSetSpec.ServiceName')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦{dq} v.(v1.StatefulSetSpec.UpdateStrategy'); l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦{dq} v.(v1.StatefulSetSpec.RevisionHistoryLimit'); l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦{dq} v.(v1.StatefulSetSpec.MinReadySeconds'); l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy'); l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦{dq} v.(v1.StatefulSetSpec.Ordinals')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PodManagementPolicy'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PodManagementPolicy'))%I suffix (l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PodManagementPolicy'))%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 H4 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 
 #[global] Instance StatefulSetSpec_access_store_PodManagementPolicy l (v : (v1.StatefulSetSpec.t)) PodManagementPolicy' :
@@ -416,18 +447,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[H4 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetSpec.t), "Replicas"] ↦ v.(v1.StatefulSetSpec.Replicas'); l.[(v1.StatefulSetSpec.t), "Selector"] ↦ v.(v1.StatefulSetSpec.Selector'); l.[(v1.StatefulSetSpec.t), "Template"] ↦ v.(v1.StatefulSetSpec.Template'); l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦ v.(v1.StatefulSetSpec.VolumeClaimTemplates'); l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦ v.(v1.StatefulSetSpec.ServiceName')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦ v.(v1.StatefulSetSpec.UpdateStrategy'); l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦ v.(v1.StatefulSetSpec.RevisionHistoryLimit'); l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦ v.(v1.StatefulSetSpec.MinReadySeconds'); l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦ v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy'); l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦ v.(v1.StatefulSetSpec.Ordinals')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦ v.(v1.StatefulSetSpec.PodManagementPolicy'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦ v.(v1.StatefulSetSpec.PodManagementPolicy'))%I suffix (l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦ PodManagementPolicy')%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 H4 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 #[global] Instance StatefulSetSpec_access_load_UpdateStrategy l (v : (v1.StatefulSetSpec.t)) dq :
   AccessStrict
@@ -439,19 +470,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[H4 H]".
-  iDestruct "H" as "[H5 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetSpec.t), "Replicas"] ↦{dq} v.(v1.StatefulSetSpec.Replicas'); l.[(v1.StatefulSetSpec.t), "Selector"] ↦{dq} v.(v1.StatefulSetSpec.Selector'); l.[(v1.StatefulSetSpec.t), "Template"] ↦{dq} v.(v1.StatefulSetSpec.Template'); l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦{dq} v.(v1.StatefulSetSpec.VolumeClaimTemplates'); l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦{dq} v.(v1.StatefulSetSpec.ServiceName'); l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PodManagementPolicy')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦{dq} v.(v1.StatefulSetSpec.RevisionHistoryLimit'); l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦{dq} v.(v1.StatefulSetSpec.MinReadySeconds'); l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy'); l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦{dq} v.(v1.StatefulSetSpec.Ordinals')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦{dq} v.(v1.StatefulSetSpec.UpdateStrategy'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦{dq} v.(v1.StatefulSetSpec.UpdateStrategy'))%I suffix (l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦{dq} v.(v1.StatefulSetSpec.UpdateStrategy'))%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 H4 H5 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 
 #[global] Instance StatefulSetSpec_access_store_UpdateStrategy l (v : (v1.StatefulSetSpec.t)) UpdateStrategy' :
@@ -464,19 +494,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[H4 H]".
-  iDestruct "H" as "[H5 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetSpec.t), "Replicas"] ↦ v.(v1.StatefulSetSpec.Replicas'); l.[(v1.StatefulSetSpec.t), "Selector"] ↦ v.(v1.StatefulSetSpec.Selector'); l.[(v1.StatefulSetSpec.t), "Template"] ↦ v.(v1.StatefulSetSpec.Template'); l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦ v.(v1.StatefulSetSpec.VolumeClaimTemplates'); l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦ v.(v1.StatefulSetSpec.ServiceName'); l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦ v.(v1.StatefulSetSpec.PodManagementPolicy')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦ v.(v1.StatefulSetSpec.RevisionHistoryLimit'); l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦ v.(v1.StatefulSetSpec.MinReadySeconds'); l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦ v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy'); l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦ v.(v1.StatefulSetSpec.Ordinals')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦ v.(v1.StatefulSetSpec.UpdateStrategy'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦ v.(v1.StatefulSetSpec.UpdateStrategy'))%I suffix (l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦ UpdateStrategy')%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 H4 H5 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 #[global] Instance StatefulSetSpec_access_load_RevisionHistoryLimit l (v : (v1.StatefulSetSpec.t)) dq :
   AccessStrict
@@ -488,20 +517,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[H4 H]".
-  iDestruct "H" as "[H5 H]".
-  iDestruct "H" as "[H6 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetSpec.t), "Replicas"] ↦{dq} v.(v1.StatefulSetSpec.Replicas'); l.[(v1.StatefulSetSpec.t), "Selector"] ↦{dq} v.(v1.StatefulSetSpec.Selector'); l.[(v1.StatefulSetSpec.t), "Template"] ↦{dq} v.(v1.StatefulSetSpec.Template'); l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦{dq} v.(v1.StatefulSetSpec.VolumeClaimTemplates'); l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦{dq} v.(v1.StatefulSetSpec.ServiceName'); l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PodManagementPolicy'); l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦{dq} v.(v1.StatefulSetSpec.UpdateStrategy')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦{dq} v.(v1.StatefulSetSpec.MinReadySeconds'); l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy'); l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦{dq} v.(v1.StatefulSetSpec.Ordinals')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦{dq} v.(v1.StatefulSetSpec.RevisionHistoryLimit'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦{dq} v.(v1.StatefulSetSpec.RevisionHistoryLimit'))%I suffix (l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦{dq} v.(v1.StatefulSetSpec.RevisionHistoryLimit'))%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 H4 H5 H6 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 
 #[global] Instance StatefulSetSpec_access_store_RevisionHistoryLimit l (v : (v1.StatefulSetSpec.t)) RevisionHistoryLimit' :
@@ -514,20 +541,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[H4 H]".
-  iDestruct "H" as "[H5 H]".
-  iDestruct "H" as "[H6 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetSpec.t), "Replicas"] ↦ v.(v1.StatefulSetSpec.Replicas'); l.[(v1.StatefulSetSpec.t), "Selector"] ↦ v.(v1.StatefulSetSpec.Selector'); l.[(v1.StatefulSetSpec.t), "Template"] ↦ v.(v1.StatefulSetSpec.Template'); l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦ v.(v1.StatefulSetSpec.VolumeClaimTemplates'); l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦ v.(v1.StatefulSetSpec.ServiceName'); l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦ v.(v1.StatefulSetSpec.PodManagementPolicy'); l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦ v.(v1.StatefulSetSpec.UpdateStrategy')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦ v.(v1.StatefulSetSpec.MinReadySeconds'); l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦ v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy'); l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦ v.(v1.StatefulSetSpec.Ordinals')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦ v.(v1.StatefulSetSpec.RevisionHistoryLimit'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦ v.(v1.StatefulSetSpec.RevisionHistoryLimit'))%I suffix (l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦ RevisionHistoryLimit')%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 H4 H5 H6 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 #[global] Instance StatefulSetSpec_access_load_MinReadySeconds l (v : (v1.StatefulSetSpec.t)) dq :
   AccessStrict
@@ -539,21 +564,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[H4 H]".
-  iDestruct "H" as "[H5 H]".
-  iDestruct "H" as "[H6 H]".
-  iDestruct "H" as "[H7 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetSpec.t), "Replicas"] ↦{dq} v.(v1.StatefulSetSpec.Replicas'); l.[(v1.StatefulSetSpec.t), "Selector"] ↦{dq} v.(v1.StatefulSetSpec.Selector'); l.[(v1.StatefulSetSpec.t), "Template"] ↦{dq} v.(v1.StatefulSetSpec.Template'); l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦{dq} v.(v1.StatefulSetSpec.VolumeClaimTemplates'); l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦{dq} v.(v1.StatefulSetSpec.ServiceName'); l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PodManagementPolicy'); l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦{dq} v.(v1.StatefulSetSpec.UpdateStrategy'); l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦{dq} v.(v1.StatefulSetSpec.RevisionHistoryLimit')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy'); l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦{dq} v.(v1.StatefulSetSpec.Ordinals')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦{dq} v.(v1.StatefulSetSpec.MinReadySeconds'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦{dq} v.(v1.StatefulSetSpec.MinReadySeconds'))%I suffix (l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦{dq} v.(v1.StatefulSetSpec.MinReadySeconds'))%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 
 #[global] Instance StatefulSetSpec_access_store_MinReadySeconds l (v : (v1.StatefulSetSpec.t)) MinReadySeconds' :
@@ -566,21 +588,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[H4 H]".
-  iDestruct "H" as "[H5 H]".
-  iDestruct "H" as "[H6 H]".
-  iDestruct "H" as "[H7 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetSpec.t), "Replicas"] ↦ v.(v1.StatefulSetSpec.Replicas'); l.[(v1.StatefulSetSpec.t), "Selector"] ↦ v.(v1.StatefulSetSpec.Selector'); l.[(v1.StatefulSetSpec.t), "Template"] ↦ v.(v1.StatefulSetSpec.Template'); l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦ v.(v1.StatefulSetSpec.VolumeClaimTemplates'); l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦ v.(v1.StatefulSetSpec.ServiceName'); l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦ v.(v1.StatefulSetSpec.PodManagementPolicy'); l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦ v.(v1.StatefulSetSpec.UpdateStrategy'); l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦ v.(v1.StatefulSetSpec.RevisionHistoryLimit')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦ v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy'); l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦ v.(v1.StatefulSetSpec.Ordinals')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦ v.(v1.StatefulSetSpec.MinReadySeconds'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦ v.(v1.StatefulSetSpec.MinReadySeconds'))%I suffix (l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦ MinReadySeconds')%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 #[global] Instance StatefulSetSpec_access_load_PersistentVolumeClaimRetentionPolicy l (v : (v1.StatefulSetSpec.t)) dq :
   AccessStrict
@@ -592,22 +611,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[H4 H]".
-  iDestruct "H" as "[H5 H]".
-  iDestruct "H" as "[H6 H]".
-  iDestruct "H" as "[H7 H]".
-  iDestruct "H" as "[H8 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetSpec.t), "Replicas"] ↦{dq} v.(v1.StatefulSetSpec.Replicas'); l.[(v1.StatefulSetSpec.t), "Selector"] ↦{dq} v.(v1.StatefulSetSpec.Selector'); l.[(v1.StatefulSetSpec.t), "Template"] ↦{dq} v.(v1.StatefulSetSpec.Template'); l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦{dq} v.(v1.StatefulSetSpec.VolumeClaimTemplates'); l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦{dq} v.(v1.StatefulSetSpec.ServiceName'); l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PodManagementPolicy'); l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦{dq} v.(v1.StatefulSetSpec.UpdateStrategy'); l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦{dq} v.(v1.StatefulSetSpec.RevisionHistoryLimit'); l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦{dq} v.(v1.StatefulSetSpec.MinReadySeconds')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦{dq} v.(v1.StatefulSetSpec.Ordinals')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy'))%I suffix (l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy'))%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 
 #[global] Instance StatefulSetSpec_access_store_PersistentVolumeClaimRetentionPolicy l (v : (v1.StatefulSetSpec.t)) PersistentVolumeClaimRetentionPolicy' :
@@ -620,22 +635,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[H4 H]".
-  iDestruct "H" as "[H5 H]".
-  iDestruct "H" as "[H6 H]".
-  iDestruct "H" as "[H7 H]".
-  iDestruct "H" as "[H8 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetSpec.t), "Replicas"] ↦ v.(v1.StatefulSetSpec.Replicas'); l.[(v1.StatefulSetSpec.t), "Selector"] ↦ v.(v1.StatefulSetSpec.Selector'); l.[(v1.StatefulSetSpec.t), "Template"] ↦ v.(v1.StatefulSetSpec.Template'); l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦ v.(v1.StatefulSetSpec.VolumeClaimTemplates'); l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦ v.(v1.StatefulSetSpec.ServiceName'); l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦ v.(v1.StatefulSetSpec.PodManagementPolicy'); l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦ v.(v1.StatefulSetSpec.UpdateStrategy'); l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦ v.(v1.StatefulSetSpec.RevisionHistoryLimit'); l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦ v.(v1.StatefulSetSpec.MinReadySeconds')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦ v.(v1.StatefulSetSpec.Ordinals')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦ v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦ v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy'))%I suffix (l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦ PersistentVolumeClaimRetentionPolicy')%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 #[global] Instance StatefulSetSpec_access_load_Ordinals l (v : (v1.StatefulSetSpec.t)) dq :
   AccessStrict
@@ -647,23 +658,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[H4 H]".
-  iDestruct "H" as "[H5 H]".
-  iDestruct "H" as "[H6 H]".
-  iDestruct "H" as "[H7 H]".
-  iDestruct "H" as "[H8 H]".
-  iDestruct "H" as "[H9 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetSpec.t), "Replicas"] ↦{dq} v.(v1.StatefulSetSpec.Replicas'); l.[(v1.StatefulSetSpec.t), "Selector"] ↦{dq} v.(v1.StatefulSetSpec.Selector'); l.[(v1.StatefulSetSpec.t), "Template"] ↦{dq} v.(v1.StatefulSetSpec.Template'); l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦{dq} v.(v1.StatefulSetSpec.VolumeClaimTemplates'); l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦{dq} v.(v1.StatefulSetSpec.ServiceName'); l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PodManagementPolicy'); l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦{dq} v.(v1.StatefulSetSpec.UpdateStrategy'); l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦{dq} v.(v1.StatefulSetSpec.RevisionHistoryLimit'); l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦{dq} v.(v1.StatefulSetSpec.MinReadySeconds'); l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦{dq} v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy')] : list (iProp Σ))%I).
+  pose (suffix := ([] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦{dq} v.(v1.StatefulSetSpec.Ordinals'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦{dq} v.(v1.StatefulSetSpec.Ordinals'))%I suffix (l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦{dq} v.(v1.StatefulSetSpec.Ordinals'))%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 
 #[global] Instance StatefulSetSpec_access_store_Ordinals l (v : (v1.StatefulSetSpec.t)) Ordinals' :
@@ -676,23 +682,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[H4 H]".
-  iDestruct "H" as "[H5 H]".
-  iDestruct "H" as "[H6 H]".
-  iDestruct "H" as "[H7 H]".
-  iDestruct "H" as "[H8 H]".
-  iDestruct "H" as "[H9 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetSpec.t), "Replicas"] ↦ v.(v1.StatefulSetSpec.Replicas'); l.[(v1.StatefulSetSpec.t), "Selector"] ↦ v.(v1.StatefulSetSpec.Selector'); l.[(v1.StatefulSetSpec.t), "Template"] ↦ v.(v1.StatefulSetSpec.Template'); l.[(v1.StatefulSetSpec.t), "VolumeClaimTemplates"] ↦ v.(v1.StatefulSetSpec.VolumeClaimTemplates'); l.[(v1.StatefulSetSpec.t), "ServiceName"] ↦ v.(v1.StatefulSetSpec.ServiceName'); l.[(v1.StatefulSetSpec.t), "PodManagementPolicy"] ↦ v.(v1.StatefulSetSpec.PodManagementPolicy'); l.[(v1.StatefulSetSpec.t), "UpdateStrategy"] ↦ v.(v1.StatefulSetSpec.UpdateStrategy'); l.[(v1.StatefulSetSpec.t), "RevisionHistoryLimit"] ↦ v.(v1.StatefulSetSpec.RevisionHistoryLimit'); l.[(v1.StatefulSetSpec.t), "MinReadySeconds"] ↦ v.(v1.StatefulSetSpec.MinReadySeconds'); l.[(v1.StatefulSetSpec.t), "PersistentVolumeClaimRetentionPolicy"] ↦ v.(v1.StatefulSetSpec.PersistentVolumeClaimRetentionPolicy')] : list (iProp Σ))%I).
+  pose (suffix := ([] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦ v.(v1.StatefulSetSpec.Ordinals'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦ v.(v1.StatefulSetSpec.Ordinals'))%I suffix (l.[(v1.StatefulSetSpec.t), "Ordinals"] ↦ Ordinals')%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 H9 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 
 End def.
@@ -813,13 +814,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetStatus.t), "Replicas"] ↦{dq} v.(v1.StatefulSetStatus.Replicas'); l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦{dq} v.(v1.StatefulSetStatus.ReadyReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦{dq} v.(v1.StatefulSetStatus.CurrentReplicas'); l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦{dq} v.(v1.StatefulSetStatus.UpdatedReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦{dq} v.(v1.StatefulSetStatus.CurrentRevision'); l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦{dq} v.(v1.StatefulSetStatus.UpdateRevision'); l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦{dq} v.(v1.StatefulSetStatus.CollisionCount'); l.[(v1.StatefulSetStatus.t), "Conditions"] ↦{dq} v.(v1.StatefulSetStatus.Conditions'); l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦{dq} v.(v1.StatefulSetStatus.AvailableReplicas')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦{dq} v.(v1.StatefulSetStatus.ObservedGeneration'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦{dq} v.(v1.StatefulSetStatus.ObservedGeneration'))%I suffix (l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦{dq} v.(v1.StatefulSetStatus.ObservedGeneration'))%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 
 #[global] Instance StatefulSetStatus_access_store_ObservedGeneration l (v : (v1.StatefulSetStatus.t)) ObservedGeneration' :
@@ -832,13 +838,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetStatus.t), "Replicas"] ↦ v.(v1.StatefulSetStatus.Replicas'); l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦ v.(v1.StatefulSetStatus.ReadyReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦ v.(v1.StatefulSetStatus.CurrentReplicas'); l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦ v.(v1.StatefulSetStatus.UpdatedReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦ v.(v1.StatefulSetStatus.CurrentRevision'); l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦ v.(v1.StatefulSetStatus.UpdateRevision'); l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦ v.(v1.StatefulSetStatus.CollisionCount'); l.[(v1.StatefulSetStatus.t), "Conditions"] ↦ v.(v1.StatefulSetStatus.Conditions'); l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦ v.(v1.StatefulSetStatus.AvailableReplicas')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦ v.(v1.StatefulSetStatus.ObservedGeneration'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦ v.(v1.StatefulSetStatus.ObservedGeneration'))%I suffix (l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦ ObservedGeneration')%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 #[global] Instance StatefulSetStatus_access_load_Replicas l (v : (v1.StatefulSetStatus.t)) dq :
   AccessStrict
@@ -850,14 +861,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦{dq} v.(v1.StatefulSetStatus.ObservedGeneration')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦{dq} v.(v1.StatefulSetStatus.ReadyReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦{dq} v.(v1.StatefulSetStatus.CurrentReplicas'); l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦{dq} v.(v1.StatefulSetStatus.UpdatedReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦{dq} v.(v1.StatefulSetStatus.CurrentRevision'); l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦{dq} v.(v1.StatefulSetStatus.UpdateRevision'); l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦{dq} v.(v1.StatefulSetStatus.CollisionCount'); l.[(v1.StatefulSetStatus.t), "Conditions"] ↦{dq} v.(v1.StatefulSetStatus.Conditions'); l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦{dq} v.(v1.StatefulSetStatus.AvailableReplicas')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetStatus.t), "Replicas"] ↦{dq} v.(v1.StatefulSetStatus.Replicas'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetStatus.t), "Replicas"] ↦{dq} v.(v1.StatefulSetStatus.Replicas'))%I suffix (l.[(v1.StatefulSetStatus.t), "Replicas"] ↦{dq} v.(v1.StatefulSetStatus.Replicas'))%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 
 #[global] Instance StatefulSetStatus_access_store_Replicas l (v : (v1.StatefulSetStatus.t)) Replicas' :
@@ -870,14 +885,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦ v.(v1.StatefulSetStatus.ObservedGeneration')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦ v.(v1.StatefulSetStatus.ReadyReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦ v.(v1.StatefulSetStatus.CurrentReplicas'); l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦ v.(v1.StatefulSetStatus.UpdatedReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦ v.(v1.StatefulSetStatus.CurrentRevision'); l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦ v.(v1.StatefulSetStatus.UpdateRevision'); l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦ v.(v1.StatefulSetStatus.CollisionCount'); l.[(v1.StatefulSetStatus.t), "Conditions"] ↦ v.(v1.StatefulSetStatus.Conditions'); l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦ v.(v1.StatefulSetStatus.AvailableReplicas')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetStatus.t), "Replicas"] ↦ v.(v1.StatefulSetStatus.Replicas'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetStatus.t), "Replicas"] ↦ v.(v1.StatefulSetStatus.Replicas'))%I suffix (l.[(v1.StatefulSetStatus.t), "Replicas"] ↦ Replicas')%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 #[global] Instance StatefulSetStatus_access_load_ReadyReplicas l (v : (v1.StatefulSetStatus.t)) dq :
   AccessStrict
@@ -889,15 +908,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦{dq} v.(v1.StatefulSetStatus.ObservedGeneration'); l.[(v1.StatefulSetStatus.t), "Replicas"] ↦{dq} v.(v1.StatefulSetStatus.Replicas')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦{dq} v.(v1.StatefulSetStatus.CurrentReplicas'); l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦{dq} v.(v1.StatefulSetStatus.UpdatedReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦{dq} v.(v1.StatefulSetStatus.CurrentRevision'); l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦{dq} v.(v1.StatefulSetStatus.UpdateRevision'); l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦{dq} v.(v1.StatefulSetStatus.CollisionCount'); l.[(v1.StatefulSetStatus.t), "Conditions"] ↦{dq} v.(v1.StatefulSetStatus.Conditions'); l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦{dq} v.(v1.StatefulSetStatus.AvailableReplicas')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦{dq} v.(v1.StatefulSetStatus.ReadyReplicas'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦{dq} v.(v1.StatefulSetStatus.ReadyReplicas'))%I suffix (l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦{dq} v.(v1.StatefulSetStatus.ReadyReplicas'))%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 
 #[global] Instance StatefulSetStatus_access_store_ReadyReplicas l (v : (v1.StatefulSetStatus.t)) ReadyReplicas' :
@@ -910,15 +932,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦ v.(v1.StatefulSetStatus.ObservedGeneration'); l.[(v1.StatefulSetStatus.t), "Replicas"] ↦ v.(v1.StatefulSetStatus.Replicas')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦ v.(v1.StatefulSetStatus.CurrentReplicas'); l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦ v.(v1.StatefulSetStatus.UpdatedReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦ v.(v1.StatefulSetStatus.CurrentRevision'); l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦ v.(v1.StatefulSetStatus.UpdateRevision'); l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦ v.(v1.StatefulSetStatus.CollisionCount'); l.[(v1.StatefulSetStatus.t), "Conditions"] ↦ v.(v1.StatefulSetStatus.Conditions'); l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦ v.(v1.StatefulSetStatus.AvailableReplicas')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦ v.(v1.StatefulSetStatus.ReadyReplicas'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦ v.(v1.StatefulSetStatus.ReadyReplicas'))%I suffix (l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦ ReadyReplicas')%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 #[global] Instance StatefulSetStatus_access_load_CurrentReplicas l (v : (v1.StatefulSetStatus.t)) dq :
   AccessStrict
@@ -930,16 +955,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦{dq} v.(v1.StatefulSetStatus.ObservedGeneration'); l.[(v1.StatefulSetStatus.t), "Replicas"] ↦{dq} v.(v1.StatefulSetStatus.Replicas'); l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦{dq} v.(v1.StatefulSetStatus.ReadyReplicas')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦{dq} v.(v1.StatefulSetStatus.UpdatedReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦{dq} v.(v1.StatefulSetStatus.CurrentRevision'); l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦{dq} v.(v1.StatefulSetStatus.UpdateRevision'); l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦{dq} v.(v1.StatefulSetStatus.CollisionCount'); l.[(v1.StatefulSetStatus.t), "Conditions"] ↦{dq} v.(v1.StatefulSetStatus.Conditions'); l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦{dq} v.(v1.StatefulSetStatus.AvailableReplicas')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦{dq} v.(v1.StatefulSetStatus.CurrentReplicas'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦{dq} v.(v1.StatefulSetStatus.CurrentReplicas'))%I suffix (l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦{dq} v.(v1.StatefulSetStatus.CurrentReplicas'))%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 
 #[global] Instance StatefulSetStatus_access_store_CurrentReplicas l (v : (v1.StatefulSetStatus.t)) CurrentReplicas' :
@@ -952,16 +979,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦ v.(v1.StatefulSetStatus.ObservedGeneration'); l.[(v1.StatefulSetStatus.t), "Replicas"] ↦ v.(v1.StatefulSetStatus.Replicas'); l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦ v.(v1.StatefulSetStatus.ReadyReplicas')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦ v.(v1.StatefulSetStatus.UpdatedReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦ v.(v1.StatefulSetStatus.CurrentRevision'); l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦ v.(v1.StatefulSetStatus.UpdateRevision'); l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦ v.(v1.StatefulSetStatus.CollisionCount'); l.[(v1.StatefulSetStatus.t), "Conditions"] ↦ v.(v1.StatefulSetStatus.Conditions'); l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦ v.(v1.StatefulSetStatus.AvailableReplicas')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦ v.(v1.StatefulSetStatus.CurrentReplicas'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦ v.(v1.StatefulSetStatus.CurrentReplicas'))%I suffix (l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦ CurrentReplicas')%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 #[global] Instance StatefulSetStatus_access_load_UpdatedReplicas l (v : (v1.StatefulSetStatus.t)) dq :
   AccessStrict
@@ -973,17 +1002,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦{dq} v.(v1.StatefulSetStatus.ObservedGeneration'); l.[(v1.StatefulSetStatus.t), "Replicas"] ↦{dq} v.(v1.StatefulSetStatus.Replicas'); l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦{dq} v.(v1.StatefulSetStatus.ReadyReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦{dq} v.(v1.StatefulSetStatus.CurrentReplicas')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦{dq} v.(v1.StatefulSetStatus.CurrentRevision'); l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦{dq} v.(v1.StatefulSetStatus.UpdateRevision'); l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦{dq} v.(v1.StatefulSetStatus.CollisionCount'); l.[(v1.StatefulSetStatus.t), "Conditions"] ↦{dq} v.(v1.StatefulSetStatus.Conditions'); l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦{dq} v.(v1.StatefulSetStatus.AvailableReplicas')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦{dq} v.(v1.StatefulSetStatus.UpdatedReplicas'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦{dq} v.(v1.StatefulSetStatus.UpdatedReplicas'))%I suffix (l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦{dq} v.(v1.StatefulSetStatus.UpdatedReplicas'))%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 
 #[global] Instance StatefulSetStatus_access_store_UpdatedReplicas l (v : (v1.StatefulSetStatus.t)) UpdatedReplicas' :
@@ -996,17 +1026,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦ v.(v1.StatefulSetStatus.ObservedGeneration'); l.[(v1.StatefulSetStatus.t), "Replicas"] ↦ v.(v1.StatefulSetStatus.Replicas'); l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦ v.(v1.StatefulSetStatus.ReadyReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦ v.(v1.StatefulSetStatus.CurrentReplicas')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦ v.(v1.StatefulSetStatus.CurrentRevision'); l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦ v.(v1.StatefulSetStatus.UpdateRevision'); l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦ v.(v1.StatefulSetStatus.CollisionCount'); l.[(v1.StatefulSetStatus.t), "Conditions"] ↦ v.(v1.StatefulSetStatus.Conditions'); l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦ v.(v1.StatefulSetStatus.AvailableReplicas')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦ v.(v1.StatefulSetStatus.UpdatedReplicas'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦ v.(v1.StatefulSetStatus.UpdatedReplicas'))%I suffix (l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦ UpdatedReplicas')%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 #[global] Instance StatefulSetStatus_access_load_CurrentRevision l (v : (v1.StatefulSetStatus.t)) dq :
   AccessStrict
@@ -1018,18 +1049,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[H4 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦{dq} v.(v1.StatefulSetStatus.ObservedGeneration'); l.[(v1.StatefulSetStatus.t), "Replicas"] ↦{dq} v.(v1.StatefulSetStatus.Replicas'); l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦{dq} v.(v1.StatefulSetStatus.ReadyReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦{dq} v.(v1.StatefulSetStatus.CurrentReplicas'); l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦{dq} v.(v1.StatefulSetStatus.UpdatedReplicas')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦{dq} v.(v1.StatefulSetStatus.UpdateRevision'); l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦{dq} v.(v1.StatefulSetStatus.CollisionCount'); l.[(v1.StatefulSetStatus.t), "Conditions"] ↦{dq} v.(v1.StatefulSetStatus.Conditions'); l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦{dq} v.(v1.StatefulSetStatus.AvailableReplicas')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦{dq} v.(v1.StatefulSetStatus.CurrentRevision'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦{dq} v.(v1.StatefulSetStatus.CurrentRevision'))%I suffix (l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦{dq} v.(v1.StatefulSetStatus.CurrentRevision'))%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 H4 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 
 #[global] Instance StatefulSetStatus_access_store_CurrentRevision l (v : (v1.StatefulSetStatus.t)) CurrentRevision' :
@@ -1042,18 +1073,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[H4 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦ v.(v1.StatefulSetStatus.ObservedGeneration'); l.[(v1.StatefulSetStatus.t), "Replicas"] ↦ v.(v1.StatefulSetStatus.Replicas'); l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦ v.(v1.StatefulSetStatus.ReadyReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦ v.(v1.StatefulSetStatus.CurrentReplicas'); l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦ v.(v1.StatefulSetStatus.UpdatedReplicas')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦ v.(v1.StatefulSetStatus.UpdateRevision'); l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦ v.(v1.StatefulSetStatus.CollisionCount'); l.[(v1.StatefulSetStatus.t), "Conditions"] ↦ v.(v1.StatefulSetStatus.Conditions'); l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦ v.(v1.StatefulSetStatus.AvailableReplicas')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦ v.(v1.StatefulSetStatus.CurrentRevision'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦ v.(v1.StatefulSetStatus.CurrentRevision'))%I suffix (l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦ CurrentRevision')%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 H4 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 #[global] Instance StatefulSetStatus_access_load_UpdateRevision l (v : (v1.StatefulSetStatus.t)) dq :
   AccessStrict
@@ -1065,19 +1096,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[H4 H]".
-  iDestruct "H" as "[H5 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦{dq} v.(v1.StatefulSetStatus.ObservedGeneration'); l.[(v1.StatefulSetStatus.t), "Replicas"] ↦{dq} v.(v1.StatefulSetStatus.Replicas'); l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦{dq} v.(v1.StatefulSetStatus.ReadyReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦{dq} v.(v1.StatefulSetStatus.CurrentReplicas'); l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦{dq} v.(v1.StatefulSetStatus.UpdatedReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦{dq} v.(v1.StatefulSetStatus.CurrentRevision')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦{dq} v.(v1.StatefulSetStatus.CollisionCount'); l.[(v1.StatefulSetStatus.t), "Conditions"] ↦{dq} v.(v1.StatefulSetStatus.Conditions'); l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦{dq} v.(v1.StatefulSetStatus.AvailableReplicas')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦{dq} v.(v1.StatefulSetStatus.UpdateRevision'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦{dq} v.(v1.StatefulSetStatus.UpdateRevision'))%I suffix (l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦{dq} v.(v1.StatefulSetStatus.UpdateRevision'))%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 H4 H5 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 
 #[global] Instance StatefulSetStatus_access_store_UpdateRevision l (v : (v1.StatefulSetStatus.t)) UpdateRevision' :
@@ -1090,19 +1120,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[H4 H]".
-  iDestruct "H" as "[H5 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦ v.(v1.StatefulSetStatus.ObservedGeneration'); l.[(v1.StatefulSetStatus.t), "Replicas"] ↦ v.(v1.StatefulSetStatus.Replicas'); l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦ v.(v1.StatefulSetStatus.ReadyReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦ v.(v1.StatefulSetStatus.CurrentReplicas'); l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦ v.(v1.StatefulSetStatus.UpdatedReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦ v.(v1.StatefulSetStatus.CurrentRevision')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦ v.(v1.StatefulSetStatus.CollisionCount'); l.[(v1.StatefulSetStatus.t), "Conditions"] ↦ v.(v1.StatefulSetStatus.Conditions'); l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦ v.(v1.StatefulSetStatus.AvailableReplicas')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦ v.(v1.StatefulSetStatus.UpdateRevision'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦ v.(v1.StatefulSetStatus.UpdateRevision'))%I suffix (l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦ UpdateRevision')%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 H4 H5 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 #[global] Instance StatefulSetStatus_access_load_CollisionCount l (v : (v1.StatefulSetStatus.t)) dq :
   AccessStrict
@@ -1114,20 +1143,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[H4 H]".
-  iDestruct "H" as "[H5 H]".
-  iDestruct "H" as "[H6 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦{dq} v.(v1.StatefulSetStatus.ObservedGeneration'); l.[(v1.StatefulSetStatus.t), "Replicas"] ↦{dq} v.(v1.StatefulSetStatus.Replicas'); l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦{dq} v.(v1.StatefulSetStatus.ReadyReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦{dq} v.(v1.StatefulSetStatus.CurrentReplicas'); l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦{dq} v.(v1.StatefulSetStatus.UpdatedReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦{dq} v.(v1.StatefulSetStatus.CurrentRevision'); l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦{dq} v.(v1.StatefulSetStatus.UpdateRevision')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetStatus.t), "Conditions"] ↦{dq} v.(v1.StatefulSetStatus.Conditions'); l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦{dq} v.(v1.StatefulSetStatus.AvailableReplicas')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦{dq} v.(v1.StatefulSetStatus.CollisionCount'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦{dq} v.(v1.StatefulSetStatus.CollisionCount'))%I suffix (l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦{dq} v.(v1.StatefulSetStatus.CollisionCount'))%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 H4 H5 H6 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 
 #[global] Instance StatefulSetStatus_access_store_CollisionCount l (v : (v1.StatefulSetStatus.t)) CollisionCount' :
@@ -1140,20 +1167,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[H4 H]".
-  iDestruct "H" as "[H5 H]".
-  iDestruct "H" as "[H6 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦ v.(v1.StatefulSetStatus.ObservedGeneration'); l.[(v1.StatefulSetStatus.t), "Replicas"] ↦ v.(v1.StatefulSetStatus.Replicas'); l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦ v.(v1.StatefulSetStatus.ReadyReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦ v.(v1.StatefulSetStatus.CurrentReplicas'); l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦ v.(v1.StatefulSetStatus.UpdatedReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦ v.(v1.StatefulSetStatus.CurrentRevision'); l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦ v.(v1.StatefulSetStatus.UpdateRevision')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetStatus.t), "Conditions"] ↦ v.(v1.StatefulSetStatus.Conditions'); l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦ v.(v1.StatefulSetStatus.AvailableReplicas')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦ v.(v1.StatefulSetStatus.CollisionCount'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦ v.(v1.StatefulSetStatus.CollisionCount'))%I suffix (l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦ CollisionCount')%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 H4 H5 H6 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 #[global] Instance StatefulSetStatus_access_load_Conditions l (v : (v1.StatefulSetStatus.t)) dq :
   AccessStrict
@@ -1165,21 +1190,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[H4 H]".
-  iDestruct "H" as "[H5 H]".
-  iDestruct "H" as "[H6 H]".
-  iDestruct "H" as "[H7 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦{dq} v.(v1.StatefulSetStatus.ObservedGeneration'); l.[(v1.StatefulSetStatus.t), "Replicas"] ↦{dq} v.(v1.StatefulSetStatus.Replicas'); l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦{dq} v.(v1.StatefulSetStatus.ReadyReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦{dq} v.(v1.StatefulSetStatus.CurrentReplicas'); l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦{dq} v.(v1.StatefulSetStatus.UpdatedReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦{dq} v.(v1.StatefulSetStatus.CurrentRevision'); l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦{dq} v.(v1.StatefulSetStatus.UpdateRevision'); l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦{dq} v.(v1.StatefulSetStatus.CollisionCount')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦{dq} v.(v1.StatefulSetStatus.AvailableReplicas')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetStatus.t), "Conditions"] ↦{dq} v.(v1.StatefulSetStatus.Conditions'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetStatus.t), "Conditions"] ↦{dq} v.(v1.StatefulSetStatus.Conditions'))%I suffix (l.[(v1.StatefulSetStatus.t), "Conditions"] ↦{dq} v.(v1.StatefulSetStatus.Conditions'))%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 
 #[global] Instance StatefulSetStatus_access_store_Conditions l (v : (v1.StatefulSetStatus.t)) Conditions' :
@@ -1192,21 +1214,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[H4 H]".
-  iDestruct "H" as "[H5 H]".
-  iDestruct "H" as "[H6 H]".
-  iDestruct "H" as "[H7 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦ v.(v1.StatefulSetStatus.ObservedGeneration'); l.[(v1.StatefulSetStatus.t), "Replicas"] ↦ v.(v1.StatefulSetStatus.Replicas'); l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦ v.(v1.StatefulSetStatus.ReadyReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦ v.(v1.StatefulSetStatus.CurrentReplicas'); l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦ v.(v1.StatefulSetStatus.UpdatedReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦ v.(v1.StatefulSetStatus.CurrentRevision'); l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦ v.(v1.StatefulSetStatus.UpdateRevision'); l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦ v.(v1.StatefulSetStatus.CollisionCount')] : list (iProp Σ))%I).
+  pose (suffix := ([l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦ v.(v1.StatefulSetStatus.AvailableReplicas')] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetStatus.t), "Conditions"] ↦ v.(v1.StatefulSetStatus.Conditions'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetStatus.t), "Conditions"] ↦ v.(v1.StatefulSetStatus.Conditions'))%I suffix (l.[(v1.StatefulSetStatus.t), "Conditions"] ↦ Conditions')%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 #[global] Instance StatefulSetStatus_access_load_AvailableReplicas l (v : (v1.StatefulSetStatus.t)) dq :
   AccessStrict
@@ -1218,22 +1237,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[H4 H]".
-  iDestruct "H" as "[H5 H]".
-  iDestruct "H" as "[H6 H]".
-  iDestruct "H" as "[H7 H]".
-  iDestruct "H" as "[H8 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦{dq} v.(v1.StatefulSetStatus.ObservedGeneration'); l.[(v1.StatefulSetStatus.t), "Replicas"] ↦{dq} v.(v1.StatefulSetStatus.Replicas'); l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦{dq} v.(v1.StatefulSetStatus.ReadyReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦{dq} v.(v1.StatefulSetStatus.CurrentReplicas'); l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦{dq} v.(v1.StatefulSetStatus.UpdatedReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦{dq} v.(v1.StatefulSetStatus.CurrentRevision'); l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦{dq} v.(v1.StatefulSetStatus.UpdateRevision'); l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦{dq} v.(v1.StatefulSetStatus.CollisionCount'); l.[(v1.StatefulSetStatus.t), "Conditions"] ↦{dq} v.(v1.StatefulSetStatus.Conditions')] : list (iProp Σ))%I).
+  pose (suffix := ([] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦{dq} v.(v1.StatefulSetStatus.AvailableReplicas'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦{dq} v.(v1.StatefulSetStatus.AvailableReplicas'))%I suffix (l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦{dq} v.(v1.StatefulSetStatus.AvailableReplicas'))%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 
 #[global] Instance StatefulSetStatus_access_store_AvailableReplicas l (v : (v1.StatefulSetStatus.t)) AvailableReplicas' :
@@ -1246,22 +1261,18 @@ Proof.
   iIntros "H".
   iDestruct (typed_pointsto_not_null with "H") as %Hnotnull.
   iDestruct (typed_pointsto_split with "H") as "H".
-  rewrite /= /named.
-  iDestruct "H" as "[H0 H]".
-  iDestruct "H" as "[H1 H]".
-  iDestruct "H" as "[H2 H]".
-  iDestruct "H" as "[H3 H]".
-  iDestruct "H" as "[H4 H]".
-  iDestruct "H" as "[H5 H]".
-  iDestruct "H" as "[H6 H]".
-  iDestruct "H" as "[H7 H]".
-  iDestruct "H" as "[H8 H]".
-  iDestruct "H" as "[Hfield Hrest]".
+  pose (prefix := ([l.[(v1.StatefulSetStatus.t), "ObservedGeneration"] ↦ v.(v1.StatefulSetStatus.ObservedGeneration'); l.[(v1.StatefulSetStatus.t), "Replicas"] ↦ v.(v1.StatefulSetStatus.Replicas'); l.[(v1.StatefulSetStatus.t), "ReadyReplicas"] ↦ v.(v1.StatefulSetStatus.ReadyReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentReplicas"] ↦ v.(v1.StatefulSetStatus.CurrentReplicas'); l.[(v1.StatefulSetStatus.t), "UpdatedReplicas"] ↦ v.(v1.StatefulSetStatus.UpdatedReplicas'); l.[(v1.StatefulSetStatus.t), "CurrentRevision"] ↦ v.(v1.StatefulSetStatus.CurrentRevision'); l.[(v1.StatefulSetStatus.t), "UpdateRevision"] ↦ v.(v1.StatefulSetStatus.UpdateRevision'); l.[(v1.StatefulSetStatus.t), "CollisionCount"] ↦ v.(v1.StatefulSetStatus.CollisionCount'); l.[(v1.StatefulSetStatus.t), "Conditions"] ↦ v.(v1.StatefulSetStatus.Conditions')] : list (iProp Σ))%I).
+  pose (suffix := ([] : list (iProp Σ))%I).
+  iAssert (generated_access_fields (prefix ++ (l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦ v.(v1.StatefulSetStatus.AvailableReplicas'))%I :: suffix))
+    with "[H]" as "Hfields".
+  { unfold prefix, suffix. iExact "H". }
+  iDestruct (generated_access_fields_acc prefix (l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦ v.(v1.StatefulSetStatus.AvailableReplicas'))%I suffix (l.[(v1.StatefulSetStatus.t), "AvailableReplicas"] ↦ AvailableReplicas')%I with "Hfields")
+    as "[Hfield Hrestore]".
   iSplitL "Hfield"; first iExact "Hfield".
   iIntros "Hfield".
+  iSpecialize ("Hrestore" with "Hfield").
   iApply typed_pointsto_combine; first done.
-  simpl. rewrite /named.
-  iFrame "H0 H1 H2 H3 H4 H5 H6 H7 H8 Hfield Hrest".
+  unfold prefix, suffix. iExact "Hrestore".
 Qed.
 
 End def.
@@ -2831,13 +2842,76 @@ Context {package_sem' : v1.Assumptions}.
 
 Local Set Default Proof Using "All".
 
-#[global] Instance ControllerRevision_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ControllerRevision.t). Admitted.
+#[global]Program Instance ControllerRevision_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (v1.ControllerRevision.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "TypeMeta" ∷ l.[(v1.ControllerRevision.t), "TypeMeta"] ↦{dq} v.(v1.ControllerRevision.TypeMeta') ∗
+      "ObjectMeta" ∷ l.[(v1.ControllerRevision.t), "ObjectMeta"] ↦{dq} v.(v1.ControllerRevision.ObjectMeta') ∗
+      "Data" ∷ l.[(v1.ControllerRevision.t), "Data"] ↦{dq} v.(v1.ControllerRevision.Data') ∗
+      "Revision" ∷ l.[(v1.ControllerRevision.t), "Revision"] ↦{dq} v.(v1.ControllerRevision.Revision') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
 
 #[global] Instance ControllerRevision_into_val_typed
    :
   IntoValTypedUnderlying (v1.ControllerRevision.t) (v1.ControllerRevisionⁱᵐᵖˡ).
-Proof. Admitted.
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance ControllerRevision_access_load_TypeMeta l (v : (v1.ControllerRevision.t)) dq :
+  AccessStrict
+    (l.[(v1.ControllerRevision.t), "TypeMeta"] ↦{dq} (v.(v1.ControllerRevision.TypeMeta')))
+    (l.[(v1.ControllerRevision.t), "TypeMeta"] ↦{dq} (v.(v1.ControllerRevision.TypeMeta')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ControllerRevision_access_store_TypeMeta l (v : (v1.ControllerRevision.t)) TypeMeta' :
+  AccessStrict
+    (l.[(v1.ControllerRevision.t), "TypeMeta"] ↦ (v.(v1.ControllerRevision.TypeMeta')))
+    (l.[(v1.ControllerRevision.t), "TypeMeta"] ↦ TypeMeta')
+    (l ↦ v) (l ↦ (v <|(v1.ControllerRevision.TypeMeta') := TypeMeta'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ControllerRevision_access_load_ObjectMeta l (v : (v1.ControllerRevision.t)) dq :
+  AccessStrict
+    (l.[(v1.ControllerRevision.t), "ObjectMeta"] ↦{dq} (v.(v1.ControllerRevision.ObjectMeta')))
+    (l.[(v1.ControllerRevision.t), "ObjectMeta"] ↦{dq} (v.(v1.ControllerRevision.ObjectMeta')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ControllerRevision_access_store_ObjectMeta l (v : (v1.ControllerRevision.t)) ObjectMeta' :
+  AccessStrict
+    (l.[(v1.ControllerRevision.t), "ObjectMeta"] ↦ (v.(v1.ControllerRevision.ObjectMeta')))
+    (l.[(v1.ControllerRevision.t), "ObjectMeta"] ↦ ObjectMeta')
+    (l ↦ v) (l ↦ (v <|(v1.ControllerRevision.ObjectMeta') := ObjectMeta'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ControllerRevision_access_load_Data l (v : (v1.ControllerRevision.t)) dq :
+  AccessStrict
+    (l.[(v1.ControllerRevision.t), "Data"] ↦{dq} (v.(v1.ControllerRevision.Data')))
+    (l.[(v1.ControllerRevision.t), "Data"] ↦{dq} (v.(v1.ControllerRevision.Data')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ControllerRevision_access_store_Data l (v : (v1.ControllerRevision.t)) Data' :
+  AccessStrict
+    (l.[(v1.ControllerRevision.t), "Data"] ↦ (v.(v1.ControllerRevision.Data')))
+    (l.[(v1.ControllerRevision.t), "Data"] ↦ Data')
+    (l ↦ v) (l ↦ (v <|(v1.ControllerRevision.Data') := Data'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance ControllerRevision_access_load_Revision l (v : (v1.ControllerRevision.t)) dq :
+  AccessStrict
+    (l.[(v1.ControllerRevision.t), "Revision"] ↦{dq} (v.(v1.ControllerRevision.Revision')))
+    (l.[(v1.ControllerRevision.t), "Revision"] ↦{dq} (v.(v1.ControllerRevision.Revision')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance ControllerRevision_access_store_Revision l (v : (v1.ControllerRevision.t)) Revision' :
+  AccessStrict
+    (l.[(v1.ControllerRevision.t), "Revision"] ↦ (v.(v1.ControllerRevision.Revision')))
+    (l.[(v1.ControllerRevision.t), "Revision"] ↦ Revision')
+    (l ↦ v) (l ↦ (v <|(v1.ControllerRevision.Revision') := Revision'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
 
 End def.
 End ControllerRevision.

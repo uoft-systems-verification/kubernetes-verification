@@ -54,10 +54,10 @@ Proof.
     destruct kspec, kobj; rewrite /KObjectV.valid_update /=;
       rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
         ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
-        ?/DeploymentV.valid_update
+        ?/DeploymentV.valid_update ?/ControllerRevisionV.valid_update
         ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
         ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
-        ?/DeploymentV.valid_create
+        ?/DeploymentV.valid_create ?/ControllerRevisionV.valid_create
         /KObjectV.valid_update_input /=;
       try contradiction; tauto.
   }
@@ -68,7 +68,7 @@ Proof.
   { destruct kobj; rewrite /KObjectV.valid_update_input /= in Hvalid;
       rewrite ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
         ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
-        ?/DeploymentV.valid_create in Hvalid;
+        ?/DeploymentV.valid_create ?/ControllerRevisionV.valid_create in Hvalid;
       tauto. }
   wp_method_call. rewrite /apimodel.State__updateⁱᵐᵖˡ. wp_call.
   wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto_keep.
@@ -120,7 +120,7 @@ Proof.
     { destruct kspec, kobj; rewrite /KObjectV.valid_update /= in Hvalid_update |- *;
         rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
           ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
-          ?/DeploymentV.valid_update in Hvalid_update;
+          ?/DeploymentV.valid_update ?/ControllerRevisionV.valid_update in Hvalid_update;
         try contradiction; tauto. }
 
     assert (key0 = key) as ->.
@@ -171,7 +171,7 @@ Proof.
     { destruct kspec, kobj; rewrite /KObjectV.valid_update /= in Hvalid_update |- *;
         rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
           ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
-          ?/DeploymentV.valid_update in Hvalid_update;
+          ?/DeploymentV.valid_update ?/ControllerRevisionV.valid_update in Hvalid_update;
         try contradiction; tauto. }
 
     assert (key0 = key) as ->.
@@ -225,7 +225,7 @@ Proof.
     { destruct kspec, kobj; rewrite /KObjectV.valid_update /= in Hvalid_update |- *;
         rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
           ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
-          ?/DeploymentV.valid_update in Hvalid_update;
+          ?/DeploymentV.valid_update ?/ControllerRevisionV.valid_update in Hvalid_update;
         try contradiction; tauto. }
 
     assert (key0 = key) as ->.
@@ -263,7 +263,7 @@ Proof.
     { destruct kspec, kobj; rewrite /KObjectV.valid_update /= in Hvalid_update |- *;
         rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
           ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
-          ?/DeploymentV.valid_update in Hvalid_update;
+          ?/DeploymentV.valid_update ?/ControllerRevisionV.valid_update in Hvalid_update;
         try contradiction; tauto. }
 
     assert (key0 = key) as ->.
@@ -315,7 +315,7 @@ Proof.
       { destruct kobj; rewrite /KObjectV.valid_update_input /= in Hvalid;
           rewrite ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
             ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
-            ?/DeploymentV.valid_create in Hvalid;
+            ?/DeploymentV.valid_create ?/ControllerRevisionV.valid_create in Hvalid;
           tauto. }
       rewrite /ObjectMetaV.valid_create in Hvalid_create_meta.
       rewrite decide_False in Hvalid_create_meta.
@@ -356,7 +356,7 @@ Proof.
     - rewrite <-e0.
       destruct kobj as [[tm meta spec status]|[tm meta spec status]|
         [tm meta spec status]|[tm meta spec status]|
-        [tm meta spec status]]; destruct meta; done. }
+        [tm meta spec status]|[tm meta spec status]]; destruct meta; done. }
   wp_apply (wp_applyValidationAndDefaultingOnUpdate_ok _ _ _ _ _ _ _
     (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') kobj
     with "[$Hdeepown_l $Hdeepown_old_l]").
@@ -391,7 +391,7 @@ Proof.
   { destruct old_kobj, kobj, updated_kobj;
       rewrite /KObjectV.updated /PodV.updated /ReplicaSetV.updated
         /PersistentVolumeClaimV.updated /StatefulSetV.updated
-        /DeploymentV.updated /= in Hupdated_kobj |- *;
+        /DeploymentV.updated /ControllerRevisionV.updated /= in Hupdated_kobj |- *;
       try contradiction; rewrite /ObjectMetaV.updated in Hupdated_kobj |- *; tauto. }
   assert ((KObjectV.objectmeta kobj).(ObjectMetaV.UID') =
       (KObjectV.objectmeta old_kobj).(ObjectMetaV.UID') ∧
@@ -441,7 +441,7 @@ Proof.
     { destruct kspec, kobj; rewrite /KObjectV.valid_update /= in Hvalid_update |- *;
         rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
           ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
-          ?/DeploymentV.valid_update in Hvalid_update;
+          ?/DeploymentV.valid_update ?/ControllerRevisionV.valid_update in Hvalid_update;
         try contradiction; tauto. }
 
     assert (key0 = key) as ->.
@@ -486,7 +486,7 @@ Proof.
     { destruct kspec, kobj; rewrite /KObjectV.valid_update /= in Hvalid_update |- *;
         rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
           ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
-          ?/DeploymentV.valid_update in Hvalid_update;
+          ?/DeploymentV.valid_update ?/ControllerRevisionV.valid_update in Hvalid_update;
         try contradiction; tauto. }
 
     assert (key0 = key) as ->.
@@ -553,7 +553,7 @@ Proof.
   { destruct kspec, kobj; rewrite /KObjectV.valid_update /= in Hvalid_update |- *;
       rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
         ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
-        ?/DeploymentV.valid_update in Hvalid_update;
+        ?/DeploymentV.valid_update ?/ControllerRevisionV.valid_update in Hvalid_update;
       try contradiction; tauto. }
 
   assert (key0 = key) as ->.
@@ -589,7 +589,7 @@ Proof.
   { destruct kspec, kobj, new_kobj;
       rewrite /KObjectV.updated /PodV.updated /ReplicaSetV.updated
         /PersistentVolumeClaimV.updated /StatefulSetV.updated
-        /DeploymentV.updated /= in Hupdated_new |- *;
+        /DeploymentV.updated /ControllerRevisionV.updated /= in Hupdated_new |- *;
       try contradiction; rewrite /ObjectMetaV.updated in Hupdated_new |- *; tauto. }
   assert ((KObjectV.objectmeta new_kobj).(ObjectMetaV.UID') =
       (KObjectV.objectmeta old_kobj).(ObjectMetaV.UID')) as Huid_new_old.

@@ -40,9 +40,10 @@ PACKAGES = {
     "gopkg.in/inf.v0": ("inf", "gopkg_in/inf_v0", "inf"),
     "math/big": ("big", "math/big", "big"),
     "time": ("runtime_time", "time", "time"),
+    "k8s.io/apimachinery/pkg/runtime": ("runtime", "k8s_io/apimachinery/pkg/runtime", "runtime"),
 }
 SCALARS = {
-    "string": "go_string", "bool": "bool", "int": "w64", "uint": "w64",
+    "interface": "interface.t", "string": "go_string", "bool": "bool", "int": "w64", "uint": "w64",
     "int64": "w64", "uint64": "w64", "int32": "w32", "uint32": "w32",
     "int16": "w16", "uint16": "w16", "int8": "w8", "uint8": "w8",
 }
@@ -265,6 +266,8 @@ def main():
         n = nodes[key]
         if n["Kind"] == "struct":
             return module(key) + ".deepown"
+        if n["Kind"] == "interface":
+            return "(λ c v (_ : dfrac), ⌜ c = interface.nil ∧ v = interface.nil ⌝)%I"
         if n["Kind"] in SCALARS:
             return "(λ c v (_ : dfrac), ⌜ c = v ⌝)%I"
         op = "slice_list" if key == BIG_NAT else {"ptr": "ptr", "slice": "slice", "map": "map"}[n["Kind"]]
@@ -387,6 +390,8 @@ def main():
             imports = []
             if pkg == CORE:
                 imports = ["k8s.io/apimachinery/pkg/util/intstr"]
+            elif pkg == APPS:
+                imports = ["k8s.io/apimachinery/pkg/runtime"]
             elif pkg == "k8s.io/apimachinery/pkg/api/resource":
                 imports = ["gopkg.in/inf.v0"]
             elif pkg == "gopkg.in/inf.v0":

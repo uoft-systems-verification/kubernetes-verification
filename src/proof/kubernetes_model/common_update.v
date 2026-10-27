@@ -32,7 +32,7 @@ Proof.
   destruct kspec, input; rewrite /KObjectV.valid_update /= in Hvalid Htransfer |- *;
     rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
       ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
-      ?/DeploymentV.valid_update in Hvalid |- *;
+      ?/DeploymentV.valid_update ?/ControllerRevisionV.valid_update in Hvalid |- *;
     try contradiction; rewrite -?Hannotations; intuition.
 Qed.
 
@@ -62,7 +62,7 @@ Lemma wp_allowUnconditionalUpdate (kind : go_string) :
 Proof.
   wp_start as "#Hinit".
   wp_auto_keep.
-  do 7 (wp_if_destruct; first (iApply "HΦ"; done)).
+  do 8 (wp_if_destruct; first (iApply "HΦ"; done)).
   wp_apply wp_slice_literal. iSplitR; first done.
   iIntros (args_sl) "[Hargs _]". wp_auto_keep.
   wp_apply (wp_Errorf with "[$Hargs]").
@@ -273,7 +273,7 @@ Proof.
   { destruct old_spec, input; rewrite /KObjectV.valid_update /= in Hvalid_update |- *;
       rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
         ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
-        ?/DeploymentV.valid_update in Hvalid_update;
+        ?/DeploymentV.valid_update ?/ControllerRevisionV.valid_update in Hvalid_update;
       try contradiction; tauto. }
   assert ((KObjectV.objectmeta old).(ObjectMetaV.Name') = old_meta.(ObjectMetaV.Name') ∧
       (KObjectV.objectmeta old).(ObjectMetaV.Namespace') = old_meta.(ObjectMetaV.Namespace'))
@@ -439,10 +439,10 @@ Lemma storage_object_normalize_eq_implies_update_objects_equiv_except_resource_v
 Proof.
   destruct obj1 as [[tm1 meta1 spec1 status1]|[tm1 meta1 spec1 status1]|
       [tm1 meta1 spec1 status1]|[tm1 meta1 spec1 status1]|
-      [tm1 meta1 spec1 status1]],
+      [tm1 meta1 spec1 status1]|[tm1 meta1 spec1 status1]],
     obj2 as [[tm2 meta2 spec2 status2]|[tm2 meta2 spec2 status2]|
       [tm2 meta2 spec2 status2]|[tm2 meta2 spec2 status2]|
-      [tm2 meta2 spec2 status2]];
+      [tm2 meta2 spec2 status2]|[tm2 meta2 spec2 status2]];
     try discriminate;
     destruct meta1, meta2;
     rewrite /KObjectV.valid /storage_object_normalize
@@ -490,7 +490,7 @@ Proof.
   destruct (KObjectV.spec old), input; rewrite /KObjectV.valid_update /= in Hvalid_update;
     rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
       ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
-      ?/DeploymentV.valid_update in Hvalid_update;
+      ?/DeploymentV.valid_update ?/ControllerRevisionV.valid_update in Hvalid_update;
     try contradiction; tauto.
 Qed.
 

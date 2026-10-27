@@ -1,0 +1,3 @@
+# History equality, ordering, names and hashing are library boundaries.
+translate = ["!*"]
+imports = ["!*"]

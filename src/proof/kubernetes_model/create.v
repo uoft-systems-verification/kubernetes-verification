@@ -44,7 +44,7 @@ Proof.
   { destruct kobj; rewrite /KObjectV.valid_create /= in Hvalid;
       rewrite ?/PodV.valid_create ?/ReplicaSetV.valid_create
         ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
-        ?/DeploymentV.valid_create in Hvalid;
+        ?/DeploymentV.valid_create ?/ControllerRevisionV.valid_create in Hvalid;
       tauto. }
   wp_method_call. rewrite /apimodel.State__createⁱᵐᵖˡ. wp_call.
   wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto_keep.
@@ -169,7 +169,7 @@ Proof.
     as (Hnamespace2 & Howner_references2 & Hdeletion_timestamp2).
   { destruct kobj, kobj2; rewrite /KObjectV.created /= in Hcreated2; try contradiction;
       rewrite ?/PodV.created ?/ReplicaSetV.created ?/PersistentVolumeClaimV.created
-        ?/StatefulSetV.created ?/DeploymentV.created
+        ?/StatefulSetV.created ?/DeploymentV.created ?/ControllerRevisionV.created
         /ObjectMetaV.created in Hcreated2;
       simpl; tauto. }
   assert (KObjectV.extra_valid kobj2) as Hextra_valid2.
@@ -408,7 +408,7 @@ Proof.
     with "[$Hinit $Hisk $Hdeepown_i $Hown_children_frag]").
   { iPureIntro. split_and!; done. }
   iIntros (i' kobj' key uid) "Hpost". iNamed "Hpost".
-  destruct kobj' as [pod'|rs'|pvc'|sts'|d']; try done.
+  destruct kobj' as [pod'|rs'|pvc'|sts'|d'|revision']; try done.
   iDestruct "Hdeepown_i" as (pod_l') "[%Hi' Hdeepown_l]". wp_auto_keep.
   unfold KObjectV.valid_interface in Hi'. destruct Hi' as [Hi' _]. rewrite Hi'.
   change (go.PointerType api_core_v1.Pod) with (go.PointerType v1.Pod).

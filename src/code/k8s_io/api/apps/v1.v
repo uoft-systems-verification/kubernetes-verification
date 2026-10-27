@@ -2,6 +2,7 @@
 Require Export New.code.k8s_io.api.core.v1.
 Require Export New.code.k8s_io.apimachinery.pkg.apis.meta.v1.
 Require Export New.code.k8s_io.apimachinery.pkg.util.intstr.
+Require Export New.code.k8s_io.apimachinery.pkg.runtime.
 Require Export New.code.k8s_io.apimachinery.pkg.runtime.schema.
 Module core_v1 := code.k8s_io.api.core.v1.v1.
 Module meta_v1 := code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.
@@ -193,15 +194,13 @@ Axiom DaemonSetListⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalConte
 
 Axiom ReplicaSetListⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom ControllerRevisionⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
 Axiom ControllerRevisionListⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Definition GroupName {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"apps"%go.
 
-Axiom ControllerRevisionHashLabelKey : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
+Definition ControllerRevisionHashLabelKey {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"controller-revision-hash"%go.
 
-Axiom StatefulSetRevisionLabel : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
+Definition StatefulSetRevisionLabel {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"controller-revision-hash"%go.
 
 Axiom DeprecatedRollbackTo : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
@@ -211,13 +210,13 @@ Definition StatefulSetPodNameLabel {ext : ffi_syntax} {go_gctx : GoGlobalContext
 
 Definition PodIndexLabel {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"apps.kubernetes.io/pod-index"%go.
 
-Axiom OrderedReadyPodManagement : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
+Definition OrderedReadyPodManagement {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"OrderedReady"%go.
 
-Axiom ParallelPodManagement : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
+Definition ParallelPodManagement {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"Parallel"%go.
 
-Axiom RollingUpdateStatefulSetStrategyType : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
+Definition RollingUpdateStatefulSetStrategyType {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"RollingUpdate"%go.
 
-Axiom OnDeleteStatefulSetStrategyType : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
+Definition OnDeleteStatefulSetStrategyType {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val := #"OnDelete"%go.
 
 Axiom RetainPersistentVolumeClaimRetentionPolicyType : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 
@@ -469,7 +468,7 @@ Definition addKnownTypes {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_str
 
 #[global] Instance info' : PkgInfo pkg_id.v1 :=
 {|
-  pkg_imported_pkgs := [code.k8s_io.api.core.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.util.intstr.pkg_id.intstr; code.k8s_io.apimachinery.pkg.runtime.schema.pkg_id.schema]
+  pkg_imported_pkgs := [code.k8s_io.api.core.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.util.intstr.pkg_id.intstr; code.k8s_io.apimachinery.pkg.runtime.pkg_id.runtime; code.k8s_io.apimachinery.pkg.runtime.schema.pkg_id.schema]
 |}.
 
 Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
@@ -479,6 +478,7 @@ Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
     package.init pkg_id.v1 (λ: <>,
       exception_do (do:  (go.GlobalAlloc SchemeGroupVersion code.k8s_io.apimachinery.pkg.runtime.schema.schema.GroupVersion #());;;
       do:  (code.k8s_io.apimachinery.pkg.runtime.schema.schema.initialize' #());;;
+      do:  (code.k8s_io.apimachinery.pkg.runtime.runtime.initialize' #());;;
       do:  (code.k8s_io.apimachinery.pkg.util.intstr.intstr.initialize' #());;;
       do:  (code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.initialize' #());;;
       do:  (code.k8s_io.api.core.v1.v1.initialize' #());;;
@@ -1723,17 +1723,63 @@ Class ReplicaSetCondition_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!
 Module ControllerRevision.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  TypeMeta' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.TypeMeta.t;
+  ObjectMeta' : code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta.t;
+  Data' : code.k8s_io.apimachinery.pkg.runtime.runtime.RawExtension.t;
+  Revision' : w64;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _) (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End ControllerRevision.
+
+Definition ControllerRevision'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.EmbeddedField "TypeMeta"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.TypeMeta);
+  (go.EmbeddedField "ObjectMeta"%go code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta);
+  (go.FieldDecl "Data"%go code.k8s_io.apimachinery.pkg.runtime.runtime.RawExtension);
+  (go.FieldDecl "Revision"%go go.int64)
+].
+Program Definition ControllerRevision'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (ControllerRevision'fds_unsealed).
+Global Instance equals_unfold_ControllerRevision {ext : ffi_syntax} {go_gctx : GoGlobalContext} : ControllerRevision'fds =→ ControllerRevision'fds_unsealed.
+Proof. rewrite /ControllerRevision'fds seal_eq //. Qed.
+
+Definition ControllerRevisionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (ControllerRevision'fds).
 
 Class ControllerRevision_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] ControllerRevision_type_repr  :: go.TypeReprUnderlying ControllerRevisionⁱᵐᵖˡ ControllerRevision.t;
   #[global] ControllerRevision_underlying :: (ControllerRevision) <u (ControllerRevisionⁱᵐᵖˡ);
-  #[global] ControllerRevisionⁱᵐᵖˡ_underlying :: (ControllerRevisionⁱᵐᵖˡ) ↓u (ControllerRevisionⁱᵐᵖˡ);
+  #[global] ControllerRevision_get_TypeMeta (x : ControllerRevision.t) :: ⟦StructFieldGet (ControllerRevisionⁱᵐᵖˡ) "TypeMeta", #x⟧ ⤳[under] #x.(ControllerRevision.TypeMeta');
+  #[global] ControllerRevision_set_TypeMeta (x : ControllerRevision.t) y :: ⟦StructFieldSet (ControllerRevisionⁱᵐᵖˡ) "TypeMeta", (#x, #y)⟧ ⤳[under] #(x <|ControllerRevision.TypeMeta' := y|>);
+  #[global] ControllerRevision_get_ObjectMeta (x : ControllerRevision.t) :: ⟦StructFieldGet (ControllerRevisionⁱᵐᵖˡ) "ObjectMeta", #x⟧ ⤳[under] #x.(ControllerRevision.ObjectMeta');
+  #[global] ControllerRevision_set_ObjectMeta (x : ControllerRevision.t) y :: ⟦StructFieldSet (ControllerRevisionⁱᵐᵖˡ) "ObjectMeta", (#x, #y)⟧ ⤳[under] #(x <|ControllerRevision.ObjectMeta' := y|>);
+  #[global] ControllerRevision_get_Data (x : ControllerRevision.t) :: ⟦StructFieldGet (ControllerRevisionⁱᵐᵖˡ) "Data", #x⟧ ⤳[under] #x.(ControllerRevision.Data');
+  #[global] ControllerRevision_set_Data (x : ControllerRevision.t) y :: ⟦StructFieldSet (ControllerRevisionⁱᵐᵖˡ) "Data", (#x, #y)⟧ ⤳[under] #(x <|ControllerRevision.Data' := y|>);
+  #[global] ControllerRevision_get_Revision (x : ControllerRevision.t) :: ⟦StructFieldGet (ControllerRevisionⁱᵐᵖˡ) "Revision", #x⟧ ⤳[under] #x.(ControllerRevision.Revision');
+  #[global] ControllerRevision_set_Revision (x : ControllerRevision.t) y :: ⟦StructFieldSet (ControllerRevisionⁱᵐᵖˡ) "Revision", (#x, #y)⟧ ⤳[under] #(x <|ControllerRevision.Revision' := y|>);
+  #[global] ControllerRevision'ptr_GetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (ControllerRevision)) "GetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetDeletionGracePeriodSeconds" (StructFieldRef ControllerRevision "ObjectMeta"%go "$r"));
+  #[global] ControllerRevision'ptr_GetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (ControllerRevision)) "GetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetDeletionTimestamp" (StructFieldRef ControllerRevision "ObjectMeta"%go "$r"));
+  #[global] ControllerRevision'ptr_GetFinalizers_unfold :: MethodUnfold (go.PointerType (ControllerRevision)) "GetFinalizers" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetFinalizers" (StructFieldRef ControllerRevision "ObjectMeta"%go "$r"));
+  #[global] ControllerRevision'ptr_GetGenerateName_unfold :: MethodUnfold (go.PointerType (ControllerRevision)) "GetGenerateName" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetGenerateName" (StructFieldRef ControllerRevision "ObjectMeta"%go "$r"));
+  #[global] ControllerRevision'ptr_GetGeneration_unfold :: MethodUnfold (go.PointerType (ControllerRevision)) "GetGeneration" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetGeneration" (StructFieldRef ControllerRevision "ObjectMeta"%go "$r"));
+  #[global] ControllerRevision'ptr_GetLabels_unfold :: MethodUnfold (go.PointerType (ControllerRevision)) "GetLabels" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetLabels" (StructFieldRef ControllerRevision "ObjectMeta"%go "$r"));
+  #[global] ControllerRevision'ptr_GetName_unfold :: MethodUnfold (go.PointerType (ControllerRevision)) "GetName" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetName" (StructFieldRef ControllerRevision "ObjectMeta"%go "$r"));
+  #[global] ControllerRevision'ptr_GetOwnerReferences_unfold :: MethodUnfold (go.PointerType (ControllerRevision)) "GetOwnerReferences" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetOwnerReferences" (StructFieldRef ControllerRevision "ObjectMeta"%go "$r"));
+  #[global] ControllerRevision'ptr_GetResourceVersion_unfold :: MethodUnfold (go.PointerType (ControllerRevision)) "GetResourceVersion" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetResourceVersion" (StructFieldRef ControllerRevision "ObjectMeta"%go "$r"));
+  #[global] ControllerRevision'ptr_GetUID_unfold :: MethodUnfold (go.PointerType (ControllerRevision)) "GetUID" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "GetUID" (StructFieldRef ControllerRevision "ObjectMeta"%go "$r"));
+  #[global] ControllerRevision'ptr_SetCreationTimestamp_unfold :: MethodUnfold (go.PointerType (ControllerRevision)) "SetCreationTimestamp" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetCreationTimestamp" (StructFieldRef ControllerRevision "ObjectMeta"%go "$r"));
+  #[global] ControllerRevision'ptr_SetDeletionGracePeriodSeconds_unfold :: MethodUnfold (go.PointerType (ControllerRevision)) "SetDeletionGracePeriodSeconds" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetDeletionGracePeriodSeconds" (StructFieldRef ControllerRevision "ObjectMeta"%go "$r"));
+  #[global] ControllerRevision'ptr_SetDeletionTimestamp_unfold :: MethodUnfold (go.PointerType (ControllerRevision)) "SetDeletionTimestamp" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetDeletionTimestamp" (StructFieldRef ControllerRevision "ObjectMeta"%go "$r"));
+  #[global] ControllerRevision'ptr_SetFinalizers_unfold :: MethodUnfold (go.PointerType (ControllerRevision)) "SetFinalizers" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetFinalizers" (StructFieldRef ControllerRevision "ObjectMeta"%go "$r"));
+  #[global] ControllerRevision'ptr_SetGeneration_unfold :: MethodUnfold (go.PointerType (ControllerRevision)) "SetGeneration" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetGeneration" (StructFieldRef ControllerRevision "ObjectMeta"%go "$r"));
+  #[global] ControllerRevision'ptr_SetName_unfold :: MethodUnfold (go.PointerType (ControllerRevision)) "SetName" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetName" (StructFieldRef ControllerRevision "ObjectMeta"%go "$r"));
+  #[global] ControllerRevision'ptr_SetResourceVersion_unfold :: MethodUnfold (go.PointerType (ControllerRevision)) "SetResourceVersion" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetResourceVersion" (StructFieldRef ControllerRevision "ObjectMeta"%go "$r"));
+  #[global] ControllerRevision'ptr_SetSelfLink_unfold :: MethodUnfold (go.PointerType (ControllerRevision)) "SetSelfLink" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetSelfLink" (StructFieldRef ControllerRevision "ObjectMeta"%go "$r"));
+  #[global] ControllerRevision'ptr_SetUID_unfold :: MethodUnfold (go.PointerType (ControllerRevision)) "SetUID" (λ: "$r", MethodResolve (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta) "SetUID" (StructFieldRef ControllerRevision "ObjectMeta"%go "$r"));
 }.
 
 Module ControllerRevisionList.
@@ -1796,6 +1842,7 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] import_core_v1_Assumption :: code.k8s_io.api.core.v1.v1.Assumptions;
   #[global] import_meta_v1_Assumption :: code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions;
   #[global] import_intstr_Assumption :: code.k8s_io.apimachinery.pkg.util.intstr.intstr.Assumptions;
+  #[global] import_runtime_Assumption :: code.k8s_io.apimachinery.pkg.runtime.runtime.Assumptions;
   #[global] import_schema_Assumption :: code.k8s_io.apimachinery.pkg.runtime.schema.schema.Assumptions;
 }.
 End v1.

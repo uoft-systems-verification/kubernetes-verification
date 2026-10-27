@@ -1,0 +1,4 @@
+# REST strategy validation/preparation is an upstream library boundary, as for
+# the other apps REST strategies modeled by apimodel.
+translate = ["!*"]
+imports = ["!*"]

@@ -465,8 +465,6 @@ Axiom bufferⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go
 
 Axiom TypeMetaⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom RawExtensionⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
 Axiom Unknownⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom ProtobufMarshallerⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
@@ -2000,17 +1998,36 @@ Class TypeMeta_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalCont
 Module RawExtension.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Record t :=
+mk {
+  Raw' : slice.t;
+  Object' : runtime.Object.t;
+}.
+
+#[global] Instance zero_val : ZeroVal t := {| zero_val := mk (zero_val _) (zero_val _)|}.
+#[global] Arguments mk : clear implicits.
+#[global] Arguments t : clear implicits.
 End def.
 End RawExtension.
+
+Definition RawExtension'fds_unsealed {ext : ffi_syntax} {go_gctx : GoGlobalContext} : list go.field_decl := [
+  (go.FieldDecl "Raw"%go (go.SliceType go.byte));
+  (go.FieldDecl "Object"%go Object)
+].
+Program Definition RawExtension'fds {ext : ffi_syntax} {go_gctx : GoGlobalContext} := sealed (RawExtension'fds_unsealed).
+Global Instance equals_unfold_RawExtension {ext : ffi_syntax} {go_gctx : GoGlobalContext} : RawExtension'fds =→ RawExtension'fds_unsealed.
+Proof. rewrite /RawExtension'fds seal_eq //. Qed.
+
+Definition RawExtensionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.StructType (RawExtension'fds).
 
 Class RawExtension_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
   #[global] RawExtension_type_repr  :: go.TypeReprUnderlying RawExtensionⁱᵐᵖˡ RawExtension.t;
   #[global] RawExtension_underlying :: (RawExtension) <u (RawExtensionⁱᵐᵖˡ);
-  #[global] RawExtensionⁱᵐᵖˡ_underlying :: (RawExtensionⁱᵐᵖˡ) ↓u (RawExtensionⁱᵐᵖˡ);
+  #[global] RawExtension_get_Raw (x : RawExtension.t) :: ⟦StructFieldGet (RawExtensionⁱᵐᵖˡ) "Raw", #x⟧ ⤳[under] #x.(RawExtension.Raw');
+  #[global] RawExtension_set_Raw (x : RawExtension.t) y :: ⟦StructFieldSet (RawExtensionⁱᵐᵖˡ) "Raw", (#x, #y)⟧ ⤳[under] #(x <|RawExtension.Raw' := y|>);
+  #[global] RawExtension_get_Object (x : RawExtension.t) :: ⟦StructFieldGet (RawExtensionⁱᵐᵖˡ) "Object", #x⟧ ⤳[under] #x.(RawExtension.Object');
+  #[global] RawExtension_set_Object (x : RawExtension.t) y :: ⟦StructFieldSet (RawExtensionⁱᵐᵖˡ) "Object", (#x, #y)⟧ ⤳[under] #(x <|RawExtension.Object' := y|>);
 }.
 
 Module Unknown.

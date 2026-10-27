@@ -91,6 +91,16 @@ module = "DeploymentView"
 roots = ["k8s.io/api/apps/v1/Deployment"]
 context = "apps"
 
+[contexts.revision]
+imports = ["New.proof.k8s_io.api.apps.v1_init", "New.generatedproof.k8s_io.apimachinery.pkg.runtime"]
+aliases = ["api_core_v1", "api_apps_v1", "meta_v1", "resource", "intstr", "inf", "big", "runtime_time", "runtime"]
+assumptions = { meta_v1_sem = "meta_v1", core_v1_sem = "api_core_v1", apps_v1_sem = "api_apps_v1", runtime_sem = "runtime" }
+
+[groups.controllerrevision]
+module = "ControllerRevisionView"
+roots = ["k8s.io/api/apps/v1/ControllerRevision"]
+context = "revision"
+
 # Fields below are omitted from both the view and deepown. Keys are fully
 # qualified Go type IDs and exact Go field names. Every exclusion needs an
 # explanation, also emitted as a comment in the generated view.

@@ -50,7 +50,7 @@ Proof.
   iIntros (i' kobj') "(Hdeepown_i & Hown_meta_frag & %Hvalid' & %Hupdated & %Hpreserved & Hdeepown_i' &
     Hown_status_frag)".
   destruct Hpreserved as (Hsame_kind & Hmeta_eq).
-  destruct kobj' as [pod'|rs'|pvc'|sts'|d']; try done.
+  destruct kobj' as [pod'|rs'|pvc'|sts'|d'|revision']; try done.
   iDestruct "Hdeepown_i'" as (rs_l') "[%Hi' Hdeepown_l']".
   iDestruct "Hdeepown_i" as (rs_l0) "[%Hi0 Hdeepown_l]".
   unfold KObjectV.valid_interface in Hi', Hi0.
@@ -118,7 +118,7 @@ Proof.
     iApply ("HΦ" $! null (interface.ok err_ok)). iFrame. iRight. iFrame. done. }
   iDestruct "Hsuccess" as (i' kobj') "(-> & %Hvalid' & %Hpreserved & Hdeepown_i' & Hown_status_frag)".
   destruct Hpreserved as (Hsame_kind & Hmeta_eq).
-  destruct kobj' as [pod'|rs'|pvc'|sts'|d']; try done.
+  destruct kobj' as [pod'|rs'|pvc'|sts'|d'|revision']; try done.
   iDestruct "Hdeepown_i'" as (rs_l') "[%Hi' Hdeepown_l']".
   unfold KObjectV.valid_interface in Hi'. destruct Hi' as [Hi' _].
   wp_auto.

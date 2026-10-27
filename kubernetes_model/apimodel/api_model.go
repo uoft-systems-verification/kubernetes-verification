@@ -34,6 +34,7 @@ import (
 	corev1defaults "k8s.io/kubernetes/pkg/apis/core/v1"
 	"k8s.io/kubernetes/pkg/apis/rbac"
 	"k8s.io/kubernetes/pkg/controller"
+	crstrategy "k8s.io/kubernetes/pkg/registry/apps/controllerrevision"
 	deploymentstrategy "k8s.io/kubernetes/pkg/registry/apps/deployment"
 	rsstrategy "k8s.io/kubernetes/pkg/registry/apps/replicaset"
 	stsstrategy "k8s.io/kubernetes/pkg/registry/apps/statefulset"
@@ -110,6 +111,8 @@ func deepCopy(obj interface{}) interface{} {
 	case *appsv1.Deployment:
 		return o.DeepCopy()
 	case *rbacv1.ClusterRole:
+		return o.DeepCopy()
+	case *appsv1.ControllerRevision:
 		return o.DeepCopy()
 	default:
 		panic(fmt.Sprintf("copyObject: unsupported type %T", obj))
@@ -437,6 +440,12 @@ func convertVersionedToLegacy(obj interface{}) (interface{}, error) {
 			return nil, errors.NewBadRequest(fmt.Sprintf("failed to convert rbacv1.ClusterRole to internal ClusterRole: %v", err))
 		}
 		return internalClusterRole, nil
+	case *appsv1.ControllerRevision:
+		internal := &apps.ControllerRevision{}
+		if err := legacyscheme.Scheme.Convert(typed, internal, nil); err != nil {
+			return nil, errors.NewBadRequest(fmt.Sprintf("failed to convert ControllerRevision: %v", err))
+		}
+		return internal, nil
 	default:
 		return nil, fmt.Errorf("unsupported versioned object type for conversion: %T", obj)
 	}
@@ -469,6 +478,8 @@ func applySchemaDefaults(obj interface{}) error {
 		appsv1defaults.SetObjectDefaults_Deployment(typed)
 	case *rbacv1.ClusterRole:
 		// ClusterRole has no schema defaults.
+	case *appsv1.ControllerRevision:
+		// ControllerRevision has no schema defaults.
 	default:
 		return fmt.Errorf("unsupported object type for schema defaults: %T", obj)
 	}
@@ -492,6 +503,8 @@ func applyStrategyPrepareForCreate(obj interface{}) error {
 		deploymentstrategy.Strategy.PrepareForCreate(ctx, typed)
 	case *rbac.ClusterRole:
 		clusterrolestrategy.Strategy.PrepareForCreate(ctx, typed)
+	case *apps.ControllerRevision:
+		crstrategy.Strategy.PrepareForCreate(ctx, typed)
 	default:
 		return fmt.Errorf("unsupported object type for strategy and validation: %T", obj)
 	}
@@ -517,6 +530,8 @@ func applyAdmissionMutate(obj interface{}) error {
 	case *apps.Deployment:
 		return nil
 	case *rbac.ClusterRole:
+		return nil
+	case *apps.ControllerRevision:
 		return nil
 	default:
 		return fmt.Errorf("unsupported object type for strategy and validation: %T", obj)
@@ -559,6 +574,8 @@ func applyPostPrepareCreateDefaults(obj interface{}) error {
 	case *apps.Deployment:
 		return nil
 	case *rbac.ClusterRole:
+		return nil
+	case *apps.ControllerRevision:
 		return nil
 	default:
 		return fmt.Errorf("unsupported object type for post-prepare create defaults: %T", obj)
@@ -614,6 +631,8 @@ func applyAdmissionMutateForUpdate(obj, oldObj interface{}) error {
 		return nil
 	case *rbac.ClusterRole:
 		return nil
+	case *apps.ControllerRevision:
+		return nil
 	default:
 		return fmt.Errorf("unsupported object type for update admission mutation: %T", obj)
 	}
@@ -646,6 +665,8 @@ func applyAdmissionValidate(obj interface{}) error {
 	case *rbac.ClusterRole:
 		// This model does not mirror any ClusterRole-specific validating admission plugins.
 		return nil
+	case *apps.ControllerRevision:
+		return nil
 	default:
 		return fmt.Errorf("unsupported object type for admission validation: %T", obj)
 	}
@@ -653,7 +674,7 @@ func applyAdmissionValidate(obj interface{}) error {
 
 func allowUnconditionalUpdate(kind string) (bool, error) {
 	switch kind {
-	case "Pod", "PersistentVolumeClaim", "ReplicaSet", "StatefulSet", "Deployment", "ServiceAccount", "ClusterRole":
+	case "Pod", "PersistentVolumeClaim", "ReplicaSet", "StatefulSet", "Deployment", "ControllerRevision", "ServiceAccount", "ClusterRole":
 		// These strategies return true from AllowUnconditionalUpdate() in release-1.34.
 		// References:
 		// - https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/core/pod/strategy.go#L157-L159
@@ -684,6 +705,8 @@ func updateStrategyForLegacyObject(obj interface{}) (rest.RESTUpdateStrategy, er
 		return deploymentstrategy.Strategy, nil
 	case *rbac.ClusterRole:
 		return clusterrolestrategy.Strategy, nil
+	case *apps.ControllerRevision:
+		return crstrategy.Strategy, nil
 	default:
 		return nil, fmt.Errorf("unsupported object type for update strategy: %T", obj)
 	}
@@ -737,6 +760,10 @@ func applyStrategyValidate(obj interface{}, name string) error {
 		if errs := clusterrolestrategy.Strategy.Validate(ctx, typed); len(errs) > 0 {
 			return errors.NewInvalid(schema.GroupKind{Group: "rbac.authorization.k8s.io", Kind: "ClusterRole"}, name, errs)
 		}
+	case *apps.ControllerRevision:
+		if errs := crstrategy.Strategy.Validate(ctx, typed); len(errs) > 0 {
+			return errors.NewInvalid(schema.GroupKind{Group: "apps", Kind: "ControllerRevision"}, name, errs)
+		}
 	default:
 		return fmt.Errorf("unsupported object type for strategy and validation: %T", obj)
 	}
@@ -759,6 +786,8 @@ func applyStrategyCanonicalize(obj interface{}) error {
 		deploymentstrategy.Strategy.Canonicalize(typed)
 	case *rbac.ClusterRole:
 		clusterrolestrategy.Strategy.Canonicalize(typed)
+	case *apps.ControllerRevision:
+		crstrategy.Strategy.Canonicalize(typed)
 	default:
 		return fmt.Errorf("unsupported object type for strategy and validation: %T", obj)
 	}
@@ -1473,6 +1502,8 @@ func checkGracefulDelete(obj interface{}, options *metav1.DeleteOptions) (bool, 
 		return false, false, nil
 	case *appsv1.StatefulSet:
 		// StatefulSets don't support graceful deletion
+		return false, false, nil
+	case *appsv1.ControllerRevision:
 		return false, false, nil
 	case *appsv1.Deployment:
 		// Deployments don't support graceful deletion
@@ -2243,4 +2274,86 @@ func (s *State) ClusterRoleUpdate(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, 
 	}
 
 	return updatedCR, nil
+}
+
+// Returned value must be treated as read-only.
+func (s *State) ControllerRevisionGet(namespace, name string) (*appsv1.ControllerRevision, error) {
+	return s.ControllerRevisionMutGet(namespace, name)
+}
+
+func (s *State) ControllerRevisionMutGet(namespace, name string) (*appsv1.ControllerRevision, error) {
+	key := KKey{
+		Kind:      "ControllerRevision",
+		Namespace: namespace,
+		Name:      name,
+	}
+
+	obj, err := s.get(key)
+	if err != nil {
+		return nil, err
+	}
+
+	ss, ok := obj.(*appsv1.ControllerRevision)
+	if !ok {
+		// This should never happen
+		return nil, fmt.Errorf("state entry for controllerrevision %s/%s is not a *v1.ControllerRevision", namespace, name)
+	}
+
+	return ss, nil
+}
+
+// Returned value must be treated as read-only.
+func (s *State) ControllerRevisionList(namespace string, selector labels.Selector) ([]*appsv1.ControllerRevision, error) {
+	return s.ControllerRevisionMutList(namespace, selector)
+}
+
+func (s *State) ControllerRevisionMutList(namespace string, selector labels.Selector) ([]*appsv1.ControllerRevision, error) {
+	objs, err := s.objListBySelector("ControllerRevision", namespace, selector)
+	if err != nil {
+		return nil, err
+	}
+
+	sets := make([]*appsv1.ControllerRevision, 0, len(objs))
+	for _, obj := range objs {
+		set, ok := obj.(*appsv1.ControllerRevision)
+		if !ok {
+			return nil, fmt.Errorf("state entry is not a *v1.ControllerRevision")
+		}
+		sets = append(sets, set)
+	}
+
+	return sets, nil
+}
+
+func (s *State) ControllerRevisionCreate(namespace string, ss *appsv1.ControllerRevision) (*appsv1.ControllerRevision, error) {
+	obj, err := s.create("ControllerRevision", namespace, ss)
+	if err != nil {
+		return nil, err
+	}
+
+	createdSS, ok := obj.(*appsv1.ControllerRevision)
+	if !ok {
+		return nil, fmt.Errorf("create returned unexpected type %T", obj)
+	}
+
+	return createdSS, nil
+}
+
+func (s *State) ControllerRevisionUpdate(namespace string, ss *appsv1.ControllerRevision) (*appsv1.ControllerRevision, error) {
+	obj, err := s.update("ControllerRevision", namespace, ss)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedSS, ok := obj.(*appsv1.ControllerRevision)
+	if !ok {
+		return nil, fmt.Errorf("update returned unexpected type %T", obj)
+	}
+
+	return updatedSS, nil
+}
+
+func (s *State) ControllerRevisionDelete(namespace, name string, options metav1.DeleteOptions) error {
+	key := KKey{Kind: "ControllerRevision", Namespace: namespace, Name: name}
+	return s.delete(key, options)
 }
