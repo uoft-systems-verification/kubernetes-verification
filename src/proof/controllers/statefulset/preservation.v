@@ -392,12 +392,18 @@ Proof.
             set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')))
       all_pods).
   { exact (Forall_and Hall_valid Hall_parent_refs). }
+  assert (sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') =
+    set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')) as Hset_namespace.
+  { exact (f_equal KKey.Namespace' Hset_key). }
+  iEval (rewrite Hset_namespace) in "Hown_pod_orphans".
   wp_apply (wp_releasePodsWithBadNames_combined γ l set_l all_sl
     set all_ptrs all_pods (list_to_set (PodV.key <$> living_all)) 1 pod_dq terminating_bound
     with "[$Hset $Hall_sl $Hall_pods $Hbad_meta $Hbad_spec
-      $Hbad_occupied $Hall_deletion_observed $Hown_children_frag $Hown_terminating_children_frag]").
+      $Hbad_occupied $Hall_deletion_observed $Hown_children_frag $Hown_terminating_children_frag
+      $Hown_pod_orphans]").
   { iFrame "#". iPureIntro. split_and!; done. }
   iIntros (released err) "Hrelease". iNamedPrefix "Hrelease" "Hrelease_".
+  iEval (rewrite -Hset_namespace) in "Hrelease_Hown_pod_orphans".
   destruct err as [err_ok|].
   { wp_auto_keep.
     set remaining_bad := filter BadLiving (drop released all_pods).
@@ -603,6 +609,7 @@ Proof.
       with "[Hrelease_Hown_terminating_children_frag]" as "Hrelease_Hown_terminating_children_frag".
     { iExists terminating_bound. iFrame. }
     iApply ("HΦ" $! remaining_pods pvcs (interface.ok err_ok)).
+    iFrame "Hrelease_Hown_pod_orphans".
     rewrite /owned_resources /=.
     iFrame "Hown_sts_meta_frag Hown_sts_spec_frag Hremaining_frags Hremaining_occupied
       Hown_pvc_frags Hoccupied_pvc_frags Hremaining_children Hrelease_Hown_terminating_children_frag
@@ -801,6 +808,7 @@ Proof.
     with "[Hreconcile_Hown_terminating_children_frag]" as "Hreconcile_Hown_terminating_children_frag".
   { iExists terminating_bound'. iFrame. }
   iApply ("HΦ" $! pods' pvcs' interface.nil).
+  iFrame "Hrelease_Hown_pod_orphans".
   rewrite /owned_resources /=.
   iFrame "Hown_sts_meta_frag Hown_sts_spec_frag Hfinal_pod_frags Hfinal_occupied
     Hfinal_pvcs Hfinal_occupied_pvcs Hreconcile_Hown_children

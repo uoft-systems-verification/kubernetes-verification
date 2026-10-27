@@ -6,13 +6,14 @@ From New.proof Require Import prelude empty_ffi.
 From New.object_specs Require Export prelude.
 From New.proof.big_op Require Export big_sepL big_sepM.
 From New.proof.algebra Require Export
-  kview cview terminating_children deletion_observation.
+  kview cview terminating_children orphan_view deletion_observation.
 
 Class kubernetesModelG Σ := {
   #[global] kubernetes_model_kviewG :: kviewG Σ;
   #[global] kubernetes_model_cviewG :: cviewG Σ;
   #[global] kubernetes_model_terminating_childrenG :: terminatingChildrenG Σ;
   #[global] kubernetes_model_deletion_observationG :: deletionObservationG Σ;
+  #[global] kubernetes_model_orphan_viewG :: orphanViewG Σ;
 }.
 
 Section spec.
@@ -26,6 +27,7 @@ Record KubernetesGname := mk_γk {
   γ_children : gname;
   γ_terminating_children : gname;
   γ_deletion_observation : gname;
+  γ_orphans : gname;
 }.
 
 Definition own_kview_auth γ state used_uid : iProp Σ :=
@@ -73,11 +75,54 @@ Definition own_deletion_observation_auth γ state used_uid : iProp Σ :=
 Definition own_deletion_observed_frag γ key uid : iProp Σ :=
   deletion_observation.own_frag γ.(γ_deletion_observation) key uid.
 
+Definition own_orphans_auth γ state tracked : iProp Σ :=
+  orphan_view.own_auth γ.(γ_orphans) state tracked.
+
+Definition own_orphans_frag γ bk dq ks : iProp Σ :=
+  orphan_view.own_frag γ.(γ_orphans) bk dq ks.
+
+(** The whole fragment of [key]'s orphan bucket when [key]'s kind is adoptable,
+    and nothing otherwise. Making [key] a living orphan requires it. *)
+Definition own_orphans_frag_of γ (key : KKey.t) (ks : gset KKey.t) : iProp Σ :=
+  if decide (key.(KKey.Kind') ∈ orphan_view.adoptable_kinds)
+  then own_orphans_frag γ (orphan_view.bucket_of key) (DfracOwn 1) ks
+  else True%I.
+
+(** The whole orphan bucket fragment for the Pods of namespace [ns], whatever
+    its contents. A controller that releases Pods in [ns] holds it. *)
+Definition own_pod_orphans γ (ns : go_string) : iProp Σ :=
+  ∃ ks, own_orphans_frag γ ("Pod"%go, ns) (DfracOwn 1) ks.
+
+Lemma own_pod_orphans_frag_of γ pod :
+  own_pod_orphans γ pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace') ⊣⊢
+    ∃ ks, own_orphans_frag_of γ (PodV.key pod) ks.
+Proof.
+  rewrite /own_pod_orphans /own_orphans_frag_of.
+  case_decide as Hkind; first done.
+  exfalso. apply Hkind.
+  rewrite /PodV.key /PodV.meta_key /= /orphan_view.adoptable_kinds elem_of_singleton //.
+Qed.
+
+Lemma meta_parent_ref_namespace_eq meta parent_key parent_uid :
+  meta_parent_ref meta = Some (parent_key, parent_uid) →
+  meta.(ObjectMetaV.Namespace') = parent_key.(KKey.Namespace').
+Proof.
+  unfold meta_parent_ref.
+  destruct meta.(ObjectMetaV.OwnerReferences') as [owner_references|];
+    last done.
+  destruct (list_find
+    (λ owner_reference,
+      owner_reference.(OwnerReferenceV.Controller') = Some true)
+    owner_references) as [[i owner_reference]|]; last done.
+  intros Hparent. inversion Hparent. done.
+Qed.
+
 Definition kubernetes_inv γ l : iProp Σ :=
   ∃ (phys_state_l: loc) (phys_used_uid_l: loc) (phys_used_rv_l: loc)
     (phys_state: gmap KKey.t interface.t) (phys_used_uid : gmap types.UID.t unit) (phys_used_rv : gmap go_string unit)
     (abs_state: gmap KKey.t KObjectV.t) (used_uid: gset types.UID.t)
-    (used_reference: gset (KKey.t * types.UID.t)),
+    (used_reference: gset (KKey.t * types.UID.t))
+    (orphan_tracked: gset orphan_view.bucket),
     "Hstate_m_addr" ∷ l.[(apimodel.State.t), "m"] ↦ phys_state_l ∗
     "Hstate_used_uid_addr" ∷ l.[(apimodel.State.t), "usedUID"] ↦ phys_used_uid_l ∗
     "Hstate_used_rv_addr" ∷ l.[(apimodel.State.t), "usedRV"] ↦ phys_used_rv_l ∗
@@ -88,6 +133,7 @@ Definition kubernetes_inv γ l : iProp Σ :=
     "Hown_children" ∷ own_children_auth γ abs_state used_reference ∗
     "Hown_terminating_children" ∷ own_terminating_children_auth γ abs_state ∗
     "Hown_deletion_observations" ∷ own_deletion_observation_auth γ abs_state used_uid ∗
+    "Hown_orphans" ∷ own_orphans_auth γ abs_state orphan_tracked ∗
     "Hphys_abs_rep" ∷ ([∗ map] i; obj ∈ phys_state; abs_state,
       match i with
       | interface.ok i_ok => KObjectV.deepown_i i_ok obj 1

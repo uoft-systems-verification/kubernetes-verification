@@ -42,19 +42,21 @@ Proof.
     (γ_terminating_children) "Hown_terminating_children".
   iMod deletion_observation.init as
     (γ_deletion_observation) "Hown_deletion_observations".
+  iMod orphan_view.init as (γ_orphans) "Hown_orphans".
   iAssert (kubernetes_inv
       (mk_γk γ_state γ_children γ_terminating_children
-        γ_deletion_observation) l)
+        γ_deletion_observation γ_orphans) l)
     with "[m usedUID usedRV Hown_phys Hown_used_uid Hown_used_rv
       Hown_abs Hown_children Hown_terminating_children
-      Hown_deletion_observations]" as "Hinv".
+      Hown_deletion_observations Hown_orphans]" as "Hinv".
   { iExists phys_state_l, phys_used_uid_l, phys_used_rv_l,
       (∅ : gmap KKey.t interface.t),
       (∅ : gmap types.UID.t unit),
       (∅ : gmap go_string unit),
       (∅ : gmap KKey.t KObjectV.t),
       (∅ : gset types.UID.t),
-      (∅ : gset (KKey.t * types.UID.t)).
+      (∅ : gset (KKey.t * types.UID.t)),
+      (∅ : gset orphan_view.bucket).
     iFrame.
     rewrite big_sepM2_empty.
     iPureIntro. split; done. }
@@ -63,7 +65,7 @@ Proof.
   { iNext. iExact "Hinv". }
   iApply ("HΦ" $! l
     (mk_γk γ_state γ_children γ_terminating_children
-      γ_deletion_observation)).
+      γ_deletion_observation γ_orphans)).
   iExists mu_l. iFrame "#".
   iModIntro. done.
 Qed.

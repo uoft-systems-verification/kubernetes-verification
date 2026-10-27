@@ -21,6 +21,8 @@ Lemma wp_State__create_named_orphan_au γ l kind namespace key i kobj :
       KKey.Namespace' := namespace
     |} ⌝ ∗
     "%Hparent_none" ∷ ⌜ obj_parent_ref kobj = None ⌝ ∗
+    (* An orphan of an adoptable kind would enter an orphan bucket. *)
+    "%Hnot_adoptable" ∷ ⌜ kind ∉ orphan_view.adoptable_kinds ⌝ ∗
     "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
     "Hown_reserved_frag" ∷ own_available_reserved_frag γ 1 key ∗
     |={⊤,∅}=>
@@ -285,6 +287,10 @@ Proof.
     Hgenerated_uid_fresh Hkobj2_uid with
     "Hinv_Hown_deletion_observations") as
     "Hinv_Hown_deletion_observations".
+  iMod (orphan_view.create_vs key kobj2 with "Hinv_Hown_orphans")
+    as "Hinv_Hown_orphans".
+  { exact Hkey_not_in_abs. }
+  { apply orphan_view.not_adoptable_of_kind. rewrite Hkey_eq. exact Hnot_adoptable. }
   iModIntro.
   iAssert (([∗ map] i; obj ∈
       <[key:=interface.ok i1]> phys_state;
@@ -336,6 +342,7 @@ Lemma wp_State__create_named_orphan γ l kind namespace key i kobj :
         KKey.Namespace' := namespace
       |} ⌝ ∗
       "%Hparent_none" ∷ ⌜ obj_parent_ref kobj = None ⌝ ∗
+      "%Hnot_adoptable" ∷ ⌜ kind ∉ orphan_view.adoptable_kinds ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
       "Hown_reserved_frag" ∷ own_available_reserved_frag γ 1 key
   }}}
@@ -413,7 +420,8 @@ Proof.
     (KObjectV.PersistentVolumeClaim pvc)
     with "[$Hinit $Hisk $Hdeepown_i $Hown_reserved_frag]").
   { iPureIntro.
-    split_and!; done. }
+    split_and!; try done.
+    rewrite /orphan_view.adoptable_kinds elem_of_singleton. discriminate. }
   iIntros (i' kobj' uid) "Hpost". iNamed "Hpost".
   destruct kobj' as [pod'|rs'|pvc'|sts'|d'|revision']; try done.
   iDestruct "Hdeepown_i" as (pvc_l') "[%Hi' Hdeepown_l]".

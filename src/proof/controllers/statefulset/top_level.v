@@ -626,6 +626,8 @@ Definition progress_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "Hresources" ∷ owned_resources γ sts pods pvcs (mutating_fractions dq) true ∗
+      (* Releasing a Pod makes it an orphan in the namespace's Pod bucket. *)
+      "Hown_pod_orphans" ∷ own_pod_orphans γ sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement sts ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
@@ -633,6 +635,7 @@ Definition progress_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
     @! statefulset.syncStatefulSet #namespace #name
   {{{ pods' pvcs' (err : interface.t), RET #err;
       owned_resources γ sts pods' pvcs' (mutating_fractions dq) false ∗
+      own_pod_orphans γ sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
       ⌜ current_state_matches sts pods' pvcs' ∨
         (pods_progress_observed pods pods' ∧ match_distance sts pods' pvcs' < match_distance sts pods pvcs) ⌝
   }}}.
@@ -642,6 +645,7 @@ Definition preservation_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
       "Hresources" ∷ owned_resources γ sts pods pvcs (mutating_fractions dq) false ∗
+      "Hown_pod_orphans" ∷ own_pod_orphans γ sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement sts ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
@@ -649,6 +653,7 @@ Definition preservation_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
     @! statefulset.syncStatefulSet #namespace #name
   {{{ pods' pvcs' (err : interface.t), RET #err;
       owned_resources γ sts pods' pvcs' (mutating_fractions dq) false ∗
+      own_pod_orphans γ sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
       ⌜ match_distance sts pods' pvcs' ≤ match_distance sts pods pvcs ⌝
   }}}.
 

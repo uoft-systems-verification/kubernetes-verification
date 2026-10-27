@@ -293,7 +293,9 @@ Lemma wp_releasePod_combined γ model_l set_l pod_l
           own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
             (ObjectSpecV.PodSpec pod.(PodV.Spec')) ∗
           own_children_frag γ (StatefulSetV.key set)
-            set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 children)%I
+            set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 children)%I ∗
+      "Hown_pod_orphans" ∷
+        own_pod_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
   }}}
     @! statefulset.releasePod #set_l #pod_l
   {{{ (err : interface.t), RET #err;
@@ -306,7 +308,9 @@ Lemma wp_releasePod_combined γ model_l set_l pod_l
       else
         own_children_frag γ (StatefulSetV.key set)
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
-          (children ∖ {[PodV.key pod]}))%I
+          (children ∖ {[PodV.key pod]}))%I ∗
+      "Hown_pod_orphans" ∷
+        own_pod_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto_keep.
@@ -545,7 +549,7 @@ Proof.
          HupdatedPod_meta_Hdeepown_finalizers_some
          HupdatedPod_meta_Hdeepown_managedfields
          HupdatedPod_meta_Hdeepown_finalizers_cap".
-      iFrame "updatedPod Howner_references Hpod Hrelease_ownership HupdatedPod_typemeta
+      iFrame "updatedPod Howner_references Hpod Hrelease_ownership Hown_pod_orphans HupdatedPod_typemeta
         HupdatedPod_objectmeta_field HupdatedPod_spec_l
         HupdatedPod_status_l HΦ".
       iExists (word.add i (W64 1)),
@@ -645,7 +649,7 @@ Proof.
          HupdatedPod_meta_Hdeepown_finalizers_some
          HupdatedPod_meta_Hdeepown_managedfields
          HupdatedPod_meta_Hdeepown_finalizers_cap".
-      iFrame "updatedPod Howner_references Hpod Hrelease_ownership HupdatedPod_typemeta
+      iFrame "updatedPod Howner_references Hpod Hrelease_ownership Hown_pod_orphans HupdatedPod_typemeta
         HupdatedPod_objectmeta_field HupdatedPod_spec_l
         HupdatedPod_status_l HΦ".
       iExists (word.add i (W64 1)),
@@ -910,17 +914,27 @@ Proof.
     + iSimpl in "Hrelease_ownership".
       iDestruct "Hrelease_ownership" as
         "(%Hkey_in & Hown_meta & Hown_spec & Hown_children)".
+      (* The released Pod becomes an orphan in the StatefulSet's namespace. *)
+      assert (pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace') =
+        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')) as Hpod_namespace.
+      { exact (meta_parent_ref_namespace_eq _ _ _ Hparent). }
+      iEval (rewrite -Hpod_namespace own_pod_orphans_frag_of) in "Hown_pod_orphans".
+      iDestruct "Hown_pod_orphans" as (orphans) "Hown_orphans_frag".
       wp_apply (wp_State__PodUpdateTx_release γ model_l
         (release_pod_input set pod).(PodV.ObjectMeta').(ObjectMetaV.Namespace')
         updatedPod_l (release_pod_input set pod)
         (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID')
-        pod.(PodV.ObjectMeta') pod.(PodV.Spec') children
+        pod.(PodV.ObjectMeta') pod.(PodV.Spec') children orphans
         (StatefulSetV.key set) set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
-        with "[$Hapimodel $Hisk $Hreleased_pod $Hown_meta $Hown_spec $Hown_children]").
+        with "[$Hapimodel $Hisk $Hreleased_pod $Hown_meta $Hown_spec $Hown_children
+          $Hown_orphans_frag]").
       { iFrame "%". }
       iIntros (returned_pod_l returned_pod) "Hupdate".
       iDestruct "Hupdate" as
-        "(_ & _ & _ & _ & _ & _ & Hreturned_pod & Hown_children)".
+        "(_ & _ & _ & _ & _ & _ & Hreturned_pod & Hown_children & Hown_orphans_frag & _)".
+      iAssert (own_pod_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        with "[Hown_orphans_frag]" as "Hown_pod_orphans".
+      { rewrite -Hpod_namespace own_pod_orphans_frag_of. iExists _. iFrame. }
       wp_auto_keep.
       wp_apply (wp_IsNotFound interface.nil with "[]").
       replace (bool_decide (not_found_error interface.nil)) with false by
@@ -1009,7 +1023,8 @@ Lemma wp_releasePodsWithBadNames γ model_l set_l pods_sl
                  set.(StatefulSetV.ObjectMeta').(
                    ObjectMetaV.UID')) ∧
             PodV.key pod ∈ children)
-          bad_name_pods ⌝
+          bad_name_pods ⌝ ∗
+      "Hown_pod_orphans" ∷ own_pod_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
   }}}
     @! statefulset.releasePodsWithBadNames #set_l #pods_sl
   {{{ RET #interface.nil;
@@ -1022,7 +1037,8 @@ Lemma wp_releasePodsWithBadNames γ model_l set_l pods_sl
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
         (children ∖
-          list_to_set (PodV.key <$> bad_name_pods))
+          list_to_set (PodV.key <$> bad_name_pods)) ∗
+      "Hown_pod_orphans" ∷ own_pod_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
@@ -1070,12 +1086,13 @@ Proof.
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
       (children ∖ list_to_set
         (PodV.key <$> filter Bad (take (sint.nat i) pods))) ∗
+    "Hown_pod_orphans" ∷ own_pod_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
     "%Hi" ∷
       ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len pods_sl) ⌝
   )%I.
   iAssert I with
     "[i set Hset pod Hpods_sl Hpods Hown_meta Hown_spec
-      Hown_children]" as "Hloop_inv".
+      Hown_children Hown_pod_orphans]" as "Hloop_inv".
   {
     iExists (W64 0), (zero_val loc).
     rewrite !take_0 !drop_0 !filter_nil
@@ -1291,11 +1308,12 @@ Proof.
         with
           "[$Hpkg $Hisk $Hglobal_l $Hset $Hthis
             $Hown_meta_this $Hown_spec_this
-            $Hown_children]").
+            $Hown_children $Hown_pod_orphans]").
       {
         iFrame "%".
       }
-      iIntros (err) "(%Herr & Hrelease_Hset & Hrelease_Hpod & Hrelease_Hown_children)".
+      iIntros (err) "(%Herr & Hrelease_Hset & Hrelease_Hpod & Hrelease_Hown_children &
+        Hown_pod_orphans)".
       specialize (Herr eq_refl). subst err.
       wp_auto_keep.
       assert (Hnext :
@@ -1407,7 +1425,8 @@ Lemma wp_releasePodsWithBadNames_combined γ model_l set_l pods_sl
       "%Hreleaseable" ∷ ⌜ Forall (λ pod,
         PodV.valid pod ∧ meta_parent_ref pod.(PodV.ObjectMeta') = Some
           (StatefulSetV.key set, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID'))) pods ⌝ ∗
-      "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝
+      "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝ ∗
+      "Hown_pod_orphans" ∷ own_pod_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
   }}}
     @! statefulset.releasePodsWithBadNames #set_l #pods_sl
   {{{ (n : nat) (err : interface.t), RET #err;
@@ -1427,7 +1446,8 @@ Lemma wp_releasePodsWithBadNames_combined γ model_l set_l pods_sl
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
           (children ∖ list_to_set (PodV.key <$> filter BadLiving (take n pods))) ∗
       "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ (StatefulSetV.key set)
-        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') terminating_bound
+        set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') terminating_bound ∗
+      "Hown_pod_orphans" ∷ own_pod_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
   }}}.
 Proof.
   simpl. wp_start as "H". iNamed "H".
@@ -1460,9 +1480,10 @@ Proof.
         (children ∖ list_to_set (PodV.key <$> filter BadLiving (take (sint.nat i) pods))) ∗
     "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ (StatefulSetV.key set)
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') terminating_bound ∗
+    "Hown_pod_orphans" ∷ own_pod_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
     "%Hi" ∷ ⌜ 0 ≤ sint.Z i ≤ sint.Z (slice.len pods_sl) ⌝)%I.
   iAssert I with "[i set Hset pod Hpods_sl Hpods Hown_meta Hown_spec Hown_occupied
-      Hown_children Hown_terminating_children_frag]" as "Hloop_inv".
+      Hown_children Hown_terminating_children_frag Hown_pod_orphans]" as "Hloop_inv".
   { iExists (W64 0), (zero_val loc).
     rewrite !take_0 !drop_0 !filter_nil fmap_nil list_to_set_nil difference_empty_L.
     iFrame. iPureIntro. word. }
@@ -1566,9 +1587,10 @@ Proof.
           (list_to_set (C:=gset KKey.t) (PodV.key <$> filter is_pod_alive pods) ∖
             list_to_set (PodV.key <$> filter BadLiving (take (sint.nat i) pods)))
           dq_set dq_pods false terminating_bound with
-          "[$Hpkg $Hisk $Hglobal_l $Hset $Hthis $Hown_meta_this $Hown_spec_this $Hown_children]").
+          "[$Hpkg $Hisk $Hglobal_l $Hset $Hthis $Hown_meta_this $Hown_spec_this $Hown_children
+            $Hown_pod_orphans]").
         { iFrame "%". }
-        iIntros (err) "(%Herr & Hset & Hthis & Hown_children)".
+        iIntros (err) "(%Herr & Hset & Hthis & Hown_children & Hown_pod_orphans)".
         specialize (Herr eq_refl). subst err. wp_auto_keep.
         assert (Hfilter_take : filter BadLiving (take (sint.nat (word.add i (W64 1))) pods) =
             filter BadLiving (take (sint.nat i) pods) ++ [this_pod]).
@@ -1598,9 +1620,10 @@ Proof.
           "[#Hthis_observed _]".
         wp_apply (wp_releasePod_combined γ model_l set_l this_ptr set this_pod ∅
           dq_set dq_pods true terminating_bound with
-          "[$Hpkg $Hisk $Hglobal_l $Hset $Hthis $Hthis_observed $Hown_terminating_children_frag]").
+          "[$Hpkg $Hisk $Hglobal_l $Hset $Hthis $Hthis_observed $Hown_terminating_children_frag
+            $Hown_pod_orphans]").
         { iFrame "%". }
-        iIntros (err) "(_ & Hset & Hthis & Hown_terminating_children_frag)".
+        iIntros (err) "(_ & Hset & Hthis & Hown_terminating_children_frag & Hown_pod_orphans)".
         assert (Hfilter_take : filter BadLiving (take (sint.nat (word.add i (W64 1))) pods) =
             filter BadLiving (take (sint.nat i) pods)).
         { rewrite Hnext Htake_next list.filter_app.

@@ -126,7 +126,7 @@ Qed.
     the status changes, so the other views take the new object as it is, and
     the metadata fragment stays valid. *)
 Lemma update_status_same_meta_written_vs γ (kind namespace : go_string) kobj abs_state used_uid
-    used_reference old updated rv uid dq kmeta kstatus :
+    used_reference orphan_tracked old updated rv uid dq kmeta kstatus :
   update_status_key kind namespace kobj = KObjectV.key kobj →
   valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj) →
   ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta kobj) kmeta →
@@ -136,6 +136,7 @@ Lemma update_status_same_meta_written_vs γ (kind namespace : go_string) kobj ab
   own_children_auth γ abs_state used_reference -∗
   own_terminating_children_auth γ abs_state -∗
   own_deletion_observation_auth γ abs_state used_uid -∗
+  own_orphans_auth γ abs_state orphan_tracked -∗
   own_meta_frag γ (KObjectV.key kobj) uid dq kmeta -∗
   own_status_frag γ (KObjectV.key kobj) uid 1 kstatus ==∗
   ⌜ KObjectV.valid (update_status_stored updated rv) ∧
@@ -149,12 +150,14 @@ Lemma update_status_same_meta_written_vs γ (kind namespace : go_string) kobj ab
     (<[KObjectV.key kobj := update_status_stored updated rv]> abs_state) ∗
   own_deletion_observation_auth γ
     (<[KObjectV.key kobj := update_status_stored updated rv]> abs_state) used_uid ∗
+  own_orphans_auth γ
+    (<[KObjectV.key kobj := update_status_stored updated rv]> abs_state) orphan_tracked ∗
   own_meta_frag γ (KObjectV.key kobj) uid dq kmeta ∗
   own_status_frag γ (KObjectV.key kobj) uid 1 (KObjectV.status (update_status_stored updated rv)).
 Proof.
   iIntros (Hkey Hvalid_typemeta Hmeta_same Hvalidated Hvalid_rv)
     "Hown_abs Hown_children Hown_terminating_children Hown_deletion_observations
-      Hown_meta_frag Hown_status_frag".
+      Hown_orphans Hown_meta_frag Hown_status_frag".
   iDestruct (update_status_same_meta_validated _ _ _ _ _ _ _ _ _ _ _ _ Hkey Hmeta_same Hvalidated
     with "Hown_abs Hown_meta_frag Hown_status_frag")
     as %(Hlookup_abs & Huid_eq & Hold_living & Hmeta_eq & Hstatus_eq & Hprepared & Hns &
@@ -269,6 +272,10 @@ Proof.
   { symmetry. exact Huid_new_old. }
   { intros Hold_terminating.
     rewrite -Hdeletion_timestamp_old_new. exact Hold_terminating. }
+  iMod (orphan_view.insert_same_vs (KObjectV.key kobj) old new_kobj with
+    "Hown_orphans") as "Hown_orphans".
+  { exact Hlookup_abs. }
+  { apply orphan_view.adoptable_orphan_iff; done. }
   iModIntro. iFrame.
   iPureIntro. split_and!.
   - destruct Hvalid_kuid_new as (_ & _ & Hvalid_new_kobj & _). exact Hvalid_new_kobj.
@@ -431,11 +438,12 @@ Proof.
     iDestruct (update_status_same_meta_validated _ _ _ _ _ _ _ _ _ _ _ _ Hkey Hmeta_same Hvalidated
       with "Hinv_Hown_abs Hown_meta_frag Hown_status_frag")
       as %(_ & _ & _ & Hmeta_eq & Hstatus_eq & Hprepared & _).
-    iMod (update_status_same_meta_written_vs _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hkey Hvalid_typemeta
+    iMod (update_status_same_meta_written_vs _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hkey Hvalid_typemeta
       Hmeta_same Hvalidated Hvalid_rv with "Hinv_Hown_abs Hinv_Hown_children
-      Hinv_Hown_terminating_children Hinv_Hown_deletion_observations Hown_meta_frag Hown_status_frag")
+      Hinv_Hown_terminating_children Hinv_Hown_deletion_observations Hinv_Hown_orphans
+      Hown_meta_frag Hown_status_frag")
       as "(%Hnew & Hinv_Hown_abs & Hinv_Hown_children & Hinv_Hown_terminating_children &
-        Hinv_Hown_deletion_observations & Hown_meta_frag & Hown_status_frag)".
+        Hinv_Hown_deletion_observations & Hinv_Hown_orphans & Hown_meta_frag & Hown_status_frag)".
     destruct Hnew as (Hvalid_new & Hsame_kind_new & Hmeta_new).
     pose proof Hvalidated as (_ & Hvalid_old & _ & _ & _ & Hupdated & _).
     assert (KObjectV.valid_status_update kind namespace
@@ -674,11 +682,12 @@ Proof.
     wp_auto_keep.
     iApply fupd_wp.
     iMod "Hau" as (uid dq kmeta kstatus) "H". iNamed "H".
-    iMod (update_status_same_meta_written_vs _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hkey Hvalid_typemeta
+    iMod (update_status_same_meta_written_vs _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hkey Hvalid_typemeta
       Hmeta_same Hvalidated Hvalid_rv with "Hinv_Hown_abs Hinv_Hown_children
-      Hinv_Hown_terminating_children Hinv_Hown_deletion_observations Hown_meta_frag Hown_status_frag")
+      Hinv_Hown_terminating_children Hinv_Hown_deletion_observations Hinv_Hown_orphans
+      Hown_meta_frag Hown_status_frag")
       as "(%Hnew & Hinv_Hown_abs & Hinv_Hown_children & Hinv_Hown_terminating_children &
-        Hinv_Hown_deletion_observations & Hown_meta_frag & Hown_status_frag)".
+        Hinv_Hown_deletion_observations & Hinv_Hown_orphans & Hown_meta_frag & Hown_status_frag)".
     destruct Hnew as (Hvalid_new & Hsame_kind_new & Hmeta_new).
     iDestruct "Hclose" as "[Hclose_success _]".
     iMod ("Hclose_success" $! i' (update_status_stored updated rv) with

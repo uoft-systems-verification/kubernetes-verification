@@ -40,6 +40,31 @@ Proof. unfold adoptable_orphan. apply _. Defined.
 #[global] Instance in_bucket_dec bk k obj : Decision (in_bucket bk k obj).
 Proof. unfold in_bucket. apply _. Defined.
 
+Lemma not_adoptable_of_parent k obj p :
+  obj_parent_ref obj = Some p → ¬ adoptable_orphan k obj.
+Proof. intros Hparent (_ & _ & Hnone). rewrite Hparent in Hnone. done. Qed.
+
+Lemma not_adoptable_of_terminating k obj :
+  (KObjectV.objectmeta obj).(ObjectMetaV.DeletionTimestamp') ≠ None →
+  ¬ adoptable_orphan k obj.
+Proof. intros Hterminating (_ & Hliving & _). done. Qed.
+
+Lemma not_adoptable_of_kind k obj :
+  k.(KKey.Kind') ∉ adoptable_kinds → ¬ adoptable_orphan k obj.
+Proof. intros Hkind (Hadoptable & _). done. Qed.
+
+(** Orphan status depends only on the deletion timestamp and the controller
+    reference. *)
+Lemma adoptable_orphan_iff k old_obj new_obj :
+  (KObjectV.objectmeta old_obj).(ObjectMetaV.DeletionTimestamp') =
+    (KObjectV.objectmeta new_obj).(ObjectMetaV.DeletionTimestamp') →
+  obj_parent_ref old_obj = obj_parent_ref new_obj →
+  adoptable_orphan k old_obj ↔ adoptable_orphan k new_obj.
+Proof.
+  intros Hdeletion Hparent.
+  rewrite /adoptable_orphan /is_living_orphan Hdeletion Hparent //.
+Qed.
+
 Definition orphans (state : gmap KKey.t KObjectV.t) (bk : bucket) : gset KKey.t :=
   dom (filter (λ '(k, obj), in_bucket bk k obj) state).
 
