@@ -1,5 +1,8 @@
-From New.proof Require Import prelude empty_ffi wp_keep.
+From New.proof Require Import prelude empty_ffi wp_apply_keep.
 From New.proof.kubernetes_model Require Export common_get.
+
+(* Discard transient allocations from the imported Kubernetes libraries. *)
+Optimize Heap.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -42,10 +45,10 @@ Lemma wp_State__get_some_au γ l key :
 Proof.
   iIntros (Φ) "(#Hpkg & #Hkinv & Hau)". iNamed "Hau". iNamed "Hkinv".
   wp_method_call. rewrite /apimodel.State__getⁱᵐᵖˡ. wp_call.
-  wp_apply wp_with_defer as "%defer Hdefer".
+  wp_apply_keep wp_with_defer as "%defer Hdefer".
   simpl subst. wp_auto_keep.
-  wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto_keep.
-  wp_apply (wp_map_lookup2_KKey (go.InterfaceType []) with "[$Hinv_Hown_phys]").
+  wp_apply_keep wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto_keep.
+  wp_apply_keep (wp_map_lookup2_KKey (go.InterfaceType []) with "[$Hinv_Hown_phys]").
   iIntros "Hinv_Hown_phys". wp_auto_keep.
   iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq.
   destruct (bool_decide (is_Some (phys_state !! key))) eqn:Hdecide.
@@ -75,7 +78,7 @@ Proof.
   destruct i as [i_ok|].
   2: { simpl. iDestruct "Hdeepown_i" as %[]. }
   rewrite Hlookup_phys. wp_auto_keep.
-  wp_apply (wp_deepCopy with "[$Hpkg $Hdeepown_i]").
+  wp_apply_keep (wp_deepCopy with "[$Hpkg $Hdeepown_i]").
   iIntros (i') "(Hdeepown_i' & Hdeepown_i)". wp_auto_keep.
   iApply fupd_wp.
   iMod "Hau" as (uid dq dq_status kmeta kspec_o kstatus_o) "H". iNamed "H".
@@ -91,27 +94,37 @@ Proof.
     as "(%Huid_obj & %Hmeta_eq & %Huid_in)". 1: done.
   iPoseProof (kview.own_meta_living Hlookup_abs with
     "Hinv_Hown_abs Hown_meta_frag") as "%Hkobj_living".
-  destruct kspec_o as [kspec|]; destruct kstatus_o as [kstatus|].
-  1, 2: iPoseProof (kview.own_spec_exists with "Hinv_Hown_abs Hown_spec_frag") as "%Hspec_found";
-        assert (kspec = KObjectV.spec kobj) as Hkspec_eq by
-          (symmetry; eapply Hspec_found; [exact Hlookup_abs|exact Huid_obj|exact Hkobj_living]).
-  1, 3: iPoseProof (kview.own_status_exists with "Hinv_Hown_abs Hown_status_frag") as "%Hstatus_found";
-        assert (kstatus = KObjectV.status kobj) as Hkstatus_eq by
-          (symmetry; eapply Hstatus_found; [exact Hlookup_abs|exact Huid_obj|exact Hkobj_living]).
-  all: iMod ("Hclose" $! i' kobj with "[Hown_meta_frag Hown_spec_frag Hown_status_frag Hdeepown_i']") as "HΦ";
-    [iFrame; iPureIntro; split_and!; done|].
-  all: iModIntro.
-  all: iAssert (([∗ map] i; obj ∈ phys_state; abs_state,
+  (* Establish optional equalities locally so the invariant restoration and
+     mutex unlock below are checked once, independently of both options. *)
+  iAssert (⌜ match kspec_o with
+    | Some kspec => kspec = KObjectV.spec kobj
+    | None => True
+    end ⌝)%I as "%Hkspec_eq".
+  { destruct kspec_o as [kspec|]; last done.
+    iPoseProof (kview.own_spec_exists with "Hinv_Hown_abs Hown_spec_frag") as "%Hspec_found".
+    iPureIntro. symmetry. eapply Hspec_found; done. }
+  iAssert (⌜ match kstatus_o with
+    | Some kstatus => kstatus = KObjectV.status kobj
+    | None => True
+    end ⌝)%I as "%Hkstatus_eq".
+  { destruct kstatus_o as [kstatus|]; last done.
+    iPoseProof (kview.own_status_exists with "Hinv_Hown_abs Hown_status_frag") as "%Hstatus_found".
+    iPureIntro. symmetry. eapply Hstatus_found; done. }
+  iMod ("Hclose" $! i' kobj with "[Hown_meta_frag Hown_spec_frag Hown_status_frag Hdeepown_i']") as "HΦ".
+  { destruct kspec_o as [kspec|]; destruct kstatus_o as [kstatus|];
+      iFrame; iPureIntro; split_and!; done. }
+  iModIntro.
+  iAssert (([∗ map] i; obj ∈ phys_state; abs_state,
       match i with
       | interface.ok i_ok => KObjectV.deepown_i i_ok obj 1
       | interface.nil => False%I
       end)%I)
-    with "[Hdeepown_i Hother_rep]" as "Hinv_Hphys_abs_rep";
-    [iApply "Hother_rep"; iFrame|].
-  all: iCombineNamed "Hinv_*" as "H".
-  all: wp_apply (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]");
-    [iNamed "H"; iFrame; iFrame "#"; done|].
-  all: iApply "HΦ".
+    with "[Hdeepown_i Hother_rep]" as "Hinv_Hphys_abs_rep".
+  { iApply "Hother_rep". iFrame. }
+  iCombineNamed "Hinv_*" as "H".
+  wp_apply_keep (wp_Mutex__Unlock _ (kubernetes_inv γ l) with "[$Hown_Mutex H]").
+  { iNamed "H". iFrame. iFrame "#". done. }
+  iApply "HΦ".
 Unshelve. all: try tc_solve.
 Qed.
 
@@ -187,7 +200,7 @@ Lemma wp_State__PodMutGet γ l key namespace name uid dq kmeta kspec kstatus :
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H". subst key.
   wp_method_call. rewrite /apimodel.State__PodMutGetⁱᵐᵖˡ. wp_call. wp_auto_keep.
-  wp_apply (wp_State__get_some γ l
+  wp_apply_keep (wp_State__get_some γ l
     {| KKey.Kind' := "Pod"%go; KKey.Namespace' := namespace; KKey.Name' := name |}
     uid dq dq kmeta (Some (ObjectSpecV.PodSpec kspec)) (Some (ObjectStatusV.PodStatus kstatus))
     with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag $Hown_status_frag]").
@@ -241,7 +254,7 @@ Lemma wp_State__PodGet γ l key namespace name uid dq kmeta kspec kstatus :
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
   wp_method_call. rewrite /apimodel.State__PodGetⁱᵐᵖˡ. wp_call. wp_auto_keep.
-  wp_apply (wp_State__PodMutGet γ l key namespace name uid dq kmeta kspec kstatus
+  wp_apply_keep (wp_State__PodMutGet γ l key namespace name uid dq kmeta kspec kstatus
     with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag $Hown_status_frag]").
   { iPureIntro. done. }
   iIntros (pod_l pod) "Hpost".
@@ -279,7 +292,7 @@ Lemma wp_State__ReplicaSetMutGet γ l key namespace name uid dq dq_status kmeta 
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H". subst key.
   wp_method_call. rewrite /apimodel.State__ReplicaSetMutGetⁱᵐᵖˡ. wp_call. wp_auto_keep.
-  wp_apply (wp_State__get_some γ l
+  wp_apply_keep (wp_State__get_some γ l
     {| KKey.Kind' := "ReplicaSet"%go; KKey.Namespace' := namespace; KKey.Name' := name |}
     uid dq dq_status kmeta (Some (ObjectSpecV.ReplicaSetSpec kspec))
     (Some (ObjectStatusV.ReplicaSetStatus kstatus))
@@ -335,7 +348,7 @@ Lemma wp_State__ReplicaSetGet γ l key namespace name uid dq dq_status kmeta ksp
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
   wp_method_call. rewrite /apimodel.State__ReplicaSetGetⁱᵐᵖˡ. wp_call. wp_auto_keep.
-  wp_apply (wp_State__ReplicaSetMutGet γ l key namespace name uid dq dq_status kmeta kspec kstatus
+  wp_apply_keep (wp_State__ReplicaSetMutGet γ l key namespace name uid dq dq_status kmeta kspec kstatus
     with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag $Hown_status_frag]").
   { iPureIntro. done. }
   iIntros (rs_l rs) "Hpost".
@@ -375,7 +388,7 @@ Proof.
         uid dq kmeta ∗ True ∗ True)%I
     with "[$Hinit $Hisk $Hown_meta_frag]" as "Hget".
   { iFrame. done. }
-  wp_apply (wp_State__get_some γ l
+  wp_apply_keep (wp_State__get_some γ l
     {| KKey.Kind' := "PersistentVolumeClaim"%go;
        KKey.Namespace' := namespace;
        KKey.Name' := name |}
@@ -436,7 +449,7 @@ Proof.
   wp_method_call.
   rewrite /apimodel.State__PersistentVolumeClaimGetⁱᵐᵖˡ.
   wp_call. wp_auto_keep.
-  wp_apply (wp_State__PersistentVolumeClaimMutGet
+  wp_apply_keep (wp_State__PersistentVolumeClaimMutGet
     γ l key namespace name uid dq kmeta
     with "[$Hinit $Hisk $Hown_meta_frag]").
   { iPureIntro. done. }
@@ -472,7 +485,7 @@ Proof.
   wp_method_call.
   rewrite /apimodel.State__StatefulSetMutGetⁱᵐᵖˡ.
   wp_call. wp_auto_keep.
-  wp_apply (wp_State__get_some γ l
+  wp_apply_keep (wp_State__get_some γ l
     {| KKey.Kind' := "StatefulSet"%go;
        KKey.Namespace' := namespace;
        KKey.Name' := name |}
@@ -529,7 +542,7 @@ Proof.
   wp_method_call.
   rewrite /apimodel.State__StatefulSetGetⁱᵐᵖˡ.
   wp_call. wp_auto_keep.
-  wp_apply (wp_State__StatefulSetMutGet
+  wp_apply_keep (wp_State__StatefulSetMutGet
     γ l key namespace name uid dq kmeta kspec
     with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag]").
   { iPureIntro. done. }
@@ -565,7 +578,7 @@ Proof.
   wp_method_call.
   rewrite /apimodel.State__DeploymentMutGetⁱᵐᵖˡ.
   wp_call. wp_auto_keep.
-  wp_apply (wp_State__get_some γ l
+  wp_apply_keep (wp_State__get_some γ l
     {| KKey.Kind' := "Deployment"%go;
        KKey.Namespace' := namespace;
        KKey.Name' := name |}
@@ -622,7 +635,7 @@ Proof.
   wp_method_call.
   rewrite /apimodel.State__DeploymentGetⁱᵐᵖˡ.
   wp_call. wp_auto_keep.
-  wp_apply (wp_State__DeploymentMutGet
+  wp_apply_keep (wp_State__DeploymentMutGet
     γ l key namespace name uid dq kmeta kspec
     with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag]").
   { iPureIntro. done. }

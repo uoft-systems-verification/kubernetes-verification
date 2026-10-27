@@ -1,4 +1,4 @@
-From New.proof Require Import wp_keep.
+From New.proof Require Import wp_apply_keep.
 From New.proof Require Import prelude empty_ffi.
 From New.proof Require Export sort.
 From New.proof.map Require Import for_range.
@@ -27,6 +27,20 @@ Local Set Default Proof Using "All".
 
 #[local] Existing Instance controller_core_v1_sem.
 #[local] Existing Instance controller_meta_v1_sem.
+
+#[local] Instance controller_labels_sem : labels.Assumptions :=
+  controller.import_labels_Assumption.
+
+(* Literal construction converts the named label map to its underlying map.
+   Fix both underlying types instead of searching for intermediate types. *)
+#[local] Instance labels_set_to_map (l : loc) :
+  PureWp True (Convert labels.Set' (go.MapType go.string go.string) #l) #l | 0.
+Proof using package_sem.
+  apply pure_wp_go_step_det.
+  eapply (go.convert_underlying (from_under:=go.MapType go.string go.string)
+    (to_under:=go.MapType go.string go.string)).
+  apply go.is_convert_underlying_same.
+Qed.
 
 (** An abstract sortable element keeps a pod, its pointer, and its rank
     together, matching the coupled swaps performed by [ActivePodsWithRanks]. *)
@@ -222,7 +236,7 @@ Lemma wp_IsPodTerminating (pod_l : loc) (pod : PodV.t) (dq : dfrac) :
   {{{ (terminating : bool), RET #terminating; PodV.deepown_l pod_l pod dq }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto_keep.
-  wp_apply (wp_IsPodTerminal with "[$Hpod]").
+  wp_apply_keep (wp_IsPodTerminal with "[$Hpod]").
   iIntros (terminal) "Hpod".
   destruct terminal; wp_auto_keep.
   - by iApply "HΦ".
@@ -264,23 +278,23 @@ Proof.
     iSplitR; first iApply own_slice_nil.
     iSplitR; first iApply own_slice_cap_nil.
     iPureIntro. simpl. word. }
-  wp_for "Hloop".
-  wp_if_destruct.
+  wp_for_keep "Hloop".
+  wp_if_destruct_keep.
   - list_elem ptrs (sint.Z i) as this_ptr.
     assert (∃ this_pod, pods !! sint.nat i = Some this_pod) as [this_pod Hthis_pod].
     { apply lookup_lt_is_Some_2. rewrite -Hlen. apply (lookup_lt_Some _ _ _ Hthis_ptr_lookup). }
     rewrite decide_True; first word.
-    wp_apply (wp_load_slice_index with "[$Hsl]"); [word| |].
+    wp_apply_keep (wp_load_slice_index with "[$Hsl]"); [word| |].
     { iPureIntro. exact Hthis_ptr_lookup. }
     iIntros "Hsl". wp_auto_keep.
     iDestruct (big_sepL2_lookup_acc with "Hpods") as "[Hthis Hpods]";
       [exact Hthis_ptr_lookup|exact Hthis_pod|].
-    wp_apply (wp_IsPodTerminating with "[$Hthis]").
+    wp_apply_keep (wp_IsPodTerminating with "[$Hthis]").
     iIntros (terminating) "Hthis".
     iDestruct ("Hpods" with "Hthis") as "Hpods".
     destruct terminating; wp_auto_keep.
-    + wp_apply wp_slice_literal. iSplitR; first done. iIntros (sl0) "[Hsl0 _]". wp_auto_keep.
-      wp_apply (wp_slice_append with "[$Hresult $Hresult_cap $Hsl0]").
+    + wp_apply_keep wp_slice_literal. iSplitR; first done. iIntros (sl0) "[Hsl0 _]". wp_auto_keep.
+      wp_apply_keep (wp_slice_append with "[$Hresult $Hresult_cap $Hsl0]").
       iIntros (result') "(Hresult & Hresult_cap & _)". wp_auto_keep.
       iApply wp_for_post_do. wp_auto_keep.
       iFrame "HΦ Hsl".
@@ -318,7 +332,7 @@ Proof.
   rewrite go.make1_underlying.
   rewrite (go.is_underlying (t := labels.Set')
     (tunder := labels.Set'ⁱᵐᵖˡ)).
-  wp_apply wp_map_make1 as (labels_l) "Hlabels".
+  wp_apply_keep wp_map_make1 as (labels_l) "Hlabels".
   wp_pures_keep.
   iCombineNamed "Hmeta_field_*" as "Hmeta_fields".
   iAssert (typed_pointsto_def
@@ -342,7 +356,7 @@ Proof.
   - iDestruct "Hmeta_Hdeepown_labels_some" as (labels_c)
       "[Hlabels_src %Hlabels_c]".
     subst labels_c.
-    wp_apply (wp_map_for_range_return_func (key_type:=go.string)
+    wp_apply_keep (wp_map_for_range_return_func (key_type:=go.string)
       (λ (keys : list go_string) i,
         ∃ (last_value last_key : go_string),
           "v" ∷ v_ptr ↦ last_value ∗
@@ -365,7 +379,7 @@ Proof.
       wp_pures_keep.
       simpl subst'.
       wp_auto_keep.
-      wp_apply (wp_map_insert (K:=go_string) (V:=go_string)
+      wp_apply_keep (wp_map_insert (K:=go_string) (V:=go_string)
         go.string labels_l (map_prefix keys i labels) key value
         with "Hlabels") as "Hlabels".
       iRight. iSplit; [done|].
@@ -399,7 +413,7 @@ Proof.
         map.nil) as Hlabels_nil.
     { apply Hmeta_Hdeepown_labels_none. done. }
     rewrite Hlabels_nil.
-    wp_apply (wp_map_for_range_nil go.string go.string).
+    wp_apply_keep (wp_map_for_range_nil go.string go.string).
     wp_pures_keep.
     iCombineNamed "Hmeta_*" as "Hobjectmeta".
     iAssert (ObjectMetaV.deepown
@@ -469,7 +483,7 @@ Proof.
     wp_if_destruct; first (exfalso; word).
     case_bool_decide; wp_auto_keep.
     - subst cap. assert (len = W64 0) by word. subst len.
-      wp_apply wp_ArbitraryInt. iIntros (x) "_".
+      wp_apply_keep wp_ArbitraryInt. iIntros (x) "_".
       wp_auto_keep. iApply "HΦ".
       iDestruct (own_slice_empty with "[]") as "$"; simpl.
       { word. }
@@ -503,15 +517,15 @@ Proof.
         ⌜sl ≠ slice.nil⌝
     }}}).
   { intros stk E len. wp_start as "%Hlen".
-    wp_apply Hmake3; first word.
+    wp_apply_keep Hmake3; first word.
     iIntros (sl) "Hsl". iApply "HΦ". iFrame. }
   wp_auto_keep.
-  wp_apply Hmake2; first word.
+  wp_apply_keep Hmake2; first word.
   iIntros (finalizers_sl)
     "(Hfinalizers & Hfinalizers_cap & %Hfinalizers_non_nil)".
   iEval (rewrite -Hfinalizers_len) in "Hfinalizers".
   wp_auto_keep.
-  wp_apply (wp_slice_copy with "[$Hfinalizers $Hfinalizers_src]") as (n)
+  wp_apply_keep (wp_slice_copy with "[$Hfinalizers $Hfinalizers_src]") as (n)
     "(%Hcopied & Hfinalizers & Hfinalizers_src)".
   iAssert (finalizers_sl ↦* default []
       template.(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers'))
@@ -594,7 +608,7 @@ Proof.
   rewrite go.make1_underlying.
   rewrite (go.is_underlying (t := labels.Set')
     (tunder := labels.Set'ⁱᵐᵖˡ)).
-  wp_apply wp_map_make1 as (annotations_l) "Hannotations".
+  wp_apply_keep wp_map_make1 as (annotations_l) "Hannotations".
   wp_pures_keep.
   iCombineNamed "Hmeta_field_*" as "Hmeta_fields".
   iAssert (typed_pointsto_def
@@ -618,7 +632,7 @@ Proof.
   - iDestruct "Hmeta_Hdeepown_annotations_some" as (annotations_c)
       "[Hannotations_src %Hannotations_c]".
     subst annotations_c.
-    wp_apply (wp_map_for_range_return_func (key_type:=go.string)
+    wp_apply_keep (wp_map_for_range_return_func (key_type:=go.string)
       (λ (keys : list go_string) i,
         ∃ (last_value last_key : go_string),
           "v" ∷ v_ptr ↦ last_value ∗
@@ -639,7 +653,7 @@ Proof.
       iDestruct "Hloop" as (last_value last_key)
         "(v & k & desiredAnnotations & Hannotations)".
       wp_pures_keep. simpl subst'. wp_auto_keep.
-      wp_apply (wp_map_insert (K:=go_string) (V:=go_string)
+      wp_apply_keep (wp_map_insert (K:=go_string) (V:=go_string)
         go.string annotations_l (map_prefix keys i annotations) key value
         with "Hannotations") as "Hannotations".
       iRight. iSplit; [done|].
@@ -674,7 +688,7 @@ Proof.
         map.nil) as Hannotations_nil.
     { apply Hmeta_Hdeepown_annotations_none. done. }
     rewrite Hannotations_nil.
-    wp_apply (wp_map_for_range_nil go.string go.string).
+    wp_apply_keep (wp_map_for_range_nil go.string go.string).
     wp_pures_keep.
     iCombineNamed "Hmeta_*" as "Hobjectmeta".
     iAssert (ObjectMetaV.deepown
@@ -771,17 +785,17 @@ Proof.
   wp_pures_keep.
   wp_alloc template_ptr as "template_ptr".
   wp_auto_keep.
-  wp_apply (wp_getPodsLabelSet with "[$Hinit $Htemplate]").
+  wp_apply_keep (wp_getPodsLabelSet with "[$Hinit $Htemplate]").
   iIntros (labels_l) "[Htemplate Hlabels]".
   wp_auto_keep.
-  wp_apply (wp_getPodsFinalizers with "[$Hinit $Htemplate]").
+  wp_apply_keep (wp_getPodsFinalizers with "[$Hinit $Htemplate]").
   iIntros (finalizers_sl) "(Htemplate & Hfinalizers & Hfinalizers_cap & %Hfinalizers_not_nil)".
   wp_auto_keep.
-  wp_apply (wp_getPodsAnnotationSet with "[$Hinit $Htemplate]").
+  wp_apply_keep (wp_getPodsAnnotationSet with "[$Hinit $Htemplate]").
   iIntros (annotations_l) "[Htemplate Hannotations]".
   wp_auto_keep.
-  wp_apply wp_Accessor. 1: iPureIntro; done.
-  wp_apply (wp_GetName_deepown_kobject obj parent_l parent with "[$Hparent_meta]"). 1: done.
+  wp_apply_keep wp_Accessor. 1: iPureIntro; done.
+  wp_apply_keep (wp_GetName_deepown_kobject obj parent_l parent with "[$Hparent_meta]"). 1: done.
   iIntros "Hparent_meta".
   wp_auto_keep.
   (* Apply the spec directly to avoid [wp_apply] traversing the large continuation. *)
@@ -805,7 +819,7 @@ Proof.
     rewrite -> bool_decide_false by exact Href_not_null.
     wp_pures_keep.
     wp_auto_keep.
-    wp_apply (wp_slice_literal
+    wp_apply_keep (wp_slice_literal
       (V:=v1.OwnerReference.t) (t:=v1.OwnerReference)).
     iSplitR; first done.
     iIntros (ref_sl_ptr) "[Href_sl Href_sl_cap]".
@@ -818,7 +832,7 @@ Proof.
       as "Howners".
     iPoseProof (own_slice_cap_nil (V:=v1.OwnerReference.t)) as "Howners_cap".
     wp_auto_keep.
-    wp_apply (wp_slice_append
+    wp_apply_keep (wp_slice_append
       (st:=go.SliceType v1.OwnerReference)
       (t:=v1.OwnerReference) (V:=v1.OwnerReference.t)
       slice.nil ([] : list v1.OwnerReference.t)
@@ -832,7 +846,7 @@ Proof.
       "(%Htemplate_l_not_null & Htemplate_meta & Htemplate_spec)".
     iDestruct "Htemplate_spec" as
       (template_spec_phy) "[Htemplate_spec_ptr Htemplate_spec]".
-    wp_apply (wp_PodSpec__DeepCopy
+    wp_apply_keep (wp_PodSpec__DeepCopy
       with "[$Hcore_v1 $Htemplate_spec_ptr $Htemplate_spec]").
     iIntros (spec_copy_l)
       "(Hspec_copy & Htemplate_spec_ptr & Htemplate_spec)".
@@ -928,7 +942,7 @@ Proof.
       "(%Htemplate_l_not_null & Htemplate_meta & Htemplate_spec)".
     iDestruct "Htemplate_spec" as
       (template_spec_phy) "[Htemplate_spec_ptr Htemplate_spec]".
-    wp_apply (wp_PodSpec__DeepCopy
+    wp_apply_keep (wp_PodSpec__DeepCopy
       with "[$Hcore_v1 $Htemplate_spec_ptr $Htemplate_spec]").
     iIntros (spec_copy_l)
       "(Hspec_copy & Htemplate_spec_ptr & Htemplate_spec)".
