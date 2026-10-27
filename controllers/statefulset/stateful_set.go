@@ -2,8 +2,8 @@ package statefulset
 
 import (
 	"controllers/common"
-	"fmt"
 	"kubernetes_model/apimodel"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -15,9 +15,9 @@ import (
 )
 
 // A simplified statefulset controller. The following features are not included:
-// * adoption and general selector-based release
-// * nonzero start ordinals and Parallel pod management (rejected explicitly)
-// * non-default feature gates, including MaxUnavailableStatefulSet
+// * adoption and release
+// * managing status
+// * ControllerRevision history and rolling updates
 // * concurrent creation/deletion
 // * PVC retention policy owner reference updates
 
@@ -314,22 +314,41 @@ func firstCondemnedPod(set *apps.StatefulSet, pods []*v1.Pod) *v1.Pod {
 	return condemned
 }
 
-// largestOutdatedPod respects descending rollout order and waits for any
-// higher ordinal already at the update revision to become available.
-func largestOutdatedPod(set *apps.StatefulSet, pods []*v1.Pod, revision string) *v1.Pod {
-	if set.Spec.UpdateStrategy.Type == apps.OnDeleteStatefulSetStrategyType {
-		return nil
+func withoutStatefulSetFields(spec v1.PodSpec) v1.PodSpec {
+	spec.Volumes = nil
+	spec.Hostname = ""
+	spec.Subdomain = ""
+	return spec
+}
+
+func podSpecMatches(set *apps.StatefulSet, pod *v1.Pod) bool {
+	// Hostname, Subdomain, and Volumes cannot be repaired through the normal
+	// Pod update API. Detect a mismatch here so reconciliation replaces the
+	// Pod instead. Upstream initializes these fields for newly created Pods in
+	// stateful_set_utils.go:
+	// https://github.com/kubernetes/kubernetes/blob/master/pkg/controller/statefulset/stateful_set_utils.go
+	// See also Kubernetes Pod update validation:
+	// https://github.com/kubernetes/kubernetes/blob/master/pkg/apis/core/validation/validation.go
+	if pod.Spec.Hostname != pod.Name ||
+		pod.Spec.Subdomain != set.Spec.ServiceName ||
+		!storageMatches(set, pod) {
+		return false
 	}
-	for ordinal := endOrdinalOf(set); ordinal >= partitionOf(set); ordinal-- {
+	// Copy both sides before comparison: Quantity.DeepCopy can normalize an
+	// empty internal big.Int buffer without changing its words or API value.
+	podSpec := withoutStatefulSetFields(*pod.Spec.DeepCopy())
+	templateSpec := withoutStatefulSetFields(*set.Spec.Template.Spec.DeepCopy())
+	// TODO: Use ControllerRevision labels to detect outdated Pods, as upstream
+	// does. Full-spec equality can reject a freshly created Pod because of
+	// API-server defaults and admission mutations, or later scheduler changes.
+	return reflect.DeepEqual(podSpec, templateSpec)
+}
+
+func largestOutdatedPod(set *apps.StatefulSet, pods []*v1.Pod) *v1.Pod {
+	for ordinal := endOrdinalOf(set); ordinal >= 0; ordinal-- {
 		pod := findPodByOrdinal(set, pods, ordinal)
-		if pod == nil || isTerminating(pod) {
-			return nil
-		}
-		if !podRevisionMatches(pod, revision) {
+		if pod != nil && !podSpecMatches(set, pod) {
 			return pod
-		}
-		if !isAvailable(set, pod) {
-			return nil
 		}
 	}
 	return nil
@@ -338,13 +357,13 @@ func largestOutdatedPod(set *apps.StatefulSet, pods []*v1.Pod, revision string) 
 // reconcileDesiredPods returns true only after every desired Pod has been
 // processed. A false result without an error tells the caller to stop this
 // reconciliation after creating a missing Pod or observing a terminating Pod.
-func reconcileDesiredPods(set, currentSet, updateSet *apps.StatefulSet, pods []*v1.Pod, currentRevision, updateRevision string) (bool, error) {
+func reconcileDesiredPods(set *apps.StatefulSet, pods []*v1.Pod) (bool, error) {
 	end := endOrdinalOf(set)
 
 	for ordinal := 0; ordinal <= end; ordinal++ {
 		pod := findPodByOrdinal(set, pods, ordinal)
 		if pod == nil {
-			newPod, err := newVersionedStatefulSetPod(currentSet, updateSet, currentRevision, updateRevision, ordinal)
+			newPod, err := newStatefulSetPod(set, ordinal)
 			if err != nil {
 				return false, err
 			}
@@ -355,18 +374,6 @@ func reconcileDesiredPods(set, currentSet, updateSet *apps.StatefulSet, pods []*
 		}
 
 		if isTerminating(pod) {
-			return false, nil
-		}
-
-		if pod.Status.Phase == v1.PodFailed || pod.Status.Phase == v1.PodSucceeded {
-			return false, deletePod(pod)
-		}
-		if pod.Status.Phase == v1.PodPending {
-			if err := createPersistentVolumeClaims(set, pod); err != nil {
-				return false, err
-			}
-		}
-		if !isRunningAndReady(pod) || !isAvailable(set, pod) {
 			return false, nil
 		}
 
@@ -393,23 +400,14 @@ func reconcileCondemnedPod(set *apps.StatefulSet, pods []*v1.Pod) (bool, error) 
 	if isTerminating(condemned) {
 		return false, nil
 	}
-	var firstUnavailable *v1.Pod
-	for _, pod := range pods {
-		if !isAvailable(set, pod) && (firstUnavailable == nil || ordinalOf(pod.Name) < ordinalOf(firstUnavailable.Name)) {
-			firstUnavailable = pod
-		}
-	}
-	if (!isRunningAndReady(condemned) || !isAvailable(set, condemned)) && condemned != firstUnavailable {
-		return false, nil
-	}
 	if err := deletePod(condemned); err != nil {
 		return false, err
 	}
 	return false, nil
 }
 
-func reconcileOutdatedPod(set *apps.StatefulSet, pods []*v1.Pod, revision string) error {
-	outdated := largestOutdatedPod(set, pods, revision)
+func reconcileOutdatedPod(set *apps.StatefulSet, pods []*v1.Pod) error {
+	outdated := largestOutdatedPod(set, pods)
 	if outdated == nil {
 		return nil
 	}
@@ -419,8 +417,8 @@ func reconcileOutdatedPod(set *apps.StatefulSet, pods []*v1.Pod, revision string
 	return deletePod(outdated)
 }
 
-func reconcileReplicas(set, currentSet, updateSet *apps.StatefulSet, pods []*v1.Pod, currentRevision, updateRevision string) error {
-	continueReconcile, err := reconcileDesiredPods(set, currentSet, updateSet, pods, currentRevision, updateRevision)
+func reconcileReplicas(set *apps.StatefulSet, pods []*v1.Pod) error {
+	continueReconcile, err := reconcileDesiredPods(set, pods)
 	if err != nil || !continueReconcile {
 		return err
 	}
@@ -430,7 +428,7 @@ func reconcileReplicas(set, currentSet, updateSet *apps.StatefulSet, pods []*v1.
 		return err
 	}
 
-	return reconcileOutdatedPod(set, pods, updateRevision)
+	return reconcileOutdatedPod(set, pods)
 }
 
 func syncStatefulSet(namespace, name string) error {
@@ -455,40 +453,5 @@ func syncStatefulSet(namespace, name string) error {
 		return err
 	}
 
-	if set.Spec.Ordinals != nil && set.Spec.Ordinals.Start != 0 {
-		return fmt.Errorf("local StatefulSet controller requires zero start ordinal")
-	}
-	if set.Spec.PodManagementPolicy == apps.ParallelPodManagement {
-		return fmt.Errorf("local StatefulSet controller requires OrderedReady pod management")
-	}
-	pods := filterPodsForStatefulSet(set, allPods)
-	revisions, err := listRevisions(set)
-	if err != nil {
-		return err
-	}
-	current, update, collisionCount, err := getStatefulSetRevisions(set, revisions)
-	if err != nil {
-		return err
-	}
-	currentSet, err := applyRevision(set, current)
-	if err != nil {
-		return err
-	}
-	updateSet, err := applyRevision(set, update)
-	if err != nil {
-		return err
-	}
-	reconcileErr := reconcileReplicas(set, currentSet, updateSet, pods, current.Name, update.Name)
-	// Refresh observations so status reflects successful creates/deletes too.
-	observed, err := common.FilterPodsByOwner(&set.ObjectMeta, "StatefulSet")
-	if err != nil {
-		return err
-	}
-	if err := updateRevisionStatus(set, filterPodsForStatefulSet(set, observed), current, update, collisionCount); err != nil {
-		return err
-	}
-	if reconcileErr != nil {
-		return reconcileErr
-	}
-	return truncateHistory(set, pods, revisions, current, update)
+	return reconcileReplicas(set, filterPodsForStatefulSet(set, allPods))
 }

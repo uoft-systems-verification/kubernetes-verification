@@ -1,11 +1,8 @@
 From New.proof.controllers.statefulset Require Export statefulset_init.
-From New.proof.controllers Require Export common.
 
-(* Legacy pure predicates retained for the active construction, storage, and
-   distance lemmas. They do not characterize the revision-aware rollout policy.
-   TODO: replace them and the resource account below with revision-aware
-   predicates before restoring top-level controller specifications and proofs.
-   See README.md for the deferred proof obligations. *)
+(* Pure desired-state definitions used by all three top-level specifications.
+   Apart from package initialization, this file imports no other statefulset
+   proof, so clients can depend on the specifications without their proofs. *)
 
 Definition pvc_claim_template_names (sts : StatefulSetV.t) : list go_string :=
   (λ claim_template,
@@ -576,6 +573,12 @@ Record all_fractions := {
   pvc_dq : dfrac;
 }.
 
+Definition mutating_fractions dq : all_fractions :=
+  {| sts_dq := dq; pod_dq := 1; children_dq := 1; pvc_dq := 1 |}.
+
+Definition stability_fractions dq : all_fractions :=
+  {| sts_dq := dq; pod_dq := dq; children_dq := dq; pvc_dq := dq |}.
+
 Definition owned_resources γ sts pods pvcs fractions (ready : bool) : iProp Σ :=
   "Hown_sts_meta_frag" ∷ own_meta_frag γ (StatefulSetV.key sts)
     sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') fractions.(sts_dq) sts.(StatefulSetV.ObjectMeta') ∗
@@ -617,22 +620,6 @@ Definition owned_resources γ sts pods pvcs fractions (ready : bool) : iProp Σ 
   (* Fractional pod fragments allow duplicate entries to own compatible shares; match_distance cannot detect duplicates.
      Record key uniqueness explicitly because current_state_matches compares the full key list up to permutation. *)
   "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝.
-
-(* TODO: define and prove revision-aware progress, preservation, and stability
-   contracts for syncStatefulSet. They must account for ControllerRevision
-   metadata/spec ownership, the mixed Pod/revision child set, StatefulSet status
-   writes, readiness/availability/deletion waits, and partial API failures.
-   The previous contracts below are commented and their program proofs removed
-   because they described the deleted PodSpec-comparison controller. *)
-
-(* Legacy comparison-based contracts, retained as a commented reference.
-   TODO: revise these contracts before restoring their program proofs.
-
-Definition mutating_fractions dq : all_fractions :=
-  {| sts_dq := dq; pod_dq := 1; children_dq := 1; pvc_dq := 1 |}.
-
-Definition stability_fractions dq : all_fractions :=
-  {| sts_dq := dq; pod_dq := dq; children_dq := dq; pvc_dq := dq |}.
 
 Definition progress_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
@@ -678,7 +665,5 @@ Definition stability_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
   {{{ (err : interface.t), RET #err;
       owned_resources γ sts pods pvcs (stability_fractions dq) true
   }}}.
-
-*)
 
 End specs.

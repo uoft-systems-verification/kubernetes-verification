@@ -1,15 +1,14 @@
 From New.proof Require Export wp_helpers.
 From New.proof.string Require Export prefix_suffix.
 From New.object_specs Require Export prelude.
+From New.proof.controllers Require Export common.
 From New.proof.k8s_io.api.apps Require Export v1_init.
 From New.proof.k8s_io.api.core Require Export v1_init.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors_init.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller_init.
 From New.proof.kubernetes_model Require Export apimodel_init.
-From New.proof Require Export bytes_init strconv_init strings.
-From New.proof.k8s_io.kubernetes.pkg.controller Require Export history_init.
-From New.proof.k8s_io.client_go.kubernetes Require Export scheme_init.
+From New.proof Require Export reflect_init strconv_init strings.
 From New.proof.controllers Require Export common_init.
 Require Export New.generatedproof.controllers.statefulset.
 From New.proof Require Import proof_prelude.
