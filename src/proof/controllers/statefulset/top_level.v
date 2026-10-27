@@ -622,7 +622,63 @@ Definition owned_resources γ sts pods pvcs fractions (ready : bool) : iProp Σ 
    contracts for syncStatefulSet. They must account for ControllerRevision
    metadata/spec ownership, the mixed Pod/revision child set, StatefulSet status
    writes, readiness/availability/deletion waits, and partial API failures.
-   The previous contracts and their proofs were removed because they described
-   the deleted PodSpec-comparison controller. *)
+   The previous contracts below are commented and their program proofs removed
+   because they described the deleted PodSpec-comparison controller. *)
+
+(* Legacy comparison-based contracts, retained as a commented reference.
+   TODO: revise these contracts before restoring their program proofs.
+
+Definition mutating_fractions dq : all_fractions :=
+  {| sts_dq := dq; pod_dq := 1; children_dq := 1; pvc_dq := 1 |}.
+
+Definition stability_fractions dq : all_fractions :=
+  {| sts_dq := dq; pod_dq := dq; children_dq := dq; pvc_dq := dq |}.
+
+Definition progress_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
+  {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "Hresources" ∷ owned_resources γ sts pods pvcs (mutating_fractions dq) true ∗
+      "%Hinput_requirement" ∷ ⌜ input_requirement sts ⌝ ∗
+      "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
+      "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
+  }}}
+    @! statefulset.syncStatefulSet #namespace #name
+  {{{ pods' pvcs' (err : interface.t), RET #err;
+      owned_resources γ sts pods' pvcs' (mutating_fractions dq) false ∗
+      ⌜ current_state_matches sts pods' pvcs' ∨
+        (pods_progress_observed pods pods' ∧ match_distance sts pods' pvcs' < match_distance sts pods pvcs) ⌝
+  }}}.
+
+Definition preservation_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
+  {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "Hresources" ∷ owned_resources γ sts pods pvcs (mutating_fractions dq) false ∗
+      "%Hinput_requirement" ∷ ⌜ input_requirement sts ⌝ ∗
+      "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
+      "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
+  }}}
+    @! statefulset.syncStatefulSet #namespace #name
+  {{{ pods' pvcs' (err : interface.t), RET #err;
+      owned_resources γ sts pods' pvcs' (mutating_fractions dq) false ∗
+      ⌜ match_distance sts pods' pvcs' ≤ match_distance sts pods pvcs ⌝
+  }}}.
+
+Definition stability_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
+  {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "Hresources" ∷ owned_resources γ sts pods pvcs (stability_fractions dq) true ∗
+      "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
+      "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
+      "%Hmatch" ∷ ⌜ current_state_matches sts pods pvcs ⌝
+  }}}
+    @! statefulset.syncStatefulSet #namespace #name
+  {{{ (err : interface.t), RET #err;
+      owned_resources γ sts pods pvcs (stability_fractions dq) true
+  }}}.
+
+*)
 
 End specs.

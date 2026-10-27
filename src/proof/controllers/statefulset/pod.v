@@ -140,8 +140,8 @@ Proof.
   wp_auto_keep.
   wp_bind ((global_addr apps_v1.SchemeGroupVersion) @!
     (go.PointerType schema.GroupVersion) @! "WithKind" #"StatefulSet"%go)%E.
-  iDestruct (is_pkg_init_unfold_deps with "Hpkg") as
-    "(_ & _ & _ & _ & _ & #Happs_v1_init & _)".
+  iAssert (is_pkg_init code.k8s_io.api.apps.v1.pkg_id.v1) as "#Happs_v1_init".
+  { iPkgInit. }
   wp_apply (New.proof.k8s_io.api.apps.v1.wp_SchemeGroupVersion__WithKind
     (schema_sem := @code.k8s_io.api.apps.v1.v1.import_schema_Assumption
       _ _ _ _ object_apps_v1_sem) "StatefulSet"%go with

@@ -6,10 +6,11 @@ helpers. The pure legacy desired-state and distance predicates remain available
 for migration; their lemmas do not establish correctness of the new rollout
 decisions.
 
-The obsolete PodSpec-comparison program proofs and their top-level contracts were
-removed because they referred to deleted functions and no longer matched the Go
-controller. This also removes the old `wp_podSpecMatches` admission. Their previous
-versions remain available in Git history.
+The obsolete PodSpec-comparison program proofs were removed because they referred
+to deleted functions and no longer matched the Go controller. Their top-level
+contracts remain commented in `top_level.v` as migration references. This also
+removes the old `wp_podSpecMatches` admission. Previous proof versions remain
+available in Git history.
 
 ## TODO Replace the controller contracts and proofs
 

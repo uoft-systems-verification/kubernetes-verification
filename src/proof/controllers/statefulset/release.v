@@ -1326,11 +1326,9 @@ Proof.
                 (take (sint.nat
                   (word.add i (W64 1))) pods))).
       {
-        rewrite Hfilter_take fmap_app /=.
-        apply set_eq. intros key.
-        rewrite !elem_of_difference !elem_of_list_to_set
-          !elem_of_app !elem_of_singleton.
-        Timeout 10 set_solver.
+        rewrite Hfilter_take fmap_app /= list_to_set_app_L
+          list_to_set_singleton_L difference_difference_l_L.
+        done.
       }
       iEval (rewrite Hchildren_next)
         in "Hrelease_Hown_children".

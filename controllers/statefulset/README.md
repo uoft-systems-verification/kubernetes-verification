@@ -44,9 +44,10 @@ predicates distinguish membership from historical provenance and model explicit
 waiting/retry outcomes. The metadata-only revision-label getter, setter, and
 matcher program proofs have been checked. The previous StatefulSet distance and
 top-level program proofs described the old comparison-based controller. The
-obsolete program proofs and top-level contracts have been removed; their
-[replacement obligations](../../src/proof/controllers/statefulset/README.md) are
-marked TODO. CI checks the retained helper proofs, but does not establish
+obsolete program proofs have been removed. Their top-level contracts remain
+commented, with
+[TODOs for replacements](../../src/proof/controllers/statefulset/README.md).
+CI checks the retained helper proofs, but does not establish
 top-level correctness of this implementation until the migration is complete.
 The obsolete `wp_podSpecMatches` admission has been removed as well.
 
