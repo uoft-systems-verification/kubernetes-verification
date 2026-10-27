@@ -1,3 +1,4 @@
+From New.proof Require Import wp_keep.
 From New.proof Require Import prelude empty_ffi.
 From New.object_specs Require Export prelude.
 From New.proof.k8s_io.api.core Require Import v1.
@@ -194,14 +195,19 @@ Lemma wp_FindNewReplicaSet d_l (d : DeploymentV.t) sl ptrs (rss : list ReplicaSe
       ([∗ list] ptr;rs ∈ ptrs';rss', ReplicaSetV.deepown_l ptr rs dq3)
   }}}.
 Proof.
-  wp_start as "H". iNamed "H". wp_auto_keep.
+  wp_start as "H". iNamed "H".
+  (* Step by hand up to the opaque [sort.Sort]; [wp_Sort_sorted] is its
+     trusted boundary. *)
+  wp_pures_keep. wp_alloc rsList_ptr as "rsList".
+  wp_pures_keep. wp_alloc deployment_ptr as "deployment".
+  wp_pures_keep. wp_load. wp_pures_keep.
   iDestruct (big_sepL2_length with "Hrss") as %Hlen0.
   (* Sort the (pointer, ReplicaSet) entries together. *)
   set entries := zip ptrs rss.
   assert (entries.*1 = ptrs) as Hfst by (apply fst_zip; lia).
   assert (entries.*2 = rss) as Hsnd by (apply snd_zip; lia).
   iAssert (rs_by_creation_contents dq3 sl entries) with "[Hsl Hrss]" as "Hcontents".
-  { rewrite /rs_by_creation_contents Hfst. iFrame "Hsl".
+  { rewrite /rs_by_creation_contents Hfst. iFrame "Hsl". iSplitR; [iPkgInit|].
     rewrite big_sepL2_alt. iDestruct "Hrss" as "[_ $]". }
   iAssert (is_pkg_init sort) as "#Hsort". { iPkgInit. }
   wp_bind ((let: "$a0" := Convert controller.ReplicaSetsByCreationTimestamp sort.Interface #sl in
@@ -211,7 +217,7 @@ Proof.
     with "[$Hsort $Hcontents]").
   { iPureIntro. apply rs_created_before_strict_weak_order. rewrite Hsnd. exact Htimes. }
   iNext. iIntros (sorted) "[Hcontents [%Hperm %Hsorted]]".
-  iDestruct "Hcontents" as "[Hsl Hrss]".
+  iDestruct "Hcontents" as "(_ & Hsl & Hrss)".
   set ptrs' := sorted.*1. set rss' := sorted.*2.
   assert (zip ptrs' rss' = sorted) as Hzip by apply zip_fst_snd.
   iAssert ([∗ list] ptr;rs ∈ ptrs';rss', ReplicaSetV.deepown_l ptr rs dq3)%I
