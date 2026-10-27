@@ -1,4 +1,4 @@
-From New.proof Require Import prelude empty_ffi wp_apply_keep.
+From New.proof Require Import prelude empty_ffi wp_keep.
 From New.proof.kubernetes_model Require Export common_get.
 
 (* Discard transient allocations from the imported Kubernetes libraries. *)

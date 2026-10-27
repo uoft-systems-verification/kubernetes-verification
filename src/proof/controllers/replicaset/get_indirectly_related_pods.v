@@ -1,4 +1,4 @@
-From New.proof Require Import wp_apply_keep.
+From New.proof Require Import wp_keep.
 From New.proof Require Import prelude empty_ffi.
 From New.proof.controllers.replicaset Require Export get_replica_sets_with_same_controller.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export

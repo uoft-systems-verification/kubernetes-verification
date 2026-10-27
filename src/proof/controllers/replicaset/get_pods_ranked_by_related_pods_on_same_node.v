@@ -1,4 +1,4 @@
-From New.proof Require Import wp_apply_keep.
+From New.proof Require Import wp_keep.
 From New.proof Require Import prelude empty_ffi.
 From New.proof.controllers.replicaset Require Export replicaset_init.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller.

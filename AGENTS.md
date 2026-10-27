@@ -17,7 +17,7 @@ proof examples from the active opam switch. Resolve the path with
 
 To check a Rocq proof file, always run `make -j10 path/to/file.vo` so
 independent proofs compile in parallel, for example
-`make -j10 src/proof/benchmark/basic.vo`.
+`make -j10 src/proof/wp_keep.vo`.
 
 ## Solver Timeouts
 
@@ -57,19 +57,6 @@ for parallel goals that appear above the focused goal in the same lemma. These
 edits are only a local fast-check aid: restore every temporarily admitted or
 commented proof before finishing the task, and do not count checks run with
 temporary admits as completed verification for the final result.
-
-## Benchmark Proof Runs
-
-When asked to "run benchmark x with time limit y", try to prove all lemmas in
-the `src/proof/benchmark/x.vo` target until reaching time limit `y`. Prove
-lemmas one by one from top to bottom. After each lemma you prove, run the
-corresponding make target to check it; for benchmark `basic`, run
-`make -j10 src/proof/benchmark/basic.vo`.
-
-If you find during the proof that the spec or code is wrong, fix the spec or
-code and then continue the proof. Do not directly modify generated code in
-`src/code` or `src/generatedproof`; update the source Go code or Goose
-configuration and regenerate instead.
 
 ## Kubernetes Model Testing
 

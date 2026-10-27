@@ -1,4 +1,4 @@
-From New.proof Require Import wp_apply_keep.
+From New.proof Require Import wp_keep.
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export by_index_pod_controller.
 From New.proof Require Export util.

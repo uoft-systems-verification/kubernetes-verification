@@ -1,4 +1,4 @@
-From New.proof Require Import wp_apply_keep.
+From New.proof Require Import wp_keep.
 From New.proof Require Import prelude empty_ffi.
 From New.proof Require Export sort.
 From New.proof.map Require Import for_range.
