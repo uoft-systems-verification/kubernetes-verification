@@ -43,10 +43,12 @@ Formal migration is in progress. The new object/view representation and revision
 predicates distinguish membership from historical provenance and model explicit
 waiting/retry outcomes. The metadata-only revision-label getter, setter, and
 matcher program proofs have been checked. The previous StatefulSet distance and
-top-level program proofs still describe the old comparison-based controller and must be migrated
-before treating them as verification of this implementation. In particular,
-the old `wp_podSpecMatches` admission is obsolete, not a justification of the
-new rollout path.
+top-level program proofs described the old comparison-based controller. The
+obsolete program proofs and top-level contracts have been removed; their
+[replacement obligations](../../src/proof/controllers/statefulset/README.md) are
+marked TODO. CI checks the retained helper proofs, but does not establish
+top-level correctness of this implementation until the migration is complete.
+The obsolete `wp_podSpecMatches` admission has been removed as well.
 
 Selected generic/API Create, Get, List, Update, Delete, and status proof targets
 have also been checked with ControllerRevision included. Its ordinary-update
