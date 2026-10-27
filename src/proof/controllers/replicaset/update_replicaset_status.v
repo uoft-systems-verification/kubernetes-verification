@@ -239,26 +239,26 @@ Proof.
   iAssert (opt_ptr_rep rs_phy.(v1.ReplicaSet.Status').(api_apps_v1.ReplicaSetStatus.TerminatingReplicas')
     rs.(ReplicaSetV.Status').(ReplicaSetStatusV.TerminatingReplicas') DfracDiscarded)%I as "#Hold_term".
   { iDestruct "Hrs" as "(_ & _ & _ & Hst)". iApply (ReplicaSetStatusV.terminating_rep with "Hst"). }
-  wp_auto.
+  wp_auto_keep.
   (* The no-op check evaluates to some boolean. *)
   wp_bind (if: _ then (let: "$a0" := _ in let: "$a1" := _ in
     FuncResolve goreflect.DeepEqual [] #() "$a0" "$a1") else #false)%E.
   iApply (wp_wand _ _ _ (λ v, ∃ b : bool, ⌜ v = #b ⌝ ∗
       "rs" ∷ rs_ptr ↦ rs_l ∗ "Hrs_l" ∷ rs_l ↦ rs_phy ∗
       "newStatus" ∷ newStatus_ptr ↦ status_c)%I with "[rs Hrs_l newStatus]").
-  { repeat (split_bool; try wp_auto; try (iExists false; iFrame; done)).
+  { repeat (split_bool; try wp_auto_keep; try (iExists false; iFrame; done)).
     all: wp_apply (wp_Equal_int32 with "[]");
       [iSplitR; [iExact "Hold_term"|iExact "Hnew_term"]|].
     all: iIntros (r) "_".
-    all: destruct r; try wp_auto; try (iExists false; iFrame; done).
-    all: split_bool; try wp_auto; try (iExists false; iFrame; done).
+    all: destruct r; try wp_auto_keep; try (iExists false; iFrame; done).
+    all: split_bool; try wp_auto_keep; try (iExists false; iFrame; done).
     all: wp_apply wp_DeepEqual.
     all: iIntros (r) "_". all: iExists r; iFrame; done. }
   iIntros (v) "(%b & -> & rs & Hrs_l & newStatus)".
   destruct b.
   { (* already up to date: nothing is written *)
-    wp_auto. iApply ("HΦ" $! rs_l interface.nil rs). iModIntro. iFrame. iPureIntro. done. }
-  wp_auto.
+    wp_auto_keep. iApply ("HΦ" $! rs_l interface.nil rs). iModIntro. iFrame. iPureIntro. done. }
+  wp_auto_keep.
   iPoseProof (ReplicaSetStatusV.deepown_set_observed_generation _ _
     rs_phy.(api_apps_v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Generation') with "Hstatus") as "#Hreq".
   set I := (∃ (i : w64) (cur_l : loc) (cur_phy : api_apps_v1.ReplicaSet.t) (cur : ReplicaSetV.t)
@@ -288,9 +288,9 @@ Proof.
   iMod (ReplicaSetV.deepown_persist with "Hcur") as "Hcur".
   iDestruct "Hcur" as "(%Hcur_tm & #Hcur_meta_own & Hcur_spec_own & #Hcur_st)".
   wp_func_call. rewrite /context.TODOⁱᵐᵖˡ. wp_call.
-  wp_pures.
-  wp_load. wp_pures.
-  wp_load. wp_pures.
+  wp_pures_keep.
+  wp_load. wp_pures_keep.
+  wp_load. wp_pures_keep.
   wp_load.
   (* The current object with the requested status, read-only from now on. *)
   iPersist "Hcur_l".
@@ -325,20 +325,20 @@ Proof.
   destruct werr as [werr_ok|].
   2: {
     (* The write succeeded. *)
-    wp_auto. iApply wp_for_post_return. wp_auto.
+    wp_auto_keep. iApply wp_for_post_return. wp_auto_keep.
     iApply ("HΦ" $! result_l interface.nil rs'). rewrite Hspec_rs'. iModIntro. iFrame. done. }
   destruct Hi as [-> | ->].
   2: {
     (* The retry was rejected too: its error is returned. *)
-    wp_auto. wp_for_post.
+    wp_auto_keep. wp_for_post.
     iApply ("HΦ" $! null (interface.ok werr_ok) rs'). rewrite Hspec_rs'. iModIntro. iFrame. done. }
   (* The first write was rejected: re-read the ReplicaSet and retry. *)
   iAssert (⌜ cur_phy.(api_apps_v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Name') =
     cur.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝)%I as %Hcur_name.
   { iNamed "Hcur_meta_own". iNamed "Hdeepown_objectmeta". done. }
-  wp_auto.
+  wp_auto_keep.
   wp_func_call. rewrite /context.TODOⁱᵐᵖˡ. wp_call.
-  wp_pures. wp_load. wp_pures. wp_load. wp_pures. wp_load. wp_pures. wp_load.
+  wp_pures_keep. wp_load. wp_pures_keep. wp_load. wp_pures_keep. wp_load. wp_pures_keep. wp_load.
   wp_apply (wp_ReplicaSetInterface__Get γ l c (ReplicaSetV.key rs)
     rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') _ _ _
     rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq 1 rs'.(ReplicaSetV.ObjectMeta')
@@ -350,7 +350,7 @@ Proof.
   iPoseProof (kview.own_meta_frag_equiv_except_resource_version Hmeta_eq with "Hown_meta_frag")
     as "Hown_meta_frag".
   iEval (rewrite Hstatus_eq) in "Hown_status_frag".
-  wp_auto. wp_for_post.
+  wp_auto_keep. wp_for_post.
   iFrame "HΦ c rs newStatus updateOptions getOptions". rewrite /named.
   iExists (word.add (W64 0) (W64 1)), new_l, new_phy, new, (DfracOwn 1).
   iFrame. iPureIntro. split_and!; try done.

@@ -1,10 +1,12 @@
-From New.proof Require Import wp_keep.
+From New.proof Require Import wp_apply_keep.
 From New.proof Require Import prelude empty_ffi.
 From New.proof.controllers.replicaset Require Export get_replica_sets_with_same_controller.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export
   v1_label_selector_as_selector.
 
 Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
+(* Field reads preserve timestamps without inspecting their contents. *)
+Local Opaque TimeV.deepown TimeView.TimeV.deepown TimeView.LocationV.deepown.
 
 (* Collect transient allocations from imports before checking large program proofs. *)
 Optimize Heap.
@@ -40,6 +42,18 @@ Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
+(* Prove scalar projections in a small context instead of reopening metadata
+   inside the loop's full ownership context. *)
+Local Lemma metadata_namespace_eq c m dq :
+  ObjectMetaV.deepown c m dq -∗
+  ⌜ c.(v1.ObjectMeta.Namespace') = m.(ObjectMetaV.Namespace') ⌝.
+Proof. iIntros "H". iNamed "H". done. Qed.
+
+Local Lemma metadata_uid_eq c m dq :
+  ObjectMetaV.deepown c m dq -∗
+  ⌜ c.(v1.ObjectMeta.UID') = m.(ObjectMetaV.UID') ⌝.
+Proof. iIntros "H". iNamed "H". done. Qed.
+
 Lemma wp_getIndirectlyRelatedPods γ l rs_l rs dq :
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "Hisk" ∷ is_kubernetes γ l ∗
@@ -61,10 +75,10 @@ Proof.
   iAssert (is_pkg_init apimodel) as "#Hapimodel_init".
   { iPkgInit. }
   wp_auto_keep.
-  wp_apply wp_slice_literal. iSplitR; first done.
+  wp_apply_keep wp_slice_literal. iSplitR; first done.
   iIntros (result_backing_l) "[Hresult_sl Hresult_cap]". wp_auto_keep.
-  wp_apply wp_map_make1 as (seen_l) "Hseen".
-  wp_apply (wp_getReplicaSetsWithSameController γ l rs_l rs dq with
+  wp_apply_keep wp_map_make1 as (seen_l) "Hseen".
+  wp_apply_keep (wp_getReplicaSetsWithSameController γ l rs_l rs dq with
     "[$Hrs $Hisk $Hglobal_l]").
   iIntros (related_sets_sl related_set_ptrs related_sets related_dq)
     "(Hrelated_sets_sl & Hrelated_sets & %Hrelated_sets_valid &
@@ -98,12 +112,12 @@ Proof.
   { iExists (W64 0), null,
       (slice.mk result_backing_l (W64 0) (W64 0)), [], [], ∅.
     iFrame. rewrite big_sepL2_nil. iFrame. iPureIntro. word. }
-  wp_for "Houter". wp_if_destruct.
+  wp_for_keep "Houter". wp_if_destruct_keep.
   - list_elem related_set_ptrs (sint.Z i) as this_rs_l.
     destruct (decide
       (0 ≤ sint.Z i < sint.Z (slice.len related_sets_sl))) as
       [_|Hbounds]; last word.
-    wp_apply (wp_load_slice_index with "[$Hrelated_sets_sl]");
+    wp_apply_keep (wp_load_slice_index with "[$Hrelated_sets_sl]");
       [word|iPureIntro; exact Hthis_rs_l_lookup|].
     iIntros "Hrelated_sets_sl". wp_auto_keep.
     assert (∃ this_rs, related_sets !! sint.nat i = Some this_rs) as
@@ -134,15 +148,12 @@ Proof.
         Hthis_rs_spec & Hthis_rs_status)".
     iDestruct "Hthis_rs_spec" as (this_rs_spec_c)
       "[Hthis_rs_spec_l Hthis_rs_spec]".
-    iDestruct (struct_fields_split (V:=v1.ReplicaSetSpec.t) with
-      "Hthis_rs_spec_l") as
-      "[Hthis_rs_spec_fields %Hthis_rs_spec_nonnull]".
-    iNamedPrefix "Hthis_rs_spec_fields" "Hthis_rs_spec_field_".
+    (* Keep the physical Spec record intact; the generated field lens loads Selector. *)
     iNamedPrefix "Hthis_rs_spec" "Hthis_rs_spec_deepown_".
     iEval (rewrite Hapi_selector_eq) in
       "Hthis_rs_spec_deepown_Hdeepown_selector_some".
     wp_auto_keep.
-    wp_apply (wp_LabelSelectorAsSelector with
+    wp_apply_keep (wp_LabelSelectorAsSelector with
       "[$Hmeta_init
         $Hthis_rs_spec_deepown_Hdeepown_selector_some]").
     { iSplit.
@@ -150,15 +161,6 @@ Proof.
       - iPureIntro. apply Hthis_rs_extra_valid. exact Hapi_selector_eq. }
     iIntros (selector)
       "(Hthis_rs_spec_deepown_Hdeepown_selector_some & #Hselector)".
-    iCombineNamed "Hthis_rs_spec_field_*" as "Hthis_rs_spec_fields".
-    iAssert (typed_pointsto_def (ReplicaSetV.spec_ptr this_rs_l)
-        this_rs_spec_c related_dq) with "[Hthis_rs_spec_fields]" as
-      "Hthis_rs_spec_l".
-    { iNamed "Hthis_rs_spec_fields". simpl. rewrite /named. iFrame. }
-    iDestruct (struct_fields_combine (V:=v1.ReplicaSetSpec.t)
-      (ReplicaSetV.spec_ptr this_rs_l) this_rs_spec_c related_dq
-      Hthis_rs_spec_nonnull with "Hthis_rs_spec_l") as
-      "Hthis_rs_spec_l".
     iAssert (ReplicaSetSpecV.deepown this_rs_spec_c
         this_rs.(ReplicaSetV.Spec') related_dq)
       with "[Hthis_rs_spec_deepown_Hdeepown_replicas_some
@@ -175,14 +177,10 @@ Proof.
     { iExists this_rs_spec_c. iFrame. }
     iDestruct "Hthis_rs_meta_l" as (this_rs_meta_c)
       "[Hthis_rs_meta_l Hthis_rs_meta]".
-    iDestruct (struct_fields_split (V:=v1.ObjectMeta.t) with
-      "Hthis_rs_meta_l") as
-      "[Hthis_rs_meta_fields %Hthis_rs_meta_nonnull]".
-    iNamedPrefix "Hthis_rs_meta_fields" "Hthis_rs_meta_field_".
-    iNamedPrefix "Hthis_rs_meta" "Hthis_rs_meta_deepown_".
+    iDestruct (metadata_namespace_eq with "Hthis_rs_meta") as %Hnamespace.
     wp_auto_keep.
-    rewrite Hthis_rs_meta_deepown_Hdeepown_namespace.
-    wp_apply (wp_State__PodList_weak γ l
+    rewrite Hnamespace.
+    wp_apply_keep (wp_State__PodList_weak γ l
       this_rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') selector
       (LabelSelectorV.matches api_selector)
       (H:=λ labels : option (gmap go_string go_string),
@@ -190,23 +188,6 @@ Proof.
       with "[$Hapimodel_init $Hselector $Hisk]").
     iIntros (pods_sl pod_ptrs pods)
       "(Hpods_sl & Hpods & %Hpods_valid)".
-    iCombineNamed "Hthis_rs_meta_field_*" as "Hthis_rs_meta_fields".
-    iAssert (typed_pointsto_def (ReplicaSetV.objectmeta_ptr this_rs_l)
-        this_rs_meta_c related_dq) with "[Hthis_rs_meta_fields]" as
-      "Hthis_rs_meta_l".
-    { iNamed "Hthis_rs_meta_fields". simpl. rewrite /named.
-      rewrite Hthis_rs_meta_deepown_Hdeepown_namespace. iFrame. }
-    iDestruct (struct_fields_combine (V:=v1.ObjectMeta.t)
-      (ReplicaSetV.objectmeta_ptr this_rs_l) this_rs_meta_c related_dq
-      Hthis_rs_meta_nonnull with "Hthis_rs_meta_l") as
-      "Hthis_rs_meta_l".
-    iCombineNamed "Hthis_rs_meta_deepown_*" as
-      "Hthis_rs_meta_deepown".
-    iAssert (ObjectMetaV.deepown this_rs_meta_c
-        this_rs.(ReplicaSetV.ObjectMeta') related_dq)
-      with "[Hthis_rs_meta_deepown]" as "Hthis_rs_meta".
-    { iNamed "Hthis_rs_meta_deepown".
-      rewrite /ObjectMetaV.deepown /named. iFrame. iFrame "%". }
     iAssert (ObjectMetaV.deepown_l
         (ReplicaSetV.objectmeta_ptr this_rs_l)
         this_rs.(ReplicaSetV.ObjectMeta') related_dq)
@@ -249,12 +230,12 @@ Proof.
     { iExists (W64 0), null, result_sl', result_ptrs, result_pods, seen.
       iFrame. iPureIntro. word. }
     wp_auto_keep.
-    wp_for "Hinner". wp_if_destruct.
+    wp_for_keep "Hinner". wp_if_destruct_keep.
     + list_elem pod_ptrs (sint.Z j) as this_pod_l.
       destruct (decide
         (0 ≤ sint.Z j < sint.Z (slice.len pods_sl))) as
         [_|Hpod_bounds]; last word.
-      wp_apply (wp_load_slice_index with "[$Hpods_sl]");
+      wp_apply_keep (wp_load_slice_index with "[$Hpods_sl]");
         [word|iPureIntro; exact Hthis_pod_l_lookup|].
       iIntros "Hpods_sl". wp_auto_keep.
       assert (∃ this_pod, pods !! sint.nat j = Some this_pod) as
@@ -269,45 +250,20 @@ Proof.
           Hthis_pod_spec & Hthis_pod_status)".
       iDestruct "Hthis_pod_meta_l" as (this_pod_meta_c)
         "[Hthis_pod_meta_l Hthis_pod_meta]".
-      iDestruct (struct_fields_split (V:=v1.ObjectMeta.t) with
-        "Hthis_pod_meta_l") as
-        "[Hthis_pod_meta_fields %Hthis_pod_meta_nonnull]".
-      iNamedPrefix "Hthis_pod_meta_fields" "Hthis_pod_meta_field_".
-      iNamedPrefix "Hthis_pod_meta" "Hthis_pod_meta_deepown_".
+      iDestruct (metadata_uid_eq with "Hthis_pod_meta") as %Huid.
       wp_auto_keep.
-      rewrite Hthis_pod_meta_deepown_Hdeepown_uid.
-      wp_apply (wp_map_lookup2 types.UID
+      rewrite Huid.
+      wp_apply_keep (wp_map_lookup2 types.UID
         (go.PointerType api_apps_v1.ReplicaSet) with "[$Hseen]").
       iIntros "Hseen".
-      destruct (seen' !!
-        this_pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) as
+      destruct (seen' !! this_pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) as
         [seen_rs_l|] eqn:Hseen_lookup; rewrite Hseen_lookup /=; wp_auto_keep.
-      * iCombineNamed "Hthis_pod_meta_field_*" as
-          "Hthis_pod_meta_fields".
-        iAssert (typed_pointsto_def (PodV.objectmeta_ptr this_pod_l)
-            this_pod_meta_c 1) with "[Hthis_pod_meta_fields]" as
-          "Hthis_pod_meta_l".
-        { iNamed "Hthis_pod_meta_fields". simpl. rewrite /named.
-          rewrite Hthis_pod_meta_deepown_Hdeepown_uid. iFrame. }
-        iDestruct (struct_fields_combine (V:=v1.ObjectMeta.t)
-          (PodV.objectmeta_ptr this_pod_l) this_pod_meta_c 1
-          Hthis_pod_meta_nonnull with "Hthis_pod_meta_l") as
-          "Hthis_pod_meta_l".
-        iCombineNamed "Hthis_pod_meta_deepown_*" as
-          "Hthis_pod_meta_deepown".
-        iAssert (ObjectMetaV.deepown this_pod_meta_c
-            this_pod.(PodV.ObjectMeta') 1)
-          with "[Hthis_pod_meta_deepown]" as "Hthis_pod_meta".
-        { iNamed "Hthis_pod_meta_deepown".
-          rewrite /ObjectMetaV.deepown /named. iFrame. iFrame "%". }
-        iAssert (ObjectMetaV.deepown_l (PodV.objectmeta_ptr this_pod_l)
-            this_pod.(PodV.ObjectMeta') 1)
-          with "[Hthis_pod_meta_l Hthis_pod_meta]" as
-          "Hthis_pod_meta_l".
+      * iAssert (ObjectMetaV.deepown_l (PodV.objectmeta_ptr this_pod_l)
+            this_pod.(PodV.ObjectMeta') 1)%I
+          with "[Hthis_pod_meta_l Hthis_pod_meta]" as "Hthis_pod_meta_l".
         { iExists this_pod_meta_c. iFrame. }
         iPoseProof (PodV.deepown_l_restore _ _ _ Hthis_pod_nonnull with
-          "[$Hthis_pod_type $Hthis_pod_meta_l $Hthis_pod_spec
-            $Hthis_pod_status]") as "Hthis_pod".
+          "[$Hthis_pod_type $Hthis_pod_meta_l $Hthis_pod_spec $Hthis_pod_status]") as "Hthis_pod".
         iApply wp_for_post_continue. wp_auto_keep.
         iFrame "Hpods_sl Hrelated_sets_sl HΦ Hrs".
         iFrame "Hi_ptr".
@@ -316,36 +272,17 @@ Proof.
         assert (sint.nat (word.add j (W64 1)) = S (sint.nat j)) as
           -> by word.
         rewrite !drop_drop Nat.add_1_r. iFrame. iPureIntro. word.
-      * iCombineNamed "Hthis_pod_meta_field_*" as
-          "Hthis_pod_meta_fields".
-        iAssert (typed_pointsto_def (PodV.objectmeta_ptr this_pod_l)
-            this_pod_meta_c 1) with "[Hthis_pod_meta_fields]" as
-          "Hthis_pod_meta_l".
-        { iNamed "Hthis_pod_meta_fields". simpl. rewrite /named.
-          rewrite Hthis_pod_meta_deepown_Hdeepown_uid. iFrame. }
-        iDestruct (struct_fields_combine (V:=v1.ObjectMeta.t)
-          (PodV.objectmeta_ptr this_pod_l) this_pod_meta_c 1
-          Hthis_pod_meta_nonnull with "Hthis_pod_meta_l") as
-          "Hthis_pod_meta_l".
-        iCombineNamed "Hthis_pod_meta_deepown_*" as
-          "Hthis_pod_meta_deepown".
-        iAssert (ObjectMetaV.deepown this_pod_meta_c
-            this_pod.(PodV.ObjectMeta') 1)
-          with "[Hthis_pod_meta_deepown]" as "Hthis_pod_meta".
-        { iNamed "Hthis_pod_meta_deepown".
-          rewrite /ObjectMetaV.deepown /named. iFrame. iFrame "%". }
+      * rewrite Huid.
         iAssert (ObjectMetaV.deepown_l (PodV.objectmeta_ptr this_pod_l)
-            this_pod.(PodV.ObjectMeta') 1)
-          with "[Hthis_pod_meta_l Hthis_pod_meta]" as
-          "Hthis_pod_meta_l".
+            this_pod.(PodV.ObjectMeta') 1)%I
+          with "[Hthis_pod_meta_l Hthis_pod_meta]" as "Hthis_pod_meta_l".
         { iExists this_pod_meta_c. iFrame. }
         iPoseProof (PodV.deepown_l_restore _ _ _ Hthis_pod_nonnull with
-          "[$Hthis_pod_type $Hthis_pod_meta_l $Hthis_pod_spec
-            $Hthis_pod_status]") as "Hthis_pod".
-        wp_apply (wp_map_insert types.UID with "[$Hseen]") as "Hseen".
-        wp_apply wp_slice_literal. iSplitR; first done.
+          "[$Hthis_pod_type $Hthis_pod_meta_l $Hthis_pod_spec $Hthis_pod_status]") as "Hthis_pod".
+        wp_apply_keep (wp_map_insert types.UID with "[$Hseen]") as "Hseen".
+        wp_apply_keep wp_slice_literal. iSplitR; first done.
         iIntros (one_sl) "[Hone_sl _]". wp_auto_keep.
-        wp_apply (wp_slice_append with
+        wp_apply_keep (wp_slice_append with
           "[$Hresult_sl $Hresult_cap $Hone_sl]").
         iIntros (result_sl''')
           "(Hresult_sl & Hresult_cap & Hone_sl)". wp_auto_keep.
@@ -378,7 +315,7 @@ Proof.
     iFrame.
 
 Unshelve. all: try tc_solve.
-(* [wp_apply] leaves a proof-irrelevant label-map argument unconstrained. *)
+(* [wp_apply_keep] leaves a proof-irrelevant label-map argument unconstrained. *)
 all: exact (None : option (gmap go_string go_string)).
 Qed.
 

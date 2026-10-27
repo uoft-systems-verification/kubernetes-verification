@@ -1,4 +1,4 @@
-From New.proof Require Import wp_keep.
+From New.proof Require Import wp_apply_keep.
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export get by_index_pod_controller create delete.
 From New.proof Require Export util.
@@ -300,7 +300,7 @@ Proof.
     rewrite Hi_eq in Hreplicas_eq. congruence. }
   assert ((sint.Z (word.sub (slice.len sl) (W64 (sint.Z n)))) = (sint.Z (slice.len sl)) - (sint.Z n)) as -> by word.
   assert ((sint.Z (W64 0)) = 0) as -> by word.
-  wp_if_destruct.
+  wp_if_destruct_keep.
   - (* too few replicas: create [diff] pods concurrently through slowStartBatch *)
     (* the burst cap: [d] is the number of pods to create this sync *)
     wp_bind (if: _ then _ else do: #())%E.
@@ -308,7 +308,7 @@ Proof.
       (∃ d : w64, "diff" ∷ diff_ptr ↦ d ∗
         "%Hd" ∷ ⌜ sint.Z d = Z.min (sint.Z n - sint.Z (slice.len sl)) (sint.Z burst) ⌝) ∗ _)%I
       with "[-]").
-    { wp_if_destruct.
+    { wp_if_destruct_keep.
       - iSplitR; first done. iSplitL "diff".
         { iExists burst. iFrame "diff". iPureIntro. rewrite Z.min_r; word. }
         iNamedAccu.
@@ -341,7 +341,7 @@ Proof.
     { iPkgInit. }
     wp_auto_keep.
     rename err_ptr into err_outer_ptr.
-    wp_apply (wp_slowStartBatch γ (ReplicaSetV.key rs)
+    wp_apply_keep (wp_slowStartBatch γ (ReplicaSetV.key rs)
       rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID')
       (list_to_set (PodV.key <$> (active_pods ++ inactive_pods)))
       with "[$Hown_children_frag]").
@@ -351,7 +351,7 @@ Proof.
       iIntros "!>" (Φ') "Hau".
       wp_pures_keep. wp_auto_keep.
       wp_bind ((global_addr k8s_api_apps_v1.SchemeGroupVersion) @! (go.PointerType schema.GroupVersion) @! "WithKind" #"ReplicaSet"%go)%E.
-      wp_apply (New.proof.k8s_io.api.apps.v1.wp_SchemeGroupVersion__WithKind
+      wp_apply_keep (New.proof.k8s_io.api.apps.v1.wp_SchemeGroupVersion__WithKind
         (schema_sem := @code.k8s_io.api.apps.v1.v1.import_schema_Assumption
           _ _ _ _ object_apps_v1_sem) "ReplicaSet"%go with
         "[$Happs_v1_init]").
@@ -360,14 +360,14 @@ Proof.
       wp_bind (@! replicaset.apis_meta_v1.NewControllerRef
         #(interface.mk_ok (go.PointerType k8s_api_apps_v1.ReplicaSet) (#rs_l)) #gvk)%E.
       change (replicaset.apis_meta_v1.NewControllerRef) with v1.NewControllerRef.
-      wp_apply (v1.wp_NewControllerRef_ReplicaSet with "[]").
+      wp_apply_keep (v1.wp_NewControllerRef_ReplicaSet with "[]").
       { iFrame "#". iPureIntro. split_and!; done. }
       iIntros (controller_ref_l controller_ref)
         "(Hdeepown_l_controller_ref & %Hcontroller_ref_valid & %Hcontroller_ref_wf & _)".
       wp_auto_keep. rewrite Hgvk_k in Hcontroller_ref_valid.
       change ((rs_l.[k8s_api_apps_v1.ReplicaSet.t, "Spec"]).[k8s_api_apps_v1.ReplicaSetSpec.t, "Template"]) with
         ((ReplicaSetV.spec_ptr rs_l).[v1.ReplicaSetSpec.t, "Template"]).
-      wp_apply (controller.wp_GetPodFromTemplate
+      wp_apply_keep (controller.wp_GetPodFromTemplate
         ((ReplicaSetV.spec_ptr rs_l).[v1.ReplicaSetSpec.t, "Template"])
         (interface.mk (go.PointerType k8s_api_apps_v1.ReplicaSet) #rs_l)
         controller_ref_l DfracDiscarded DfracDiscarded
@@ -396,7 +396,7 @@ Proof.
         - unfold ObjectMetaV.valid in Hrs_meta_valid. tauto.
         - unfold ObjectMetaV.valid in Hrs_meta_valid. tauto. }
       wp_auto_keep.
-      wp_apply (v1.wp_GetNamespace_deepown with "[$Hdeepown_m_l_rs]") as "_".
+      wp_apply_keep (v1.wp_GetNamespace_deepown with "[$Hdeepown_m_l_rs]") as "_".
       wp_method_call. rewrite /kubernetes.Clientset__CoreV1ⁱᵐᵖˡ. wp_call.
       wp_auto_keep.
       wp_method_call. rewrite /trusted_client_core_v1.CoreV1Client__Podsⁱᵐᵖˡ. wp_call. wp_auto_keep.
@@ -487,7 +487,7 @@ Proof.
       iFrame "Hrs_Hdeepown_selector_some Htmpl". }
     iApply (ReplicaSetV.deepown_l_restore _ _ _ Hrs_l_not_null with
       "[$Hdeepown_t_l_rs $Hdeepown_m_l_rs $Hdeepown_s_l_rs $Hdeepown_st_l_rs]").
-  - wp_if_destruct.
+  - wp_if_destruct_keep.
     2 : { iApply ("HΦ" $! active_pods).
       iSplit.
       { iPureIntro.
@@ -522,7 +522,7 @@ Proof.
       (∃ d : w64, "diff" ∷ diff_ptr ↦ d ∗
         "%Hdelete_count" ∷ ⌜ sint.Z d = Z.min (sint.Z (slice.len sl) - sint.Z n) (sint.Z burst) ⌝) ∗ _)%I
       with "[-]").
-    { wp_if_destruct.
+    { wp_if_destruct_keep.
       - iSplitR; first done. iSplitL "diff".
         { iExists burst. iFrame "diff". iPureIntro. rewrite Z.min_r; word. }
         iNamedAccu.
@@ -551,13 +551,13 @@ Proof.
 	    "[$Hdeepown_t_l_rs $Hdeepown_m_l_rs $Hdeepown_s_l_rs $Hdeepown_st_l_rs]") as
 	    "Hdeepown_l_rs".
 	  wp_bind (@! replicaset.getIndirectlyRelatedPods #rs_l)%E.
-	  wp_apply (wp_getIndirectlyRelatedPods γ l rs_l rs DfracDiscarded with "[$Hdeepown_l_rs]").
+	  wp_apply_keep (wp_getIndirectlyRelatedPods γ l rs_l rs DfracDiscarded with "[$Hdeepown_l_rs]").
 	  { iFrame "#". }
 	  iIntros (related_sl related_ptrs related_pods related_dq)
 	    "(Hrelated_sl & Hrelated_pods & Hdeepown_l_rs)".
 	  wp_auto_keep.
 	  wp_bind (@! replicaset.getPodsToDelete #sl #related_sl #d)%E.
-	  wp_apply (wp_getPodsToDelete sl ptrs active_pods related_sl related_ptrs related_pods
+	  wp_apply_keep (wp_getPodsToDelete sl ptrs active_pods related_sl related_ptrs related_pods
 	    d DfracDiscarded related_dq with
 	    "[$Hsl $Hdeepown_l_active_pods $Hrelated_sl $Hrelated_pods]").
 	  { iFrame "#". iPureIntro. word. }
@@ -641,14 +641,14 @@ Proof.
     fold targeted tptrs.
     iPersist "ctx kubeClient".
     (* errCh := make(chan error, diff) *)
-    wp_apply chan.wp_make2; first word.
+    wp_apply_keep chan.wp_make2; first word.
     iIntros (ch γch) "(#His_chan & _ & Hoc)".
     assert (d ≠ W64 0) as Hd_nz.
     { intros Hd0. rewrite Hd0 in Hd_pos. word. }
     iEval (rewrite (decide_False _ _ Hd_nz)) in "Hoc".
     wp_auto_keep.
     iMod (init_WaitGroup delete_wgN with "wg") as (γwg) "(#His_wg & Hwg_ctr & Hwg_waiters)".
-    wp_apply (wp_WaitGroup__Add with "[$His_wg]").
+    wp_apply_keep (wp_WaitGroup__Add with "[$His_wg]").
     iApply fupd_mask_intro; [solve_ndisj|]. iIntros "Hmask". iNext.
     assert (sint.Z (slice.len sl) = Z.of_nat (length active_pods)) as Hsl_Z.
     { rewrite -Hlen Hsl_len1. word. }
@@ -691,10 +691,10 @@ Proof.
       with "[i pod Hdeepown_targeted Hmeta_targeted Hpending_elems]" as "Hloop_inv".
     { iExists (W64 0), (zero_val loc). rewrite !drop_0. iFrame "∗ #". iPureIntro. rewrite /slice.slice /=. word. }
     iClear "Hdeepown_targeted".
-    wp_for "Hloop_inv". wp_if_destruct.
+    wp_for_keep "Hloop_inv". wp_if_destruct_keep.
     + rewrite decide_True; [word|].
       list_elem tptrs (sint.Z i) as this_ptr.
-      wp_apply (wp_load_slice_index with "[$Hslice]"); [word|eauto|].
+      wp_apply_keep (wp_load_slice_index with "[$Hslice]"); [word|eauto|].
       iIntros "Hslice". wp_auto_keep.
       assert (tptrs !! sint.nat i = Some this_ptr) as Hlookup_tptrs by exact Hthis_ptr_lookup.
       assert (∃ this_pod, targeted !! sint.nat i = Some this_pod) as [this_pod Hlookup_targeted].
@@ -715,17 +715,17 @@ Proof.
       iDestruct "Hpending_elems" as "[Helem_this Hpending_elems]".
       iDestruct (big_sepL_elem_of _ _ this_pod with "Hunres_targeted") as "#Hunres_this".
       { subst targeted. eapply list_elem_of_lookup_2. exact Hlookup_targeted. }
-      wp_apply (wp_fork with "[Hdeepown_this Hmeta_this Helem_this]").
+      wp_apply_keep (wp_fork with "[Hdeepown_this Hmeta_this Helem_this]").
       { (* the goroutine deleting [this_pod] *)
         wp_pures_keep.
-        wp_apply wp_with_defer as "%defer defer". simpl subst.
+        wp_apply_keep wp_with_defer as "%defer defer". simpl subst.
         wp_auto_keep.
         iPoseProof (PodV.deepown_l_split with "Hdeepown_this") as
           "(%Hthis_ptr_not_null & Hdeepown_t_l_pod & Hdeepown_m_l_pod & Hdeepown_s_l_pod & Hdeepown_st_l_pod)".
-        wp_apply (v1.wp_GetUID_deepown with "[$Hdeepown_m_l_pod]"). iIntros "Hdeepown_m_l_pod". wp_auto_keep.
-        wp_apply (v1.wp_GetName_deepown with "[$Hdeepown_m_l_pod]"). iIntros "Hdeepown_m_l_pod". wp_auto_keep.
-        wp_apply (common.wp_NewDeleteOptionsWithUID). iIntros (do_c) "(Hdeepown_do & %Hvalid_do)". wp_auto_keep.
-        wp_apply (v1.wp_GetNamespace_deepown with "[$Hdeepown_m_l_pod]"). iIntros "Hdeepown_m_l_pod". wp_auto_keep.
+        wp_apply_keep (v1.wp_GetUID_deepown with "[$Hdeepown_m_l_pod]"). iIntros "Hdeepown_m_l_pod". wp_auto_keep.
+        wp_apply_keep (v1.wp_GetName_deepown with "[$Hdeepown_m_l_pod]"). iIntros "Hdeepown_m_l_pod". wp_auto_keep.
+        wp_apply_keep (common.wp_NewDeleteOptionsWithUID). iIntros (do_c) "(Hdeepown_do & %Hvalid_do)". wp_auto_keep.
+        wp_apply_keep (v1.wp_GetNamespace_deepown with "[$Hdeepown_m_l_pod]"). iIntros "Hdeepown_m_l_pod". wp_auto_keep.
         wp_method_call. rewrite /kubernetes.Clientset__CoreV1ⁱᵐᵖˡ. wp_call.
         wp_auto_keep.
         wp_method_call. rewrite /trusted_client_core_v1.CoreV1Client__Podsⁱᵐᵖˡ. wp_call. wp_auto_keep.
@@ -789,7 +789,7 @@ Proof.
         iModIntro. iNext.
         wp_auto_keep.
         (* the deferred wg.Done() *)
-        wp_apply (wp_WaitGroup__Done with "[$His_wg]").
+        wp_apply_keep (wp_WaitGroup__Done with "[$His_wg]").
         iInv "Hbinv" as ">Hi" "Hclose_inv".
         iApply fupd_mask_intro; [solve_ndisj|]. iIntros "Hmask". iNext.
         iNamedSuffix "Hi" "_wg".
@@ -819,7 +819,7 @@ Proof.
       { solve_ndisj. }
       { word. }
       iMod "Hmask" as "_". iModIntro.
-      wp_apply (wp_WaitGroup__Wait with "[$His_wg $Hwait_tok]").
+      wp_apply_keep (wp_WaitGroup__Wait with "[$His_wg $Hwait_tok]").
       iInv "Hbinv" as ">Hi" "Hclose_inv".
       iApply fupd_mask_intro; [solve_ndisj|]. iIntros "Hmask". iNext.
       iNamedSuffix "Hi" "_inv".
@@ -848,7 +848,7 @@ Proof.
         iLeft. done. }
       iModIntro. iIntros "Hwait_tok".
       wp_auto_keep.
-      wp_apply chan.wp_select_nonblocking. simpl.
+      wp_apply_keep chan.wp_select_nonblocking. simpl.
       iSplit.
       { (* the receive case never fires: the channel is empty *)
         iSplit; last done.
