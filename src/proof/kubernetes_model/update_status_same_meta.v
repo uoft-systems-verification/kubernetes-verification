@@ -126,7 +126,7 @@ Qed.
     the status changes, so the other views take the new object as it is, and
     the metadata fragment stays valid. *)
 Lemma update_status_same_meta_written_vs γ (kind namespace : go_string) kobj abs_state used_uid
-    used_reference orphan_tracked old updated rv uid dq kmeta kstatus :
+    used_reference old updated rv uid dq kmeta kstatus :
   update_status_key kind namespace kobj = KObjectV.key kobj →
   valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj) →
   ObjectMetaV.equiv_except_resource_version (KObjectV.objectmeta kobj) kmeta →
@@ -136,7 +136,7 @@ Lemma update_status_same_meta_written_vs γ (kind namespace : go_string) kobj ab
   own_children_auth γ abs_state used_reference -∗
   own_terminating_children_auth γ abs_state -∗
   own_deletion_observation_auth γ abs_state used_uid -∗
-  own_orphans_auth γ abs_state orphan_tracked -∗
+  own_orphans_auth γ abs_state -∗
   own_meta_frag γ (KObjectV.key kobj) uid dq kmeta -∗
   own_status_frag γ (KObjectV.key kobj) uid 1 kstatus ==∗
   ⌜ KObjectV.valid (update_status_stored updated rv) ∧
@@ -150,8 +150,7 @@ Lemma update_status_same_meta_written_vs γ (kind namespace : go_string) kobj ab
     (<[KObjectV.key kobj := update_status_stored updated rv]> abs_state) ∗
   own_deletion_observation_auth γ
     (<[KObjectV.key kobj := update_status_stored updated rv]> abs_state) used_uid ∗
-  own_orphans_auth γ
-    (<[KObjectV.key kobj := update_status_stored updated rv]> abs_state) orphan_tracked ∗
+  own_orphans_auth γ (<[KObjectV.key kobj := update_status_stored updated rv]> abs_state) ∗
   own_meta_frag γ (KObjectV.key kobj) uid dq kmeta ∗
   own_status_frag γ (KObjectV.key kobj) uid 1 (KObjectV.status (update_status_stored updated rv)).
 Proof.
@@ -438,7 +437,7 @@ Proof.
     iDestruct (update_status_same_meta_validated _ _ _ _ _ _ _ _ _ _ _ _ Hkey Hmeta_same Hvalidated
       with "Hinv_Hown_abs Hown_meta_frag Hown_status_frag")
       as %(_ & _ & _ & Hmeta_eq & Hstatus_eq & Hprepared & _).
-    iMod (update_status_same_meta_written_vs _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hkey Hvalid_typemeta
+    iMod (update_status_same_meta_written_vs _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hkey Hvalid_typemeta
       Hmeta_same Hvalidated Hvalid_rv with "Hinv_Hown_abs Hinv_Hown_children
       Hinv_Hown_terminating_children Hinv_Hown_deletion_observations Hinv_Hown_orphans
       Hown_meta_frag Hown_status_frag")
@@ -682,7 +681,7 @@ Proof.
     wp_auto_keep.
     iApply fupd_wp.
     iMod "Hau" as (uid dq kmeta kstatus) "H". iNamed "H".
-    iMod (update_status_same_meta_written_vs _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hkey Hvalid_typemeta
+    iMod (update_status_same_meta_written_vs _ _ _ _ _ _ _ _ _ _ _ _ _ _ Hkey Hvalid_typemeta
       Hmeta_same Hvalidated Hvalid_rv with "Hinv_Hown_abs Hinv_Hown_children
       Hinv_Hown_terminating_children Hinv_Hown_deletion_observations Hinv_Hown_orphans
       Hown_meta_frag Hown_status_frag")

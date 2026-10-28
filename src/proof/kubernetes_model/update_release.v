@@ -21,13 +21,13 @@ Local Set Default Proof Using "All".
    fragment is returned. *)
 (* Releasing [key] makes it a living orphan. For an adoptable kind it enters its
    bucket, which needs the whole bucket fragment; otherwise no bucket changes. *)
-Lemma orphan_view_release_vs γ abs_state orphan_tracked key old_kobj new_kobj orphans :
+Lemma orphan_view_release_vs γ abs_state key old_kobj new_kobj orphans :
   abs_state !! key = Some old_kobj →
   (KObjectV.objectmeta new_kobj).(ObjectMetaV.DeletionTimestamp') = None →
   obj_parent_ref new_kobj = None →
-  own_orphans_auth γ abs_state orphan_tracked -∗
+  own_orphans_auth γ abs_state -∗
   own_orphans_frag_of γ key orphans ==∗
-    own_orphans_auth γ (<[key := new_kobj]> abs_state) orphan_tracked ∗
+    own_orphans_auth γ (<[key := new_kobj]> abs_state) ∗
     own_orphans_frag_of γ key (orphans ∪ {[key]}).
 Proof.
   iIntros (Hlookup Hliving Hparent) "Hauth Hfrag".
@@ -682,7 +682,7 @@ Proof.
     exact Huid_updated. }
   { intros Hold_terminating.
     exfalso. apply Hold_terminating. exact Hold_deletion_timestamp_none. }
-  iMod (orphan_view_release_vs _ _ _ key old_kobj new_kobj _ with
+  iMod (orphan_view_release_vs _ _ key old_kobj new_kobj _ with
     "Hinv_Hown_orphans Hown_orphans_frag")
     as "[Hinv_Hown_orphans Hown_orphans_frag]".
   { exact Hlookup_abs. }

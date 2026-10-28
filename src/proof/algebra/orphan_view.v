@@ -9,9 +9,10 @@ From iris.base_logic.lib Require Import own.
     belongs to the bucket of its key, so buckets are pairwise disjoint and a
     write to one key changes at most one bucket. A fragment [own_frag γ bk dq ks]
     says that the living orphans of [bk] are exactly [ks]. Any fraction reads the
-    set; changing it needs the whole fragment, as for children in [cview]. The
-    authority also records the tracked buckets, those whose fragment has been
-    allocated, so that each bucket gets at most one whole fragment. *)
+    set; changing it needs the whole fragment, as for children in [cview].
+    Fragments are created only together with the authority, by [init_frags]; no
+    later update adds one. The fractions of a bucket's fragments add up to at
+    most 1, so its whole fragment is unique. *)
 Section orphan_view.
 
 Definition bucket : Type := (go_string * go_string)%type.
@@ -233,7 +234,7 @@ Proof.
   apply Hne. rewrite -Hbk1 -Hbk2 //.
 Qed.
 
-Definition authO : ofe := leibnizO (gmap KKey.t KObjectV.t * gset bucket).
+Definition authO : ofe := leibnizO (gmap KKey.t KObjectV.t).
 Definition fragUR : ucmra :=
   gmapUR bucket (prodR dfracR (agreeR (leibnizO (gset KKey.t)))).
 
@@ -244,8 +245,7 @@ Local Definition compatible b a : Prop :=
     ∃ ks,
       agree_ks ≡ to_agree (A := leibnizO (gset KKey.t)) ks ∧
       ✓ dq ∧
-      bk ∈ a.2 ∧
-      ks = orphans a.1 bk) b.
+      ks = orphans a bk) b.
 
 Local Definition view_rel_raw (_ : nat) a b : Prop :=
   compatible b a.
@@ -270,7 +270,7 @@ Proof.
   destruct (Some_includedN_is_Some _ _ _ Hlookup_incl) as
     [[dq1 agree1] Hlookup1].
   destruct (Hcompatible _ _ Hlookup1) as
-    (ks & Hagree1 & Hvdq1 & Htracked & Hks).
+    (ks & Hagree1 & Hvdq1 & Hks).
   rewrite Hlookup1 in Hlookup_incl.
   assert (Hvalid1 :
     ✓{n2} (Some (dq1, agree1) :
@@ -318,7 +318,7 @@ Qed.
 Local Lemma view_rel_raw_unit n :
   ∃ a, view_rel_raw n a ε.
 Proof.
-  exists ((∅ : gmap KKey.t KObjectV.t), (∅ : gset bucket)).
+  exists (∅ : gmap KKey.t KObjectV.t).
   rewrite /view_rel_raw /compatible map_Forall_lookup.
   intros bk x Hlookup.
   rewrite lookup_empty in Hlookup. done.
@@ -355,79 +355,38 @@ Proof.
   apply (Qp.lt_nge 1 1) in Hlt. apply Hlt. done.
 Qed.
 
-Lemma update_auth state state' tracked :
-  (∀ bk, bk ∈ tracked → orphans state' bk = orphans state bk) →
-  orphan_auth 1 (state, tracked) ~~> orphan_auth 1 (state', tracked).
+Lemma update_auth state state' :
+  (∀ bk, orphans state' bk = orphans state bk) →
+  orphan_auth 1 state ~~> orphan_auth 1 state'.
 Proof.
   intros Hsame.
   apply view_update_auth.
   intros n bf Hcompatible.
-  change (compatible bf (state, tracked)) in Hcompatible.
-  change (compatible bf (state', tracked)).
+  change (compatible bf state) in Hcompatible.
+  change (compatible bf state').
   rewrite /compatible map_Forall_lookup in Hcompatible |- *.
   intros bk [dq agree_ks] Hlookup.
   destruct (Hcompatible _ _ Hlookup) as
-    (ks & Hagree & Hvdq & Htracked & Hks).
+    (ks & Hagree & Hvdq & Hks).
   exists ks. split_and!; try done.
   simpl in *. rewrite Hks Hsame //.
 Qed.
 
-Lemma track state tracked bk :
-  bk ∉ tracked →
-  orphan_auth 1 (state, tracked) ~~>
-    orphan_auth 1 (state, tracked ∪ {[bk]}) ⋅
-    orphan_frag (mk_frag bk (DfracOwn 1) (orphans state bk)).
-Proof.
-  intros Hfresh.
-  apply view_update_alloc.
-  intros n bf Hcompatible.
-  change (compatible bf (state, tracked)) in Hcompatible.
-  change (compatible (mk_frag bk (DfracOwn 1) (orphans state bk) ⋅ bf)
-    (state, tracked ∪ {[bk]})).
-  assert (Hbf_none : bf !! bk = None).
-  { destruct (bf !! bk) as [[dq agree_ks]|] eqn:Hlookup_bf; last done.
-    exfalso.
-    destruct (map_Forall_lookup_1 _ _ _ _ Hcompatible Hlookup_bf) as
-      (ks & _ & _ & Htracked & _).
-    done. }
-  rewrite /compatible map_Forall_lookup in Hcompatible |- *.
-  intros bk' [dq agree_ks] Hlookup.
-  rewrite lookup_op in Hlookup.
-  destruct (decide (bk' = bk)) as [->|Hne].
-  - rewrite /mk_frag lookup_singleton_eq Hbf_none right_id in Hlookup.
-    inversion Hlookup. subst dq agree_ks.
-    exists (orphans state bk). split_and!; try done.
-    simpl. apply elem_of_union_r, elem_of_singleton. done.
-  - rewrite /mk_frag lookup_singleton_ne // left_id in Hlookup.
-    destruct (Hcompatible _ _ Hlookup) as
-      (ks & Hagree & Hvdq & Htracked & Hks).
-    exists ks. split_and!; try done.
-    simpl. apply elem_of_union_l. done.
-Qed.
-
-Lemma update_bucket state state' tracked bk ks :
-  (∀ bk', bk' ≠ bk → bk' ∈ tracked → orphans state' bk' = orphans state bk') →
-  orphan_auth 1 (state, tracked) ⋅ orphan_frag (mk_frag bk (DfracOwn 1) ks) ~~>
-    orphan_auth 1 (state', tracked) ⋅
+Lemma update_bucket state state' bk ks :
+  (∀ bk', bk' ≠ bk → orphans state' bk' = orphans state bk') →
+  orphan_auth 1 state ⋅ orphan_frag (mk_frag bk (DfracOwn 1) ks) ~~>
+    orphan_auth 1 state' ⋅
     orphan_frag (mk_frag bk (DfracOwn 1) (orphans state' bk)).
 Proof.
   intros Hsame.
   apply view_update.
   intros n bf Hcompatible.
-  change (compatible (mk_frag bk (DfracOwn 1) ks ⋅ bf) (state, tracked))
+  change (compatible (mk_frag bk (DfracOwn 1) ks ⋅ bf) state)
     in Hcompatible.
   change (compatible (mk_frag bk (DfracOwn 1) (orphans state' bk) ⋅ bf)
-    (state', tracked)).
-  pose proof (frame_none_of_whole bk ks bf (state, tracked) Hcompatible)
+    state').
+  pose proof (frame_none_of_whole bk ks bf state Hcompatible)
     as Hbf_none.
-  assert (Htracked_bk : bk ∈ tracked).
-  { assert (Hlookup_source :
-      (mk_frag bk (DfracOwn 1) ks ⋅ bf) !! bk =
-        Some (DfracOwn 1, to_agree (A := leibnizO (gset KKey.t)) ks)).
-    { rewrite /mk_frag lookup_op lookup_singleton_eq Hbf_none right_id //. }
-    destruct (map_Forall_lookup_1 _ _ _ _ Hcompatible Hlookup_source) as
-      (ks' & _ & _ & Htracked & _).
-    done. }
   rewrite /compatible map_Forall_lookup in Hcompatible |- *.
   intros bk' [dq agree_ks] Hlookup.
   destruct (decide (bk' = bk)) as [->|Hne].
@@ -441,7 +400,7 @@ Proof.
       rewrite /mk_frag lookup_op lookup_singleton_ne // left_id in Hlookup.
       exact Hlookup. }
     destruct (Hcompatible _ _ Hlookup_source) as
-      (ks' & Hagree & Hvdq & Htracked & Hks).
+      (ks' & Hagree & Hvdq & Hks).
     exists ks'. split_and!; try done.
     simpl in *. rewrite Hks Hsame //.
 Qed.
@@ -461,14 +420,14 @@ Context {Σ : gFunctors}.
 Context {Horphan : orphanViewG Σ}.
 #[local] Existing Instance Horphan.
 
-Definition own_auth γ (state : gmap KKey.t KObjectV.t) (tracked : gset bucket) : iProp Σ :=
-  own γ (orphan_auth 1 (state, tracked)).
+Definition own_auth γ (state : gmap KKey.t KObjectV.t) : iProp Σ :=
+  own γ (orphan_auth 1 state).
 
 Definition own_frag γ (bk : bucket) (dq : dfrac) (ks : gset KKey.t) : iProp Σ :=
   own γ (orphan_frag (mk_frag bk dq ks)).
 
-Global Instance own_auth_timeless γ state tracked :
-  Timeless (own_auth γ state tracked).
+Global Instance own_auth_timeless γ state :
+  Timeless (own_auth γ state).
 Proof. apply _. Qed.
 
 Global Instance own_frag_timeless γ bk dq ks :
@@ -477,40 +436,69 @@ Proof. apply _. Qed.
 
 Lemma init :
   ⊢ |==> ∃ γ,
-    own_auth γ (∅ : gmap KKey.t KObjectV.t) (∅ : gset bucket).
+    own_auth γ (∅ : gmap KKey.t KObjectV.t).
 Proof.
   unfold own_auth.
-  iMod (own_alloc (orphan_auth 1
-    ((∅ : gmap KKey.t KObjectV.t), (∅ : gset bucket)))) as (γ) "Hauth".
+  iMod (own_alloc (orphan_auth 1 (∅ : gmap KKey.t KObjectV.t))) as (γ) "Hauth".
   { apply (proj2 (view_auth_dfrac_valid orphan_view_rel 1
-      ((∅ : gmap KKey.t KObjectV.t), (∅ : gset bucket)))).
+      (∅ : gmap KKey.t KObjectV.t))).
     split; [done|].
     intros n.
-    change (view_rel_raw n
-      ((∅ : gmap KKey.t KObjectV.t), (∅ : gset bucket)) ε).
+    change (view_rel_raw n (∅ : gmap KKey.t KObjectV.t) ε).
     rewrite /view_rel_raw /compatible map_Forall_lookup.
     intros bk x Hlookup. rewrite lookup_empty in Hlookup. done. }
   iModIntro. iExists γ. iExact "Hauth".
 Qed.
 
-Lemma own_auth_frag_valid {γ state tracked bk dq ks} :
-  own_auth γ state tracked -∗
+(** The authority over the empty state, with the whole fragment of each bucket
+    in [S]. This is the only way to create fragments. *)
+Lemma init_frags (S : gset bucket) :
+  ⊢ |==> ∃ γ,
+    own_auth γ (∅ : gmap KKey.t KObjectV.t) ∗
+    [∗ set] bk ∈ S, own_frag γ bk (DfracOwn 1) ∅.
+Proof.
+  iMod (own_alloc (orphan_auth 1 (∅ : gmap KKey.t KObjectV.t) ⋅
+    orphan_frag (gset_to_gmap
+      (DfracOwn 1, to_agree (A := leibnizO (gset KKey.t)) ∅) S)))
+    as (γ) "[Hauth Hfrags]".
+  { apply (proj2 (view_both_dfrac_valid orphan_view_rel 1
+      (∅ : gmap KKey.t KObjectV.t) _)).
+    split; [done|].
+    intros n.
+    change (compatible (gset_to_gmap
+      (DfracOwn 1, to_agree (A := leibnizO (gset KKey.t)) ∅) S)
+      (∅ : gmap KKey.t KObjectV.t)).
+    rewrite /compatible map_Forall_lookup.
+    intros bk [dq agree_ks] Hlookup.
+    apply lookup_gset_to_gmap_Some in Hlookup as [_ Hx].
+    inversion Hx. subst dq agree_ks.
+    exists ∅. split_and!; done. }
+  iModIntro. iExists γ. iFrame "Hauth".
+  iEval (rewrite /orphan_frag -big_opS_gset_to_gmap big_opS_view_frag)
+    in "Hfrags".
+  iDestruct (big_opS_own_1 with "Hfrags") as "Hfrags".
+  rewrite /own_frag /orphan_frag /mk_frag.
+  iExact "Hfrags".
+Qed.
+
+Lemma own_auth_frag_valid {γ state bk dq ks} :
+  own_auth γ state -∗
   own_frag γ bk dq ks -∗
-  ⌜ ks = orphans state bk ∧ bk ∈ tracked ⌝.
+  ⌜ ks = orphans state bk ⌝.
 Proof.
   iIntros "Hauth Hfrag".
   iDestruct (own_valid_2 with "Hauth Hfrag") as "Hvalid".
   iDestruct (internal_cmra_valid_elim with "Hvalid") as %Hvalid.
   iPureIntro.
   apply (proj1 (view_both_validN orphan_view_rel 0%nat
-    (state, tracked) (mk_frag bk dq ks))) in Hvalid.
-  change (compatible (mk_frag bk dq ks) (state, tracked)) in Hvalid.
+    state (mk_frag bk dq ks))) in Hvalid.
+  change (compatible (mk_frag bk dq ks) state) in Hvalid.
   assert (Hlookup :
     mk_frag bk dq ks !! bk =
       Some (dq, to_agree (A := leibnizO (gset KKey.t)) ks)).
   { rewrite /mk_frag lookup_singleton_eq //. }
   destruct (map_Forall_lookup_1 _ _ _ _ Hvalid Hlookup) as
-    (ks' & Hagree & _ & Htracked & Hks).
+    (ks' & Hagree & _ & Hks).
   assert (Hks_eqv : (ks : leibnizO (gset KKey.t)) ≡ ks').
   { apply (inj (to_agree : leibnizO (gset KKey.t) → agree (leibnizO (gset KKey.t)))).
     exact Hagree. }
@@ -518,14 +506,14 @@ Proof.
   done.
 Qed.
 
-Lemma own_auth_frag_lookup {γ state tracked bk dq ks} k :
+Lemma own_auth_frag_lookup {γ state bk dq ks} k :
   k ∈ ks →
-  own_auth γ state tracked -∗
+  own_auth γ state -∗
   own_frag γ bk dq ks -∗
   ⌜ ∃ obj, state !! k = Some obj ∧ in_bucket bk k obj ⌝.
 Proof.
   iIntros (Hk) "Hauth Hfrag".
-  iDestruct (own_auth_frag_valid with "Hauth Hfrag") as %[-> _].
+  iDestruct (own_auth_frag_valid with "Hauth Hfrag") as %->.
   iPureIntro. apply elem_of_orphans. done.
 Qed.
 
@@ -555,22 +543,10 @@ Proof.
   exact Hagree.
 Qed.
 
-Lemma track_vs {γ state tracked} bk :
-  bk ∉ tracked →
-  own_auth γ state tracked ==∗
-    own_auth γ state (tracked ∪ {[bk]}) ∗
-    own_frag γ bk (DfracOwn 1) (orphans state bk).
-Proof.
-  iIntros (Hfresh) "Hauth".
-  iMod (own_update with "Hauth") as "H".
-  { apply track. exact Hfresh. }
-  iModIntro. iDestruct (own_op with "H") as "[$ $]".
-Qed.
-
-(** Any state change that leaves every tracked bucket unchanged. *)
-Lemma update_vs {γ state tracked} state' :
-  (∀ bk, bk ∈ tracked → orphans state' bk = orphans state bk) →
-  own_auth γ state tracked ==∗ own_auth γ state' tracked.
+(** Any state change that leaves every bucket unchanged. *)
+Lemma update_vs {γ state} state' :
+  (∀ bk, orphans state' bk = orphans state bk) →
+  own_auth γ state ==∗ own_auth γ state'.
 Proof.
   iIntros (Hsame) "Hauth".
   iMod (own_update with "Hauth") as "Hauth".
@@ -578,11 +554,11 @@ Proof.
   iModIntro. iExact "Hauth".
 Qed.
 
-Lemma update_bucket_vs {γ state tracked bk ks} state' :
-  (∀ bk', bk' ≠ bk → bk' ∈ tracked → orphans state' bk' = orphans state bk') →
-  own_auth γ state tracked -∗
+Lemma update_bucket_vs {γ state bk ks} state' :
+  (∀ bk', bk' ≠ bk → orphans state' bk' = orphans state bk') →
+  own_auth γ state -∗
   own_frag γ bk (DfracOwn 1) ks ==∗
-    own_auth γ state' tracked ∗
+    own_auth γ state' ∗
     own_frag γ bk (DfracOwn 1) (orphans state' bk).
 Proof.
   iIntros (Hsame) "Hauth Hfrag".
@@ -591,98 +567,78 @@ Proof.
   iModIntro. iDestruct (own_op with "H") as "[$ $]".
 Qed.
 
-Lemma insert_same_vs {γ state tracked} k old_obj new_obj :
+Lemma insert_same_vs {γ state} k old_obj new_obj :
   state !! k = Some old_obj →
   (adoptable_orphan k old_obj ↔ adoptable_orphan k new_obj) →
-  own_auth γ state tracked ==∗ own_auth γ (<[k := new_obj]> state) tracked.
+  own_auth γ state ==∗ own_auth γ (<[k := new_obj]> state).
 Proof.
   intros Hlookup Hsame.
-  apply update_vs. intros bk _.
+  apply update_vs. intros bk.
   eapply orphans_insert_same; done.
 Qed.
 
-Lemma create_vs {γ state tracked} k obj :
+Lemma create_vs {γ state} k obj :
   state !! k = None →
   ¬ adoptable_orphan k obj →
-  own_auth γ state tracked ==∗ own_auth γ (<[k := obj]> state) tracked.
+  own_auth γ state ==∗ own_auth γ (<[k := obj]> state).
 Proof.
   intros Hlookup Hnot.
-  apply update_vs. intros bk _.
+  apply update_vs. intros bk.
   apply orphans_insert_fresh; done.
 Qed.
 
-Lemma delete_not_orphan_vs {γ state tracked} k :
+Lemma delete_not_orphan_vs {γ state} k :
   (∀ obj, state !! k = Some obj → ¬ adoptable_orphan k obj) →
-  own_auth γ state tracked ==∗ own_auth γ (delete k state) tracked.
+  own_auth γ state ==∗ own_auth γ (delete k state).
 Proof.
   intros Hnot.
-  apply update_vs. intros bk _.
+  apply update_vs. intros bk.
   apply orphans_delete_not_orphan. done.
 Qed.
 
-Lemma insert_untracked_vs {γ state tracked} k obj :
-  bucket_of k ∉ tracked →
-  own_auth γ state tracked ==∗ own_auth γ (<[k := obj]> state) tracked.
-Proof.
-  intros Huntracked.
-  apply update_vs. intros bk Hbk.
-  apply orphans_insert_other.
-  intros <-. done.
-Qed.
-
-Lemma delete_untracked_vs {γ state tracked} k :
-  bucket_of k ∉ tracked →
-  own_auth γ state tracked ==∗ own_auth γ (delete k state) tracked.
-Proof.
-  intros Huntracked.
-  apply update_vs. intros bk Hbk.
-  apply orphans_delete_other.
-  intros <-. done.
-Qed.
-
 (** A key becomes a living orphan, as in a release. *)
-Lemma enter_vs {γ state tracked ks} k obj :
+Lemma enter_vs {γ state ks} k obj :
   adoptable_orphan k obj →
-  own_auth γ state tracked -∗
+  own_auth γ state -∗
   own_frag γ (bucket_of k) (DfracOwn 1) ks ==∗
-    own_auth γ (<[k := obj]> state) tracked ∗
+    own_auth γ (<[k := obj]> state) ∗
     own_frag γ (bucket_of k) (DfracOwn 1) (ks ∪ {[k]}).
 Proof.
   iIntros (Hadoptable) "Hauth Hfrag".
-  iDestruct (own_auth_frag_valid with "Hauth Hfrag") as %[-> _].
+  iDestruct (own_auth_frag_valid with "Hauth Hfrag") as %->.
   iMod (update_bucket_vs (<[k := obj]> state) with "Hauth Hfrag")
     as "[$ Hfrag]".
-  { intros bk Hne _. apply orphans_insert_other. intros Heq. apply Hne. done. }
+  { intros bk Hne. apply orphans_insert_other. intros Heq. apply Hne. done. }
   rewrite orphans_insert_enter //.
 Qed.
 
 (** A key stops being a living orphan, as in an adoption. *)
-Lemma leave_vs {γ state tracked ks} k obj :
+Lemma leave_vs {γ state ks} k obj :
   ¬ adoptable_orphan k obj →
-  own_auth γ state tracked -∗
+  own_auth γ state -∗
   own_frag γ (bucket_of k) (DfracOwn 1) ks ==∗
-    own_auth γ (<[k := obj]> state) tracked ∗
+    own_auth γ (<[k := obj]> state) ∗
     own_frag γ (bucket_of k) (DfracOwn 1) (ks ∖ {[k]}).
 Proof.
   iIntros (Hnot) "Hauth Hfrag".
-  iDestruct (own_auth_frag_valid with "Hauth Hfrag") as %[-> _].
+  iDestruct (own_auth_frag_valid with "Hauth Hfrag") as %->.
   iMod (update_bucket_vs (<[k := obj]> state) with "Hauth Hfrag")
     as "[$ Hfrag]".
-  { intros bk Hne _. apply orphans_insert_other. intros Heq. apply Hne. done. }
+  { intros bk Hne. apply orphans_insert_other. intros Heq. apply Hne. done. }
   rewrite orphans_insert_leave //.
 Qed.
 
-Lemma delete_leave_vs {γ state tracked ks} k :
-  own_auth γ state tracked -∗
+Lemma delete_leave_vs {γ state ks} k :
+  own_auth γ state -∗
   own_frag γ (bucket_of k) (DfracOwn 1) ks ==∗
-    own_auth γ (delete k state) tracked ∗
+    own_auth γ (delete k state) ∗
     own_frag γ (bucket_of k) (DfracOwn 1) (ks ∖ {[k]}).
 Proof.
   iIntros "Hauth Hfrag".
-  iDestruct (own_auth_frag_valid with "Hauth Hfrag") as %[-> _].
+  iDestruct (own_auth_frag_valid with "Hauth Hfrag") as %->.
   iMod (update_bucket_vs (delete k state) with "Hauth Hfrag")
     as "[$ Hfrag]".
-  { intros bk Hne _. apply orphans_delete_other. intros Heq. apply Hne. done. }
+  { intros bk Hne. apply orphans_delete_other. intros Heq. apply Hne. done. }
   rewrite orphans_delete //.
 Qed.
 

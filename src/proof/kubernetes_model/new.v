@@ -55,8 +55,7 @@ Proof.
       (∅ : gmap go_string unit),
       (∅ : gmap KKey.t KObjectV.t),
       (∅ : gset types.UID.t),
-      (∅ : gset (KKey.t * types.UID.t)),
-      (∅ : gset orphan_view.bucket).
+      (∅ : gset (KKey.t * types.UID.t)).
     iFrame.
     rewrite big_sepM2_empty.
     iPureIntro. split; done. }

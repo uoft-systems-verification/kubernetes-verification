@@ -75,8 +75,8 @@ Definition own_deletion_observation_auth γ state used_uid : iProp Σ :=
 Definition own_deletion_observed_frag γ key uid : iProp Σ :=
   deletion_observation.own_frag γ.(γ_deletion_observation) key uid.
 
-Definition own_orphans_auth γ state tracked : iProp Σ :=
-  orphan_view.own_auth γ.(γ_orphans) state tracked.
+Definition own_orphans_auth γ state : iProp Σ :=
+  orphan_view.own_auth γ.(γ_orphans) state.
 
 Definition own_orphans_frag γ bk dq ks : iProp Σ :=
   orphan_view.own_frag γ.(γ_orphans) bk dq ks.
@@ -121,8 +121,7 @@ Definition kubernetes_inv γ l : iProp Σ :=
   ∃ (phys_state_l: loc) (phys_used_uid_l: loc) (phys_used_rv_l: loc)
     (phys_state: gmap KKey.t interface.t) (phys_used_uid : gmap types.UID.t unit) (phys_used_rv : gmap go_string unit)
     (abs_state: gmap KKey.t KObjectV.t) (used_uid: gset types.UID.t)
-    (used_reference: gset (KKey.t * types.UID.t))
-    (orphan_tracked: gset orphan_view.bucket),
+    (used_reference: gset (KKey.t * types.UID.t)),
     "Hstate_m_addr" ∷ l.[(apimodel.State.t), "m"] ↦ phys_state_l ∗
     "Hstate_used_uid_addr" ∷ l.[(apimodel.State.t), "usedUID"] ↦ phys_used_uid_l ∗
     "Hstate_used_rv_addr" ∷ l.[(apimodel.State.t), "usedRV"] ↦ phys_used_rv_l ∗
@@ -133,7 +132,7 @@ Definition kubernetes_inv γ l : iProp Σ :=
     "Hown_children" ∷ own_children_auth γ abs_state used_reference ∗
     "Hown_terminating_children" ∷ own_terminating_children_auth γ abs_state ∗
     "Hown_deletion_observations" ∷ own_deletion_observation_auth γ abs_state used_uid ∗
-    "Hown_orphans" ∷ own_orphans_auth γ abs_state orphan_tracked ∗
+    "Hown_orphans" ∷ own_orphans_auth γ abs_state ∗
     "Hphys_abs_rep" ∷ ([∗ map] i; obj ∈ phys_state; abs_state,
       match i with
       | interface.ok i_ok => KObjectV.deepown_i i_ok obj 1
