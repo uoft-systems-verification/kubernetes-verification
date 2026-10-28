@@ -404,7 +404,7 @@ Proof.
     as "Hinv_Hown_orphans".
   { exact Hkey_not_in_abs. }
   { apply cview.living_obj_parent_ref_eq_some in Hkobj2_parent as [_ Hparent].
-    eapply orphan_view.not_adoptable_of_parent. exact Hparent. }
+    eapply orphan_view.not_living_orphan_of_parent. exact Hparent. }
   iModIntro.
   iAssert (([∗ map] i; obj ∈ <[key:=interface.ok i1]> phys_state; <[key:=kobj2]> abs_state,
     match i with

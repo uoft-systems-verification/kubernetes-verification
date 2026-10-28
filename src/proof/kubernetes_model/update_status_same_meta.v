@@ -274,7 +274,7 @@ Proof.
   iMod (orphan_view.insert_same_vs (KObjectV.key kobj) old new_kobj with
     "Hown_orphans") as "Hown_orphans".
   { exact Hlookup_abs. }
-  { apply orphan_view.adoptable_orphan_iff; done. }
+  { apply orphan_view.is_living_orphan_iff; done. }
   iModIntro. iFrame.
   iPureIntro. split_and!.
   - destruct Hvalid_kuid_new as (_ & _ & Hvalid_new_kobj & _). exact Hvalid_new_kobj.

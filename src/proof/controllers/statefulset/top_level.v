@@ -617,6 +617,8 @@ Definition owned_resources γ sts pods pvcs fractions (ready : bool) : iProp Σ 
       pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∗
   "Hreserved_pvc_frags" ∷ ([∗ list] key ∈ missing_pvc_keys sts pvcs,
     own_available_reserved_frag γ fractions.(pvc_dq) key) ∗
+  (* Creating a PVC makes it an orphan in the namespace's PVC bucket. *)
+  "Hown_pvc_orphans" ∷ own_pvc_orphans γ sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
   (* Fractional pod fragments allow duplicate entries to own compatible shares; match_distance cannot detect duplicates.
      Record key uniqueness explicitly because current_state_matches compares the full key list up to permutation. *)
   "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝.

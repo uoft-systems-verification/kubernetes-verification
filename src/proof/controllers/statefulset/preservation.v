@@ -613,7 +613,7 @@ Proof.
     rewrite /owned_resources /=.
     iFrame "Hown_sts_meta_frag Hown_sts_spec_frag Hremaining_frags Hremaining_occupied
       Hown_pvc_frags Hoccupied_pvc_frags Hremaining_children Hrelease_Hown_terminating_children_frag
-      Hreserved_pod_frags Hreserved_pvc_frags".
+      Hreserved_pod_frags Hreserved_pvc_frags Hown_pvc_orphans".
     iPureIntro. split; done. }
   specialize (Hrelease_Hdone eq_refl). subst released. wp_auto_keep.
   assert (Htake_all_pods : take (length all_pods) all_pods = all_pods).
@@ -702,15 +702,17 @@ Proof.
   iEval (rewrite -Hmissing_pvcs) in "Hreserved_pvc_frags".
   iCombine "Hown_pvc_frags Hoccupied_pvc_frags" as "Hown_pvcs".
   iEval (rewrite -big_sepL_sep) in "Hown_pvcs".
+  iEval (rewrite Hset_namespace) in "Hown_pvc_orphans".
   wp_auto_keep.
   wp_apply (wp_reconcileReplicas_preservation γ l set_l good_sl set
     good_ptrs good_pods pending_actual pvcs 1 pod_dq terminating_bound
     with "[$Hset $Hgood_sl $Hgood_pods $Hgood_owned
       $Hown_pvcs $Hgood_children $Hrelease_Hown_terminating_children_frag
-      $Hreserved_pod_frags $Hreserved_pvc_frags]").
+      $Hreserved_pod_frags $Hreserved_pvc_frags $Hown_pvc_orphans]").
   { iFrame "#". iPureIntro. split_and!; try done. }
   iIntros (pods1 pvcs' terminating_bound') "Hreconcile".
   iNamedPrefix "Hreconcile" "Hreconcile_". wp_auto_keep.
+  iEval (rewrite -Hset_namespace) in "Hreconcile_Hown_pvc_orphans".
 
   set pods' := unreserved_pods pending_actual pods1.
   assert (Hfinal_storage_perm :
@@ -813,7 +815,7 @@ Proof.
   iFrame "Hown_sts_meta_frag Hown_sts_spec_frag Hfinal_pod_frags Hfinal_occupied
     Hfinal_pvcs Hfinal_occupied_pvcs Hreconcile_Hown_children
     Hreconcile_Hown_terminating_children_frag Hreconcile_Hreserved_pods
-    Hreconcile_Hreserved_pvcs".
+    Hreconcile_Hreserved_pvcs Hreconcile_Hown_pvc_orphans".
   iPureIntro. split; done.
 Qed.
 

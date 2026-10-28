@@ -15,10 +15,9 @@ Local Set Default Proof Using "All".
    The request changes only metadata: its spec is exactly the value currently
    stored. Ordinary update preserves status, so status ownership can remain
    framed around this contract. The parent relation and [own_children_frag]
-   are updated atomically with the object. A released object of an adoptable
-   kind becomes a living orphan, so the whole fragment of its orphan bucket
-   ([own_orphans_frag_of]) gains its key; the released object's metadata
-   fragment is returned. *)
+   are updated atomically with the object. A released object becomes a living
+   orphan, so the whole fragment of its orphan bucket ([own_orphans_frag_of])
+   gains its key; the released object's metadata fragment is returned. *)
 Lemma wp_State__update_release_au γ l kind namespace i kobj parent_key parent_uid dq :
   ∀ Φ,
   is_pkg_init apimodel ∗
@@ -661,10 +660,9 @@ Proof.
     exact Huid_updated. }
   { intros Hold_terminating.
     exfalso. apply Hold_terminating. exact Hold_deletion_timestamp_none. }
-  iMod (orphan_view.release_vs key old_kobj new_kobj with
+  iMod (orphan_view.enter_vs key new_kobj with
     "Hinv_Hown_orphans Hown_orphans_frag")
     as "[Hinv_Hown_orphans Hown_orphans_frag]".
-  { exact Hlookup_abs. }
   { split; [exact Hnew_deletion_timestamp_none|exact Hnew_parent_none]. }
   iClear "Hown_spec_frag".
   iDestruct "Hclose" as "[Hclose_success _]".

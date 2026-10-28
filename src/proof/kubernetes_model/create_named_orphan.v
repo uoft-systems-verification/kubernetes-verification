@@ -274,10 +274,9 @@ Proof.
   { exact Hkey_not_in_abs. }
   { unfold terminating_children.terminating_obj_parent_ref.
     rewrite Hdeletion_timestamp2. done. }
-  iMod (orphan_view.create_orphan_vs key kobj2 with
+  iMod (orphan_view.enter_vs key kobj2 with
     "Hinv_Hown_orphans Hown_orphans_frag")
     as "[Hinv_Hown_orphans Hown_orphans_frag]".
-  { exact Hkey_not_in_abs. }
   { split; [exact Hdeletion_timestamp2|exact Hparent_none2]. }
   iMod ("Hclose" $! i2 kobj2 generated_uid
     with "[$Hdeepown_i2 $Hown_meta $Hown_spec $Hown_status
@@ -387,7 +386,8 @@ Lemma wp_State__PersistentVolumeClaimCreate_named_orphan γ l namespace key pvc_
       |} ⌝ ∗
       "%Hparent_none" ∷ ⌜ obj_parent_ref (KObjectV.PersistentVolumeClaim pvc) = None ⌝ ∗
       "Hdeepown_l" ∷ PersistentVolumeClaimV.deepown_l pvc_l pvc 1 ∗
-      "Hown_reserved_frag" ∷ own_available_reserved_frag γ 1 key
+      "Hown_reserved_frag" ∷ own_available_reserved_frag γ 1 key ∗
+      "Hown_pvc_orphans" ∷ own_pvc_orphans γ namespace
   }}}
     l @! (go.PointerType apimodel.State) @! "PersistentVolumeClaimCreate" #namespace #pvc_l
   {{{ pvc_l' pvc' uid, RET (#pvc_l', #interface.nil);
@@ -402,7 +402,8 @@ Lemma wp_State__PersistentVolumeClaimCreate_named_orphan γ l namespace key pvc_
       "Hown_status_frag" ∷
         own_status_frag γ key uid 1 (ObjectStatusV.PersistentVolumeClaimStatus pvc'.(PersistentVolumeClaimV.Status')) ∗
       "Hown_reserved_frag" ∷ own_occupied_reserved_frag γ 1 key uid ∗
-      "Hown_children_frag" ∷ own_children_frag γ key uid 1 ∅
+      "Hown_children_frag" ∷ own_children_frag γ key uid 1 ∅ ∗
+      "Hown_pvc_orphans" ∷ own_pvc_orphans γ namespace
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
@@ -416,18 +417,20 @@ Proof.
   { iExists pvc_l. iSplit;
       [iPureIntro; apply KObjectV.valid_interface_PersistentVolumeClaim|].
     iFrame. }
-  (* PVCs are not adoptable, so their orphan fragment is trivial. *)
-  iAssert (own_orphans_frag_of γ key ∅) as "Hown_pvc_orphans_frag".
-  { rewrite /own_orphans_frag_of. case_decide as Hkind; last done.
-    exfalso. revert Hkind.
-    rewrite Hkey_eq /orphan_view.adoptable_kinds elem_of_singleton. discriminate. }
+  iDestruct "Hown_pvc_orphans" as (orphans) "Hown_orphans_frag".
+  iAssert (own_orphans_frag_of γ key orphans)
+    with "[Hown_orphans_frag]" as "Hown_orphans_frag".
+  { rewrite /own_orphans_frag_of Hkey_eq. iFrame. }
   wp_apply (wp_State__create_named_orphan
     γ l PersistentVolumeClaimV.kind namespace key
     (interface.mk (go.PointerType v1.PersistentVolumeClaim) #pvc_l)
-    (KObjectV.PersistentVolumeClaim pvc) ∅
-    with "[$Hinit $Hisk $Hdeepown_i $Hown_reserved_frag $Hown_pvc_orphans_frag]").
+    (KObjectV.PersistentVolumeClaim pvc) orphans
+    with "[$Hinit $Hisk $Hdeepown_i $Hown_reserved_frag $Hown_orphans_frag]").
   { iPureIntro. split_and!; done. }
   iIntros (i' kobj' uid) "Hpost". iNamed "Hpost".
+  iAssert (own_pvc_orphans γ namespace)
+    with "[Hown_orphans_frag]" as "Hown_pvc_orphans".
+  { rewrite /own_pvc_orphans /own_orphans_frag_of Hkey_eq. iFrame. }
   destruct kobj' as [pod'|rs'|pvc'|sts'|d'|revision']; try done.
   iDestruct "Hdeepown_i" as (pvc_l') "[%Hi' Hdeepown_l]".
   wp_auto_keep.

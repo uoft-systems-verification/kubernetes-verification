@@ -280,7 +280,8 @@ Lemma wp_createPersistentVolumeClaim_without_claim_templates γ model_l
                 ""%go ⌝ ∗
           "%Hnamespace_valid" ∷
             ⌜ valid_namespace
-                set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝))
+                set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝)) ∗
+      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
   }}}
     @! statefulset.createPersistentVolumeClaim
       #set_l #pod_l #claim_template_l
@@ -305,7 +306,8 @@ Lemma wp_createPersistentVolumeClaim_without_claim_templates γ model_l
             claim.(PersistentVolumeClaimV.ObjectMeta') ∗
           "Hreserved" ∷ own_occupied_reserved_frag γ 1
             (new_persistent_volume_claim_key set claim_template ordinal)
-            claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID'))
+            claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∗
+      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
@@ -353,7 +355,7 @@ Proof.
       (symmetry; apply bool_decide_false; exact not_found_error_nil).
     wp_auto_keep.
     iApply "HΦ".
-    iFrame "Hset Hpod Hclaim_template_ptr Hclaim_template".
+    iFrame "Hset Hpod Hclaim_template_ptr Hclaim_template Hown_pvc_orphans".
     iExists existing_claim.
     iFrame.
     iPureIntro.
@@ -413,7 +415,7 @@ Proof.
       apply app_eq_nil in Hempty as [_ Hempty].
       discriminate Hempty. }
     wp_apply (wp_State__PersistentVolumeClaimCreate_named_orphan
-      with "[$Hclaim $Hown_reserved_frag]").
+      with "[$Hclaim $Hown_reserved_frag $Hown_pvc_orphans]").
     { iFrame "# %".
       iPureIntro.
       split.
@@ -428,7 +430,7 @@ Proof.
     subst uid.
     wp_auto_keep.
     iApply "HΦ".
-    iFrame "Hset Hpod Hclaim_template_ptr Hclaim_template".
+    iFrame "Hset Hpod Hclaim_template_ptr Hclaim_template Hown_pvc_orphans".
     iExists created_claim.
     iFrame.
     iPureIntro.
@@ -489,7 +491,8 @@ Lemma wp_createPersistentVolumeClaim γ model_l
                 ""%go ⌝ ∗
           "%Hnamespace_valid" ∷
             ⌜ valid_namespace
-                set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝))
+                set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝)) ∗
+      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
   }}}
     @! statefulset.createPersistentVolumeClaim
       #set_l #pod_l #claim_template_l
@@ -512,7 +515,8 @@ Lemma wp_createPersistentVolumeClaim γ model_l
             claim.(PersistentVolumeClaimV.ObjectMeta') ∗
           "Hreserved" ∷ own_occupied_reserved_frag γ 1
             (new_persistent_volume_claim_key set claim_template ordinal)
-            claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID'))
+            claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∗
+      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
   }}}.
 Proof.
   iIntros (Φ) "H HΦ". iNamed "H".
@@ -533,7 +537,7 @@ Proof.
     dq_set dq_pod dq_claim_template dq_claim_template
     set_phy claim_template_phy
     with "[$Hset $Hpod $Hclaim_template_ptr
-      $Hclaim_template $Hpvc_state]").
+      $Hclaim_template $Hpvc_state $Hown_pvc_orphans]").
   { iFrame "# %". }
   iIntros "H". iNamed "H".
   iAssert (PersistentVolumeClaimV.deepown_l
@@ -555,7 +559,7 @@ Proof.
     iFrame.
     iFrame "%". }
   iApply "HΦ".
-  iFrame "Hset Hpod Hclaim_template_l Hpvc_state".
+  iFrame "Hset Hpod Hclaim_template_l Hpvc_state Hown_pvc_orphans".
 Qed.
 
 (* [volumeClaimTemplatesByName] indexes templates by name before this function
@@ -610,7 +614,8 @@ Lemma wp_createPersistentVolumeClaims γ model_l set_l pod_l
            ⌜ PersistentVolumeClaimV.valid_create PersistentVolumeClaimV.kind
                 set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
                 (new_persistent_volume_claim
-                  set claim_template ordinal) ⌝))
+                  set claim_template ordinal) ⌝)) ∗
+      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
   }}}
     @! statefulset.createPersistentVolumeClaims #set_l #pod_l
   {{{ RET #interface.nil;
@@ -629,7 +634,8 @@ Lemma wp_createPersistentVolumeClaims γ model_l set_l pod_l
               claim.(PersistentVolumeClaimV.ObjectMeta') ∗
             "Hreserved" ∷ own_occupied_reserved_frag γ 1
               (desired_pvc_key set claim_template_name ordinal)
-              claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID'))
+              claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∗
+      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
@@ -719,6 +725,7 @@ Proof.
       "Hset" ∷ statefulset_without_claim_templates_l
         set_l set dq_set set_phy ∗
       "Hpod" ∷ PodV.deepown_l pod_l pod dq_pod ∗
+      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
       "Hclaim_templates_slice" ∷
         set_phy.(v1.StatefulSet.Spec').(v1.StatefulSetSpec.VolumeClaimTemplates')
           ↦*{dq_set} claim_templates_list ∗
@@ -740,7 +747,7 @@ Proof.
     with "Hclaim_templates_map").
   iIntros (keys) "%Hkeys".
   destruct Hkeys as (Hkeys_dom & Hkeys_len & Hkeys_nodup).
-  iSplitL "set pod claimTemplate Hset Hpod
+  iSplitL "set pod claimTemplate Hset Hpod Hown_pvc_orphans
       Hclaim_templates_slice Hclaim_templates_deepown Hpvc_todo".
   { iExists (zero_val v1.PersistentVolumeClaim.t).
     rewrite map_prefix_empty map_difference_empty big_sepM_empty.
@@ -836,7 +843,7 @@ Proof.
         claim_template ordinal dq_set dq_pod 1 dq_set set_phy
         claim_template_phy
         with "[$Hset $Hpod $claimTemplate
-          $Hclaim_template $Hpvc_state]").
+          $Hclaim_template $Hpvc_state $Hown_pvc_orphans]").
     { iFrame "# %". }
     iIntros "H". iNamed "H".
     iEval (rewrite new_persistent_volume_claim_key_eq
@@ -852,7 +859,7 @@ Proof.
     { apply map_prefix_insert; done. }
     iRight. iSplit; first done.
     iExists claim_template_phy.
-    iFrame "set pod Hset Hpod Hclaim_template_ptr
+    iFrame "set pod Hset Hpod Hown_pvc_orphans Hclaim_template_ptr
       Hclaim_templates_slice Hclaim_templates_deepown".
     rewrite Hprefix_next.
     iSplitL "Hpvc_done Hpvc_state".

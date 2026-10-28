@@ -5,9 +5,9 @@ From iris.base_logic.lib Require Import own.
 
 (** Exact knowledge of the living orphans in each bucket.
 
-    A bucket is a (kind, namespace) pair. A living orphan of an adoptable kind
-    belongs to the bucket of its key, so buckets are pairwise disjoint and a
-    write to one key changes at most one bucket. A fragment [own_frag γ bk dq ks]
+    A bucket is a (kind, namespace) pair. A living orphan belongs to the bucket
+    of its key, so buckets are pairwise disjoint and a write to one key changes
+    at most one bucket. A fragment [own_frag γ bk dq ks]
     says that the living orphans of [bk] are exactly [ks]. Any fraction reads the
     set; changing it needs the whole fragment, as for children in [cview].
     Fragments are created only together with the authority, by [init_frags]; no
@@ -17,53 +17,40 @@ Section orphan_view.
 
 Definition bucket : Type := (go_string * go_string)%type.
 
-(* Only Pods can be adopted for now. Other kinds have empty buckets. *)
-Definition adoptable_kinds : gset go_string := {["Pod"%go]}.
-
 Definition bucket_of (k : KKey.t) : bucket := (k.(KKey.Kind'), k.(KKey.Namespace')).
 
 Definition is_living_orphan (obj : KObjectV.t) : Prop :=
   (KObjectV.objectmeta obj).(ObjectMetaV.DeletionTimestamp') = None ∧
   obj_parent_ref obj = None.
 
-Definition adoptable_orphan (k : KKey.t) (obj : KObjectV.t) : Prop :=
-  k.(KKey.Kind') ∈ adoptable_kinds ∧ is_living_orphan obj.
-
 Definition in_bucket (bk : bucket) (k : KKey.t) (obj : KObjectV.t) : Prop :=
-  bucket_of k = bk ∧ adoptable_orphan k obj.
+  bucket_of k = bk ∧ is_living_orphan obj.
 
 #[global] Instance is_living_orphan_dec obj : Decision (is_living_orphan obj).
 Proof. unfold is_living_orphan. apply _. Defined.
 
-#[global] Instance adoptable_orphan_dec k obj : Decision (adoptable_orphan k obj).
-Proof. unfold adoptable_orphan. apply _. Defined.
-
 #[global] Instance in_bucket_dec bk k obj : Decision (in_bucket bk k obj).
 Proof. unfold in_bucket. apply _. Defined.
 
-Lemma not_adoptable_of_parent k obj p :
-  obj_parent_ref obj = Some p → ¬ adoptable_orphan k obj.
-Proof. intros Hparent (_ & _ & Hnone). rewrite Hparent in Hnone. done. Qed.
+Lemma not_living_orphan_of_parent obj p :
+  obj_parent_ref obj = Some p → ¬ is_living_orphan obj.
+Proof. intros Hparent (_ & Hnone). rewrite Hparent in Hnone. done. Qed.
 
-Lemma not_adoptable_of_terminating k obj :
+Lemma not_living_orphan_of_terminating obj :
   (KObjectV.objectmeta obj).(ObjectMetaV.DeletionTimestamp') ≠ None →
-  ¬ adoptable_orphan k obj.
-Proof. intros Hterminating (_ & Hliving & _). done. Qed.
-
-Lemma not_adoptable_of_kind k obj :
-  k.(KKey.Kind') ∉ adoptable_kinds → ¬ adoptable_orphan k obj.
-Proof. intros Hkind (Hadoptable & _). done. Qed.
+  ¬ is_living_orphan obj.
+Proof. intros Hterminating (Hliving & _). done. Qed.
 
 (** Orphan status depends only on the deletion timestamp and the controller
     reference. *)
-Lemma adoptable_orphan_iff k old_obj new_obj :
+Lemma is_living_orphan_iff old_obj new_obj :
   (KObjectV.objectmeta old_obj).(ObjectMetaV.DeletionTimestamp') =
     (KObjectV.objectmeta new_obj).(ObjectMetaV.DeletionTimestamp') →
   obj_parent_ref old_obj = obj_parent_ref new_obj →
-  adoptable_orphan k old_obj ↔ adoptable_orphan k new_obj.
+  is_living_orphan old_obj ↔ is_living_orphan new_obj.
 Proof.
   intros Hdeletion Hparent.
-  rewrite /adoptable_orphan /is_living_orphan Hdeletion Hparent //.
+  rewrite /is_living_orphan Hdeletion Hparent //.
 Qed.
 
 Definition orphans (state : gmap KKey.t KObjectV.t) (bk : bucket) : gset KKey.t :=
@@ -158,7 +145,7 @@ Qed.
 (** A write that keeps the key's orphan status leaves every bucket unchanged. *)
 Lemma orphans_insert_same state k old_obj new_obj bk :
   state !! k = Some old_obj →
-  (adoptable_orphan k old_obj ↔ adoptable_orphan k new_obj) →
+  (is_living_orphan old_obj ↔ is_living_orphan new_obj) →
   orphans (<[k := new_obj]> state) bk = orphans state bk.
 Proof.
   intros Hlookup Hsame.
@@ -175,14 +162,14 @@ Proof.
   - rewrite elem_of_difference elem_of_singleton.
     split; [intros [Hk' _]; done|].
     intros Hk'. split; [done|]. intros ->.
-    apply elem_of_orphans in Hk' as (obj & Hlookup' & _ & Hadoptable).
+    apply elem_of_orphans in Hk' as (obj & Hlookup' & _ & Hliving).
     rewrite Hlookup in Hlookup'. injection Hlookup' as <-.
     apply Hin. split; [done|]. apply Hsame. done.
 Qed.
 
 Lemma orphans_insert_fresh state k obj bk :
   state !! k = None →
-  ¬ adoptable_orphan k obj →
+  ¬ is_living_orphan obj →
   orphans (<[k := obj]> state) bk = orphans state bk.
 Proof.
   intros Hlookup Hnot.
@@ -197,7 +184,7 @@ Proof.
 Qed.
 
 Lemma orphans_delete_not_orphan state k bk :
-  (∀ obj, state !! k = Some obj → ¬ adoptable_orphan k obj) →
+  (∀ obj, state !! k = Some obj → ¬ is_living_orphan obj) →
   orphans (delete k state) bk = orphans state bk.
 Proof.
   intros Hnot.
@@ -206,23 +193,23 @@ Proof.
   rewrite elem_of_difference elem_of_singleton.
   split; [intros [Hk' _]; done|].
   intros Hk'. split; [done|]. intros ->.
-  apply elem_of_orphans in Hk' as (obj & Hlookup & _ & Hadoptable).
+  apply elem_of_orphans in Hk' as (obj & Hlookup & _ & Hliving).
   apply (Hnot obj Hlookup). done.
 Qed.
 
 Lemma orphans_insert_enter state k obj :
-  adoptable_orphan k obj →
+  is_living_orphan obj →
   orphans (<[k := obj]> state) (bucket_of k) = orphans state (bucket_of k) ∪ {[k]}.
 Proof.
-  intros Hadoptable. rewrite orphans_insert decide_True //.
+  intros Hliving. rewrite orphans_insert decide_True //.
 Qed.
 
 Lemma orphans_insert_leave state k obj :
-  ¬ adoptable_orphan k obj →
+  ¬ is_living_orphan obj →
   orphans (<[k := obj]> state) (bucket_of k) = orphans state (bucket_of k) ∖ {[k]}.
 Proof.
   intros Hnot. rewrite orphans_insert decide_False //.
-  intros [_ Hadoptable]. done.
+  intros [_ Hliving]. done.
 Qed.
 
 Lemma orphans_disjoint state bk1 bk2 :
@@ -569,7 +556,7 @@ Qed.
 
 Lemma insert_same_vs {γ state} k old_obj new_obj :
   state !! k = Some old_obj →
-  (adoptable_orphan k old_obj ↔ adoptable_orphan k new_obj) →
+  (is_living_orphan old_obj ↔ is_living_orphan new_obj) →
   own_auth γ state ==∗ own_auth γ (<[k := new_obj]> state).
 Proof.
   intros Hlookup Hsame.
@@ -579,7 +566,7 @@ Qed.
 
 Lemma create_vs {γ state} k obj :
   state !! k = None →
-  ¬ adoptable_orphan k obj →
+  ¬ is_living_orphan obj →
   own_auth γ state ==∗ own_auth γ (<[k := obj]> state).
 Proof.
   intros Hlookup Hnot.
@@ -588,7 +575,7 @@ Proof.
 Qed.
 
 Lemma delete_not_orphan_vs {γ state} k :
-  (∀ obj, state !! k = Some obj → ¬ adoptable_orphan k obj) →
+  (∀ obj, state !! k = Some obj → ¬ is_living_orphan obj) →
   own_auth γ state ==∗ own_auth γ (delete k state).
 Proof.
   intros Hnot.
@@ -596,15 +583,15 @@ Proof.
   apply orphans_delete_not_orphan. done.
 Qed.
 
-(** A key becomes a living orphan, as in a release. *)
+(** A key becomes a living orphan, as in a release or an orphan creation. *)
 Lemma enter_vs {γ state ks} k obj :
-  adoptable_orphan k obj →
+  is_living_orphan obj →
   own_auth γ state -∗
   own_frag γ (bucket_of k) (DfracOwn 1) ks ==∗
     own_auth γ (<[k := obj]> state) ∗
     own_frag γ (bucket_of k) (DfracOwn 1) (ks ∪ {[k]}).
 Proof.
-  iIntros (Hadoptable) "Hauth Hfrag".
+  iIntros (Hliving) "Hauth Hfrag".
   iDestruct (own_auth_frag_valid with "Hauth Hfrag") as %->.
   iMod (update_bucket_vs (<[k := obj]> state) with "Hauth Hfrag")
     as "[$ Hfrag]".
@@ -614,7 +601,7 @@ Qed.
 
 (** A key stops being a living orphan, as in an adoption. *)
 Lemma leave_vs {γ state ks} k obj :
-  ¬ adoptable_orphan k obj →
+  ¬ is_living_orphan obj →
   own_auth γ state -∗
   own_frag γ (bucket_of k) (DfracOwn 1) ks ==∗
     own_auth γ (<[k := obj]> state) ∗
@@ -640,50 +627,6 @@ Proof.
     as "[$ Hfrag]".
   { intros bk Hne. apply orphans_delete_other. intros Heq. apply Hne. done. }
   rewrite orphans_delete //.
-Qed.
-
-(** [k] is created as a living orphan. An adoptable kind enters its bucket,
-    which needs the bucket's whole fragment; other kinds change no bucket. *)
-Lemma create_orphan_vs {γ state ks} k obj :
-  state !! k = None →
-  is_living_orphan obj →
-  own_auth γ state -∗
-  (if decide (k.(KKey.Kind') ∈ adoptable_kinds)
-   then own_frag γ (bucket_of k) (DfracOwn 1) ks else True%I) ==∗
-    own_auth γ (<[k := obj]> state) ∗
-    (if decide (k.(KKey.Kind') ∈ adoptable_kinds)
-     then own_frag γ (bucket_of k) (DfracOwn 1) (ks ∪ {[k]}) else True%I).
-Proof.
-  iIntros (Hlookup Hliving) "Hauth Hfrag".
-  case_decide as Hkind.
-  - iMod (enter_vs k obj with "Hauth Hfrag") as "[$ $]"; last done.
-    split; [exact Hkind|exact Hliving].
-  - iMod (create_vs k obj with "Hauth") as "$"; last done.
-    + exact Hlookup.
-    + apply not_adoptable_of_kind. done.
-Qed.
-
-(** [k] is released and becomes a living orphan. An adoptable kind enters its
-    bucket, which needs the bucket's whole fragment; other kinds change no
-    bucket. *)
-Lemma release_vs {γ state ks} k old_obj new_obj :
-  state !! k = Some old_obj →
-  is_living_orphan new_obj →
-  own_auth γ state -∗
-  (if decide (k.(KKey.Kind') ∈ adoptable_kinds)
-   then own_frag γ (bucket_of k) (DfracOwn 1) ks else True%I) ==∗
-    own_auth γ (<[k := new_obj]> state) ∗
-    (if decide (k.(KKey.Kind') ∈ adoptable_kinds)
-     then own_frag γ (bucket_of k) (DfracOwn 1) (ks ∪ {[k]}) else True%I).
-Proof.
-  iIntros (Hlookup Hliving) "Hauth Hfrag".
-  case_decide as Hkind.
-  - iMod (enter_vs k new_obj with "Hauth Hfrag") as "[$ $]"; last done.
-    split; [exact Hkind|exact Hliving].
-  - iMod (insert_same_vs k old_obj new_obj with "Hauth") as "$"; last done.
-    + exact Hlookup.
-    + split; intros Hadoptable; exfalso; revert Hadoptable;
-        apply not_adoptable_of_kind; done.
 Qed.
 
 End orphan_view.

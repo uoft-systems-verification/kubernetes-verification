@@ -330,7 +330,7 @@ Proof.
     iMod (orphan_view.delete_not_orphan_vs key with "Hinv_Hown_orphans")
       as "Hinv_Hown_orphans".
     { intros obj Hlookup. rewrite Hlookup_abs in Hlookup. injection Hlookup as <-.
-      apply orphan_view.not_adoptable_of_terminating. exact Hold_terminating. }
+      apply orphan_view.not_living_orphan_of_terminating. exact Hold_terminating. }
     iAssert (([∗ map] i; obj ∈ delete key phys_state; delete key abs_state,
       match i with
       | interface.ok i_ok => KObjectV.deepown_i i_ok obj 1
@@ -462,8 +462,8 @@ Proof.
   iMod (orphan_view.insert_same_vs key old_kobj new_kobj with "Hinv_Hown_orphans")
     as "Hinv_Hown_orphans".
   { exact Hlookup_abs. }
-  { split; intros Hadoptable; exfalso; revert Hadoptable;
-      apply orphan_view.not_adoptable_of_terminating; done. }
+  { split; intros Horphan; exfalso; revert Horphan;
+      apply orphan_view.not_living_orphan_of_terminating; done. }
   iAssert (([∗ map] i; obj ∈ <[key:=interface.ok i1]> phys_state; <[key:=new_kobj]> abs_state,
     match i with
     | interface.ok i_ok => KObjectV.deepown_i i_ok obj 1

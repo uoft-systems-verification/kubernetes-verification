@@ -342,15 +342,18 @@ Proof.
     symmetry. exact Hset_view. }
   iEval (rewrite /= -Hmissing_pods) in "Hreserved_pod_frags".
   iEval (rewrite -Hmissing_pvcs) in "Hreserved_pvc_frags".
+  iEval (rewrite Hset_namespace) in "Hown_pvc_orphans".
   wp_auto_keep.
   wp_apply (wp_reconcileReplicas_progress γ l set_l good_sl set
     good_ptrs good_pods pvcs 1 pod_dq 0%nat
     with "[$Hset $Hgood_sl $Hgood_pods $Hgood_frags
       $Hgood_occupied $Hown_pvc_frags $Hoccupied_pvc_frags $Hgood_children
-      $Hown_terminating_children_frag $Hreserved_pod_frags $Hreserved_pvc_frags]").
+      $Hown_terminating_children_frag $Hreserved_pod_frags $Hreserved_pvc_frags
+      $Hown_pvc_orphans]").
   { iFrame "#". iFrame "%". }
   iIntros (pods' pvcs' deletion) "Hreconcile".
   iNamedPrefix "Hreconcile" "Hreconcile_".
+  iEval (rewrite -Hset_namespace) in "Hreconcile_Hown_pvc_orphans".
   iEval (rewrite big_sepL_sep) in "Hreconcile_Hown_pods".
   iDestruct "Hreconcile_Hown_pods" as
     "[Hreconcile_Hown_pod_meta Hreconcile_Hown_pod_spec]".
@@ -412,7 +415,7 @@ Proof.
         Hreconcile_Hown_pods Hreconcile_Hown_pvcs
         Hreconcile_Hown_children Hreconcile_Hterminating_children_frag
         Hreconcile_Hoccupied_pods Hreconcile_Hoccupied_pvcs
-        Hreconcile_Hreserved_pods Hreconcile_Hreserved_pvcs".
+        Hreconcile_Hreserved_pods Hreconcile_Hreserved_pvcs Hreconcile_Hown_pvc_orphans".
       iPureIntro. split; first exact Hpods'_nodup.
       left. exact Hcomplete_sts.
     + assert (pod_storage_view <$> good_pods ≡ₚ
@@ -438,7 +441,7 @@ Proof.
         Hreconcile_Hown_pods Hreconcile_Hown_pvcs
         Hreconcile_Hown_children Hreconcile_Hterminating_children_frag
         Hreconcile_Hoccupied_pods Hreconcile_Hoccupied_pvcs
-        Hreconcile_Hreserved_pods Hreconcile_Hreserved_pvcs".
+        Hreconcile_Hreserved_pods Hreconcile_Hreserved_pvcs Hreconcile_Hown_pvc_orphans".
       iPureIntro. split; first exact Hpods'_nodup.
       right. split; done.
   - assert (Hbad_distance :
@@ -506,7 +509,7 @@ Proof.
       Hreconcile_Hown_pods Hreconcile_Hown_pvcs
       Hreconcile_Hown_children Hreconcile_Hterminating_children_frag
       Hreconcile_Hoccupied_pods Hreconcile_Hoccupied_pvcs
-      Hreconcile_Hreserved_pods Hreconcile_Hreserved_pvcs".
+      Hreconcile_Hreserved_pods Hreconcile_Hreserved_pvcs Hreconcile_Hown_pvc_orphans".
     iPureIntro. split; first exact Hpods'_nodup.
     right. split; done.
 Qed.

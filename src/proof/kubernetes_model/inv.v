@@ -81,12 +81,10 @@ Definition own_orphans_auth γ state : iProp Σ :=
 Definition own_orphans_frag γ bk dq ks : iProp Σ :=
   orphan_view.own_frag γ.(γ_orphans) bk dq ks.
 
-(** The whole fragment of [key]'s orphan bucket when [key]'s kind is adoptable,
-    and nothing otherwise. Making [key] a living orphan requires it. *)
+(** The whole fragment of [key]'s orphan bucket. Making [key] a living orphan
+    requires it. *)
 Definition own_orphans_frag_of γ (key : KKey.t) (ks : gset KKey.t) : iProp Σ :=
-  if decide (key.(KKey.Kind') ∈ orphan_view.adoptable_kinds)
-  then own_orphans_frag γ (orphan_view.bucket_of key) (DfracOwn 1) ks
-  else True%I.
+  own_orphans_frag γ (orphan_view.bucket_of key) (DfracOwn 1) ks.
 
 (** The whole orphan bucket fragment for the Pods of namespace [ns], whatever
     its contents. A controller that releases Pods in [ns] holds it. *)
@@ -96,12 +94,13 @@ Definition own_pod_orphans γ (ns : go_string) : iProp Σ :=
 Lemma own_pod_orphans_frag_of γ pod :
   own_pod_orphans γ pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace') ⊣⊢
     ∃ ks, own_orphans_frag_of γ (PodV.key pod) ks.
-Proof.
-  rewrite /own_pod_orphans /own_orphans_frag_of.
-  case_decide as Hkind; first done.
-  exfalso. apply Hkind.
-  rewrite /PodV.key /PodV.meta_key /= /orphan_view.adoptable_kinds elem_of_singleton //.
-Qed.
+Proof. rewrite /own_pod_orphans /own_orphans_frag_of //. Qed.
+
+(** The whole orphan bucket fragment for the PersistentVolumeClaims of namespace
+    [ns], whatever its contents. A controller that creates orphan claims in [ns]
+    holds it. *)
+Definition own_pvc_orphans γ (ns : go_string) : iProp Σ :=
+  ∃ ks, own_orphans_frag γ (PersistentVolumeClaimV.kind, ns) (DfracOwn 1) ks.
 
 Lemma meta_parent_ref_namespace_eq meta parent_key parent_uid :
   meta_parent_ref meta = Some (parent_key, parent_uid) →
