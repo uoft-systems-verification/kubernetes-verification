@@ -8,26 +8,6 @@ Context `{!kubernetesModelG Σ}.
 Context `{!KObjectV.ObjectInterfaceAssumptions}.
 Local Set Default Proof Using "All".
 
-(* Creating [key] as a living orphan. For an adoptable kind it enters its
-   bucket, which needs the whole bucket fragment; otherwise no bucket changes. *)
-Lemma orphan_view_create_orphan_vs γ abs_state key kobj orphans :
-  abs_state !! key = None →
-  (KObjectV.objectmeta kobj).(ObjectMetaV.DeletionTimestamp') = None →
-  obj_parent_ref kobj = None →
-  own_orphans_auth γ abs_state -∗
-  own_orphans_frag_of γ key orphans ==∗
-    own_orphans_auth γ (<[key := kobj]> abs_state) ∗
-    own_orphans_frag_of γ key (orphans ∪ {[key]}).
-Proof.
-  iIntros (Hlookup Hliving Hparent) "Hauth Hfrag".
-  rewrite /own_orphans_frag_of. case_decide as Hkind.
-  - iMod (orphan_view.enter_vs key kobj with "Hauth Hfrag") as "[$ $]"; last done.
-    split; [exact Hkind|]. split; done.
-  - iMod (orphan_view.create_vs key kobj with "Hauth") as "$"; last done.
-    + exact Hlookup.
-    + apply orphan_view.not_adoptable_of_kind. done.
-Qed.
-
 Lemma wp_State__create_named_orphan_au γ l kind namespace key i kobj orphans :
   ∀ Φ,
   ( is_pkg_init apimodel ∗
@@ -294,12 +274,11 @@ Proof.
   { exact Hkey_not_in_abs. }
   { unfold terminating_children.terminating_obj_parent_ref.
     rewrite Hdeletion_timestamp2. done. }
-  iMod (orphan_view_create_orphan_vs _ _ key kobj2 orphans with
+  iMod (orphan_view.create_orphan_vs key kobj2 with
     "Hinv_Hown_orphans Hown_orphans_frag")
     as "[Hinv_Hown_orphans Hown_orphans_frag]".
   { exact Hkey_not_in_abs. }
-  { exact Hdeletion_timestamp2. }
-  { exact Hparent_none2. }
+  { split; [exact Hdeletion_timestamp2|exact Hparent_none2]. }
   iMod ("Hclose" $! i2 kobj2 generated_uid
     with "[$Hdeepown_i2 $Hown_meta $Hown_spec $Hown_status
       $Hown_reserved_frag $Hown_children $Hown_orphans_frag]") as "HΦ".

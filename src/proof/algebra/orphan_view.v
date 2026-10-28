@@ -642,4 +642,48 @@ Proof.
   rewrite orphans_delete //.
 Qed.
 
+(** [k] is created as a living orphan. An adoptable kind enters its bucket,
+    which needs the bucket's whole fragment; other kinds change no bucket. *)
+Lemma create_orphan_vs {γ state ks} k obj :
+  state !! k = None →
+  is_living_orphan obj →
+  own_auth γ state -∗
+  (if decide (k.(KKey.Kind') ∈ adoptable_kinds)
+   then own_frag γ (bucket_of k) (DfracOwn 1) ks else True%I) ==∗
+    own_auth γ (<[k := obj]> state) ∗
+    (if decide (k.(KKey.Kind') ∈ adoptable_kinds)
+     then own_frag γ (bucket_of k) (DfracOwn 1) (ks ∪ {[k]}) else True%I).
+Proof.
+  iIntros (Hlookup Hliving) "Hauth Hfrag".
+  case_decide as Hkind.
+  - iMod (enter_vs k obj with "Hauth Hfrag") as "[$ $]"; last done.
+    split; [exact Hkind|exact Hliving].
+  - iMod (create_vs k obj with "Hauth") as "$"; last done.
+    + exact Hlookup.
+    + apply not_adoptable_of_kind. done.
+Qed.
+
+(** [k] is released and becomes a living orphan. An adoptable kind enters its
+    bucket, which needs the bucket's whole fragment; other kinds change no
+    bucket. *)
+Lemma release_vs {γ state ks} k old_obj new_obj :
+  state !! k = Some old_obj →
+  is_living_orphan new_obj →
+  own_auth γ state -∗
+  (if decide (k.(KKey.Kind') ∈ adoptable_kinds)
+   then own_frag γ (bucket_of k) (DfracOwn 1) ks else True%I) ==∗
+    own_auth γ (<[k := new_obj]> state) ∗
+    (if decide (k.(KKey.Kind') ∈ adoptable_kinds)
+     then own_frag γ (bucket_of k) (DfracOwn 1) (ks ∪ {[k]}) else True%I).
+Proof.
+  iIntros (Hlookup Hliving) "Hauth Hfrag".
+  case_decide as Hkind.
+  - iMod (enter_vs k new_obj with "Hauth Hfrag") as "[$ $]"; last done.
+    split; [exact Hkind|exact Hliving].
+  - iMod (insert_same_vs k old_obj new_obj with "Hauth") as "$"; last done.
+    + exact Hlookup.
+    + split; intros Hadoptable; exfalso; revert Hadoptable;
+        apply not_adoptable_of_kind; done.
+Qed.
+
 End orphan_view.

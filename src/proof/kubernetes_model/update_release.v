@@ -19,27 +19,6 @@ Local Set Default Proof Using "All".
    kind becomes a living orphan, so the whole fragment of its orphan bucket
    ([own_orphans_frag_of]) gains its key; the released object's metadata
    fragment is returned. *)
-(* Releasing [key] makes it a living orphan. For an adoptable kind it enters its
-   bucket, which needs the whole bucket fragment; otherwise no bucket changes. *)
-Lemma orphan_view_release_vs γ abs_state key old_kobj new_kobj orphans :
-  abs_state !! key = Some old_kobj →
-  (KObjectV.objectmeta new_kobj).(ObjectMetaV.DeletionTimestamp') = None →
-  obj_parent_ref new_kobj = None →
-  own_orphans_auth γ abs_state -∗
-  own_orphans_frag_of γ key orphans ==∗
-    own_orphans_auth γ (<[key := new_kobj]> abs_state) ∗
-    own_orphans_frag_of γ key (orphans ∪ {[key]}).
-Proof.
-  iIntros (Hlookup Hliving Hparent) "Hauth Hfrag".
-  rewrite /own_orphans_frag_of. case_decide as Hkind.
-  - iMod (orphan_view.enter_vs key new_kobj with "Hauth Hfrag") as "[$ $]"; last done.
-    split; [exact Hkind|]. split; done.
-  - iMod (orphan_view.insert_same_vs key old_kobj new_kobj with "Hauth") as "$"; last done.
-    + exact Hlookup.
-    + split; intros Hadoptable; exfalso; revert Hadoptable;
-        apply orphan_view.not_adoptable_of_kind; done.
-Qed.
-
 Lemma wp_State__update_release_au γ l kind namespace i kobj parent_key parent_uid dq :
   ∀ Φ,
   is_pkg_init apimodel ∗
@@ -682,12 +661,11 @@ Proof.
     exact Huid_updated. }
   { intros Hold_terminating.
     exfalso. apply Hold_terminating. exact Hold_deletion_timestamp_none. }
-  iMod (orphan_view_release_vs _ _ key old_kobj new_kobj _ with
+  iMod (orphan_view.release_vs key old_kobj new_kobj with
     "Hinv_Hown_orphans Hown_orphans_frag")
     as "[Hinv_Hown_orphans Hown_orphans_frag]".
   { exact Hlookup_abs. }
-  { exact Hnew_deletion_timestamp_none. }
-  { exact Hnew_parent_none. }
+  { split; [exact Hnew_deletion_timestamp_none|exact Hnew_parent_none]. }
   iClear "Hown_spec_frag".
   iDestruct "Hclose" as "[Hclose_success _]".
   iMod ("Hclose_success" $! i1' new_kobj with
