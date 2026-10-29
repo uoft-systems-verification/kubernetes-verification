@@ -2,8 +2,6 @@ module controllers
 
 go 1.24.11
 
-replace kubernetes_model => ../kubernetes_model
-
 replace k8s.io/api => ../kubernetes/staging/src/k8s.io/api
 
 replace k8s.io/apiextensions-apiserver => ../kubernetes/staging/src/k8s.io/apiextensions-apiserver
@@ -28,7 +26,6 @@ require (
 	k8s.io/api v0.32.1
 	k8s.io/apimachinery v0.32.1
 	k8s.io/kubernetes v0.0.0
-	kubernetes_model v0.0.0-00010101000000-000000000000
 )
 
 require (

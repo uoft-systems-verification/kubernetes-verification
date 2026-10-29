@@ -1,8 +1,8 @@
 package statefulset
 
 import (
+	"context"
 	"controllers/common"
-	"kubernetes_model/apimodel"
 	"reflect"
 	"strconv"
 	"strings"
@@ -11,11 +11,16 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	clientset "k8s.io/client-go/kubernetes"
+	appslisters "k8s.io/client-go/listers/apps/v1"
+	corelisters "k8s.io/client-go/listers/core/v1"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/kubernetes/pkg/controller"
 )
 
 // A simplified statefulset controller. The following features are not included:
-// * adoption and release
+// * adoption
 // * managing status
 // * ControllerRevision history and rolling updates
 // * concurrent creation/deletion
@@ -72,37 +77,26 @@ func filterPodsForStatefulSet(set *apps.StatefulSet, pods []*v1.Pod) []*v1.Pod {
 	return result
 }
 
-func releasePod(set *apps.StatefulSet, pod *v1.Pod) error {
-	updatedPod := pod.DeepCopy()
-	ownerReferences := []metav1.OwnerReference{}
-	released := false
-	for _, ownerReference := range updatedPod.OwnerReferences {
-		// Upstream releases a Pod with a strategic-merge deletion keyed by the
-		// owner's UID, preserving owner references with other UIDs:
-		// https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/controller/controller_ref_manager.go
-		if ownerReference.UID == set.UID {
-			released = true
-			continue
-		}
-		ownerReferences = append(ownerReferences, ownerReference)
+// releasePod uses the same UID-guarded strategic-merge patch as upstream's
+// PodControllerRefManager.ReleasePod, preserving unrelated owner references.
+func releasePod(ctx context.Context, kubeClient *clientset.Clientset, set *apps.StatefulSet, pod *v1.Pod) error {
+	patch, err := controller.GenerateDeleteOwnerRefStrategicMergeBytes(pod.UID, []types.UID{set.UID})
+	if err != nil {
+		return err
 	}
-	if !released {
-		return nil
-	}
-	updatedPod.OwnerReferences = ownerReferences
-	_, err := apimodel.ModelState.PodUpdateTx(updatedPod.Namespace, updatedPod)
-	if apierrors.IsNotFound(err) {
+	_, err = kubeClient.CoreV1().Pods(pod.Namespace).Patch(ctx, pod.Name, types.StrategicMergePatchType, patch, metav1.PatchOptions{})
+	if apierrors.IsNotFound(err) || apierrors.IsInvalid(err) {
 		return nil
 	}
 	return err
 }
 
-func releasePodsWithBadNames(set *apps.StatefulSet, pods []*v1.Pod) error {
+func releasePodsWithBadNames(ctx context.Context, kubeClient *clientset.Clientset, set *apps.StatefulSet, pods []*v1.Pod) error {
 	for _, pod := range pods {
 		if isMemberOf(set.Name, pod.Name) {
 			continue
 		}
-		if err := releasePod(set, pod); err != nil {
+		if err := releasePod(ctx, kubeClient, set, pod); err != nil {
 			return err
 		}
 	}
@@ -237,11 +231,11 @@ func newPersistentVolumeClaim(set *apps.StatefulSet, pod *v1.Pod, claimTemplate 
 	return claim
 }
 
-func createPersistentVolumeClaim(set *apps.StatefulSet, pod *v1.Pod, claimTemplate *v1.PersistentVolumeClaim) error {
+func createPersistentVolumeClaim(ctx context.Context, kubeClient *clientset.Clientset, claimLister corelisters.PersistentVolumeClaimLister, set *apps.StatefulSet, pod *v1.Pod, claimTemplate *v1.PersistentVolumeClaim) error {
 	claim := newPersistentVolumeClaim(set, pod, claimTemplate)
-	_, err := apimodel.ModelState.PersistentVolumeClaimGet(claim.Namespace, claim.Name)
+	_, err := claimLister.PersistentVolumeClaims(claim.Namespace).Get(claim.Name)
 	if apierrors.IsNotFound(err) {
-		_, err = apimodel.ModelState.PersistentVolumeClaimCreate(claim.Namespace, claim)
+		_, err = kubeClient.CoreV1().PersistentVolumeClaims(claim.Namespace).Create(ctx, claim, metav1.CreateOptions{})
 		if err != nil && !apierrors.IsAlreadyExists(err) {
 			return err
 		}
@@ -250,40 +244,40 @@ func createPersistentVolumeClaim(set *apps.StatefulSet, pod *v1.Pod, claimTempla
 	return err
 }
 
-func createPersistentVolumeClaims(set *apps.StatefulSet, pod *v1.Pod) error {
+func createPersistentVolumeClaims(ctx context.Context, kubeClient *clientset.Clientset, claimLister corelisters.PersistentVolumeClaimLister, set *apps.StatefulSet, pod *v1.Pod) error {
 	for _, claimTemplate := range volumeClaimTemplatesByName(set) {
-		if err := createPersistentVolumeClaim(set, pod, &claimTemplate); err != nil {
+		if err := createPersistentVolumeClaim(ctx, kubeClient, claimLister, set, pod, &claimTemplate); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func createStatefulPod(set *apps.StatefulSet, pod *v1.Pod) error {
-	if err := createPersistentVolumeClaims(set, pod); err != nil {
+func createStatefulPod(ctx context.Context, kubeClient *clientset.Clientset, claimLister corelisters.PersistentVolumeClaimLister, set *apps.StatefulSet, pod *v1.Pod) error {
+	if err := createPersistentVolumeClaims(ctx, kubeClient, claimLister, set, pod); err != nil {
 		return err
 	}
-	_, err := apimodel.ModelState.PodCreate(set.Namespace, pod)
+	_, err := kubeClient.CoreV1().Pods(set.Namespace).Create(ctx, pod, metav1.CreateOptions{})
 	if apierrors.IsAlreadyExists(err) {
 		return nil
 	}
 	return err
 }
 
-func updateStatefulPod(set *apps.StatefulSet, pod *v1.Pod) error {
+func updateStatefulPod(ctx context.Context, kubeClient *clientset.Clientset, set *apps.StatefulSet, pod *v1.Pod) error {
 	if identityMatches(set, pod) {
 		return nil
 	}
 
 	updatedPod := pod.DeepCopy()
 	updateIdentity(set, updatedPod)
-	_, err := apimodel.ModelState.PodUpdateTx(updatedPod.Namespace, updatedPod)
+	_, err := kubeClient.CoreV1().Pods(updatedPod.Namespace).Update(ctx, updatedPod, metav1.UpdateOptions{})
 	return err
 }
 
-func deletePod(pod *v1.Pod) error {
-	uid := pod.ObjectMeta.GetUID()
-	err := apimodel.ModelState.PodDelete(pod.Namespace, pod.Name, common.NewDeleteOptionsWithUID(uid))
+func deletePod(ctx context.Context, kubeClient *clientset.Clientset, pod *v1.Pod) error {
+	// Upstream StatefulPodControl deletes by name without UID preconditions.
+	err := kubeClient.CoreV1().Pods(pod.Namespace).Delete(ctx, pod.Name, metav1.DeleteOptions{})
 	if err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
@@ -357,7 +351,7 @@ func largestOutdatedPod(set *apps.StatefulSet, pods []*v1.Pod) *v1.Pod {
 // reconcileDesiredPods returns true only after every desired Pod has been
 // processed. A false result without an error tells the caller to stop this
 // reconciliation after creating a missing Pod or observing a terminating Pod.
-func reconcileDesiredPods(set *apps.StatefulSet, pods []*v1.Pod) (bool, error) {
+func reconcileDesiredPods(ctx context.Context, kubeClient *clientset.Clientset, claimLister corelisters.PersistentVolumeClaimLister, set *apps.StatefulSet, pods []*v1.Pod) (bool, error) {
 	end := endOrdinalOf(set)
 
 	for ordinal := 0; ordinal <= end; ordinal++ {
@@ -367,7 +361,7 @@ func reconcileDesiredPods(set *apps.StatefulSet, pods []*v1.Pod) (bool, error) {
 			if err != nil {
 				return false, err
 			}
-			if err := createStatefulPod(set, newPod); err != nil {
+			if err := createStatefulPod(ctx, kubeClient, claimLister, set, newPod); err != nil {
 				return false, err
 			}
 			return false, nil
@@ -377,11 +371,11 @@ func reconcileDesiredPods(set *apps.StatefulSet, pods []*v1.Pod) (bool, error) {
 			return false, nil
 		}
 
-		if err := createPersistentVolumeClaims(set, pod); err != nil {
+		if err := createPersistentVolumeClaims(ctx, kubeClient, claimLister, set, pod); err != nil {
 			return false, err
 		}
 
-		if err := updateStatefulPod(set, pod); err != nil {
+		if err := updateStatefulPod(ctx, kubeClient, set, pod); err != nil {
 			return false, err
 		}
 	}
@@ -392,7 +386,7 @@ func reconcileDesiredPods(set *apps.StatefulSet, pods []*v1.Pod) (bool, error) {
 // reconcileCondemnedPod returns true when there is no condemned Pod and
 // reconciliation may continue. After observing or deleting one condemned Pod,
 // the caller stops this reconciliation and waits for the next observed state.
-func reconcileCondemnedPod(set *apps.StatefulSet, pods []*v1.Pod) (bool, error) {
+func reconcileCondemnedPod(ctx context.Context, kubeClient *clientset.Clientset, set *apps.StatefulSet, pods []*v1.Pod) (bool, error) {
 	condemned := firstCondemnedPod(set, pods)
 	if condemned == nil {
 		return true, nil
@@ -400,13 +394,13 @@ func reconcileCondemnedPod(set *apps.StatefulSet, pods []*v1.Pod) (bool, error) 
 	if isTerminating(condemned) {
 		return false, nil
 	}
-	if err := deletePod(condemned); err != nil {
+	if err := deletePod(ctx, kubeClient, condemned); err != nil {
 		return false, err
 	}
 	return false, nil
 }
 
-func reconcileOutdatedPod(set *apps.StatefulSet, pods []*v1.Pod) error {
+func reconcileOutdatedPod(ctx context.Context, kubeClient *clientset.Clientset, set *apps.StatefulSet, pods []*v1.Pod) error {
 	outdated := largestOutdatedPod(set, pods)
 	if outdated == nil {
 		return nil
@@ -414,25 +408,25 @@ func reconcileOutdatedPod(set *apps.StatefulSet, pods []*v1.Pod) error {
 	if isTerminating(outdated) {
 		return nil
 	}
-	return deletePod(outdated)
+	return deletePod(ctx, kubeClient, outdated)
 }
 
-func reconcileReplicas(set *apps.StatefulSet, pods []*v1.Pod) error {
-	continueReconcile, err := reconcileDesiredPods(set, pods)
+func reconcileReplicas(ctx context.Context, kubeClient *clientset.Clientset, claimLister corelisters.PersistentVolumeClaimLister, set *apps.StatefulSet, pods []*v1.Pod) error {
+	continueReconcile, err := reconcileDesiredPods(ctx, kubeClient, claimLister, set, pods)
 	if err != nil || !continueReconcile {
 		return err
 	}
 
-	continueReconcile, err = reconcileCondemnedPod(set, pods)
+	continueReconcile, err = reconcileCondemnedPod(ctx, kubeClient, set, pods)
 	if err != nil || !continueReconcile {
 		return err
 	}
 
-	return reconcileOutdatedPod(set, pods)
+	return reconcileOutdatedPod(ctx, kubeClient, set, pods)
 }
 
-func syncStatefulSet(namespace, name string) error {
-	set, err := apimodel.ModelState.StatefulSetGet(namespace, name)
+func syncStatefulSet(ctx context.Context, kubeClient *clientset.Clientset, setLister appslisters.StatefulSetLister, claimLister corelisters.PersistentVolumeClaimLister, podIndexer cache.Indexer, namespace, name string) error {
+	set, err := setLister.StatefulSets(namespace).Get(name)
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -440,7 +434,7 @@ func syncStatefulSet(namespace, name string) error {
 		return err
 	}
 
-	allPods, err := common.FilterPodsByOwner(&set.ObjectMeta, "StatefulSet")
+	allPods, err := common.FilterPodsByOwner(podIndexer, &set.ObjectMeta, "StatefulSet")
 	if err != nil {
 		return err
 	}
@@ -449,9 +443,9 @@ func syncStatefulSet(namespace, name string) error {
 		return nil
 	}
 
-	if err := releasePodsWithBadNames(set, allPods); err != nil {
+	if err := releasePodsWithBadNames(ctx, kubeClient, set, allPods); err != nil {
 		return err
 	}
 
-	return reconcileReplicas(set, filterPodsForStatefulSet(set, allPods))
+	return reconcileReplicas(ctx, kubeClient, claimLister, set, filterPodsForStatefulSet(set, allPods))
 }

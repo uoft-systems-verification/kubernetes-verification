@@ -152,11 +152,7 @@ Axiom DaemonSetListerExpansionⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : Go
 
 Axiom DaemonSetNamespaceListerExpansionⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom DeploymentListerⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
 Axiom deploymentListerⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom DeploymentNamespaceListerⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom deploymentNamespaceListerⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
@@ -176,11 +172,7 @@ Axiom ReplicaSetListerExpansionⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : G
 
 Axiom ReplicaSetNamespaceListerExpansionⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom StatefulSetListerⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
 Axiom statefulSetListerⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom StatefulSetNamespaceListerⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom statefulSetNamespaceListerⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
@@ -376,17 +368,16 @@ Class DaemonSetNamespaceListerExpansion_Assumptions {ext : ffi_syntax} `{!GoGlob
 Module DeploymentLister.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Definition t : Type := interface.t.
+#[global] Arguments t : clear implicits.
 End def.
 End DeploymentLister.
 
+Definition DeploymentListerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "Deployments"%go (go.Signature [go.string] false [DeploymentNamespaceLister]); go.MethodElem "List"%go (go.Signature [code.k8s_io.apimachinery.pkg.labels.labels.Selector] false [go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment); go.error]); go.TypeElem [go.TypeTerm DeploymentListerExpansion]].
+
 Class DeploymentLister_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
-  #[global] DeploymentLister_type_repr  :: go.TypeReprUnderlying DeploymentListerⁱᵐᵖˡ DeploymentLister.t;
   #[global] DeploymentLister_underlying :: (DeploymentLister) <u (DeploymentListerⁱᵐᵖˡ);
-  #[global] DeploymentListerⁱᵐᵖˡ_underlying :: (DeploymentListerⁱᵐᵖˡ) ↓u (DeploymentListerⁱᵐᵖˡ);
 }.
 
 Module deploymentLister.
@@ -403,22 +394,22 @@ Class deploymentLister_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoL
   #[global] deploymentLister_type_repr  :: go.TypeReprUnderlying deploymentListerⁱᵐᵖˡ deploymentLister.t;
   #[global] deploymentLister_underlying :: (deploymentLister) <u (deploymentListerⁱᵐᵖˡ);
   #[global] deploymentListerⁱᵐᵖˡ_underlying :: (deploymentListerⁱᵐᵖˡ) ↓u (deploymentListerⁱᵐᵖˡ);
+  #[global] deploymentLister'ptr_Deployments_unfold :: MethodUnfold (go.PointerType (deploymentLister)) "Deployments" (deploymentLister__Deploymentsⁱᵐᵖˡ);
 }.
 
 Module DeploymentNamespaceLister.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Definition t : Type := interface.t.
+#[global] Arguments t : clear implicits.
 End def.
 End DeploymentNamespaceLister.
 
+Definition DeploymentNamespaceListerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "Get"%go (go.Signature [go.string] false [go.PointerType code.k8s_io.api.apps.v1.v1.Deployment; go.error]); go.MethodElem "List"%go (go.Signature [code.k8s_io.apimachinery.pkg.labels.labels.Selector] false [go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment); go.error]); go.TypeElem [go.TypeTerm DeploymentNamespaceListerExpansion]].
+
 Class DeploymentNamespaceLister_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
-  #[global] DeploymentNamespaceLister_type_repr  :: go.TypeReprUnderlying DeploymentNamespaceListerⁱᵐᵖˡ DeploymentNamespaceLister.t;
   #[global] DeploymentNamespaceLister_underlying :: (DeploymentNamespaceLister) <u (DeploymentNamespaceListerⁱᵐᵖˡ);
-  #[global] DeploymentNamespaceListerⁱᵐᵖˡ_underlying :: (DeploymentNamespaceListerⁱᵐᵖˡ) ↓u (DeploymentNamespaceListerⁱᵐᵖˡ);
 }.
 
 Module deploymentNamespaceLister.
@@ -599,17 +590,16 @@ Class ReplicaSetNamespaceListerExpansion_Assumptions {ext : ffi_syntax} `{!GoGlo
 Module StatefulSetLister.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Definition t : Type := interface.t.
+#[global] Arguments t : clear implicits.
 End def.
 End StatefulSetLister.
 
+Definition StatefulSetListerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "List"%go (go.Signature [code.k8s_io.apimachinery.pkg.labels.labels.Selector] false [go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet); go.error]); go.MethodElem "StatefulSets"%go (go.Signature [go.string] false [StatefulSetNamespaceLister]); go.TypeElem [go.TypeTerm StatefulSetListerExpansion]].
+
 Class StatefulSetLister_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
-  #[global] StatefulSetLister_type_repr  :: go.TypeReprUnderlying StatefulSetListerⁱᵐᵖˡ StatefulSetLister.t;
   #[global] StatefulSetLister_underlying :: (StatefulSetLister) <u (StatefulSetListerⁱᵐᵖˡ);
-  #[global] StatefulSetListerⁱᵐᵖˡ_underlying :: (StatefulSetListerⁱᵐᵖˡ) ↓u (StatefulSetListerⁱᵐᵖˡ);
 }.
 
 Module statefulSetLister.
@@ -626,22 +616,22 @@ Class statefulSetLister_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!Go
   #[global] statefulSetLister_type_repr  :: go.TypeReprUnderlying statefulSetListerⁱᵐᵖˡ statefulSetLister.t;
   #[global] statefulSetLister_underlying :: (statefulSetLister) <u (statefulSetListerⁱᵐᵖˡ);
   #[global] statefulSetListerⁱᵐᵖˡ_underlying :: (statefulSetListerⁱᵐᵖˡ) ↓u (statefulSetListerⁱᵐᵖˡ);
+  #[global] statefulSetLister'ptr_StatefulSets_unfold :: MethodUnfold (go.PointerType (statefulSetLister)) "StatefulSets" (statefulSetLister__StatefulSetsⁱᵐᵖˡ);
 }.
 
 Module StatefulSetNamespaceLister.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Definition t : Type := interface.t.
+#[global] Arguments t : clear implicits.
 End def.
 End StatefulSetNamespaceLister.
 
+Definition StatefulSetNamespaceListerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "Get"%go (go.Signature [go.string] false [go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet; go.error]); go.MethodElem "List"%go (go.Signature [code.k8s_io.apimachinery.pkg.labels.labels.Selector] false [go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet); go.error]); go.TypeElem [go.TypeTerm StatefulSetNamespaceListerExpansion]].
+
 Class StatefulSetNamespaceLister_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
-  #[global] StatefulSetNamespaceLister_type_repr  :: go.TypeReprUnderlying StatefulSetNamespaceListerⁱᵐᵖˡ StatefulSetNamespaceLister.t;
   #[global] StatefulSetNamespaceLister_underlying :: (StatefulSetNamespaceLister) <u (StatefulSetNamespaceListerⁱᵐᵖˡ);
-  #[global] StatefulSetNamespaceListerⁱᵐᵖˡ_underlying :: (StatefulSetNamespaceListerⁱᵐᵖˡ) ↓u (StatefulSetNamespaceListerⁱᵐᵖˡ);
 }.
 
 Module statefulSetNamespaceLister.

@@ -7,9 +7,11 @@ Require Export New.code.k8s_io.apimachinery.pkg.watch.
 Require Export New.code.k8s_io.client_go.applyconfigurations.core.v1.
 Require Export New.code.k8s_io.client_go.gentype.
 Require Export New.code.k8s_io.client_go.rest.
+Require Export New.code.k8s_io.api.authentication.v1.
 Module api_core_v1 := code.k8s_io.api.core.v1.v1.
 Module apis_meta_v1 := code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.
 Module applyconfigurations_core_v1 := code.k8s_io.client_go.applyconfigurations.core.v1.v1.
+Module api_authentication_v1 := code.k8s_io.api.authentication.v1.v1.
 From New.golang Require Import defn.
 Require Export New.trusted_code.k8s_io.client_go.kubernetes.typed.core.v1.
 Import v1.
@@ -370,8 +372,6 @@ Axiom persistentVolumesⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalC
 
 Axiom PersistentVolumeClaimsGetterⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom PersistentVolumeClaimInterfaceⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
 Axiom persistentVolumeClaimsⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom PodsGetterⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
@@ -411,8 +411,6 @@ Axiom servicesⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, 
 Axiom ServiceExpansionⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom ServiceAccountsGetterⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
-Axiom ServiceAccountInterfaceⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Axiom serviceAccountsⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
@@ -462,7 +460,7 @@ Definition newServiceAccounts {ext : ffi_syntax} {go_gctx : GoGlobalContext} : g
 
 #[global] Instance info' : PkgInfo pkg_id.v1 :=
 {|
-  pkg_imported_pkgs := [code.context.pkg_id.context; code.k8s_io.api.core.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.types.pkg_id.types; code.k8s_io.apimachinery.pkg.watch.pkg_id.watch; code.k8s_io.client_go.applyconfigurations.core.v1.pkg_id.v1; code.k8s_io.client_go.gentype.pkg_id.gentype; code.k8s_io.client_go.rest.pkg_id.rest]
+  pkg_imported_pkgs := [code.context.pkg_id.context; code.k8s_io.api.core.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1; code.k8s_io.apimachinery.pkg.types.pkg_id.types; code.k8s_io.apimachinery.pkg.watch.pkg_id.watch; code.k8s_io.client_go.applyconfigurations.core.v1.pkg_id.v1; code.k8s_io.client_go.gentype.pkg_id.gentype; code.k8s_io.client_go.rest.pkg_id.rest; code.k8s_io.api.authentication.v1.pkg_id.v1]
 |}.
 
 Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
@@ -470,7 +468,8 @@ Axiom _'init : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, val.
 Definition initialize' {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: <>,
     package.init pkg_id.v1 (λ: <>,
-      exception_do (do:  (code.k8s_io.client_go.rest.rest.initialize' #());;;
+      exception_do (do:  (code.k8s_io.api.authentication.v1.v1.initialize' #());;;
+      do:  (code.k8s_io.client_go.rest.rest.initialize' #());;;
       do:  (code.k8s_io.client_go.gentype.gentype.initialize' #());;;
       do:  (code.k8s_io.client_go.applyconfigurations.core.v1.v1.initialize' #());;;
       do:  (code.k8s_io.apimachinery.pkg.watch.watch.initialize' #());;;
@@ -605,7 +604,9 @@ Class CoreV1Client_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocal
   #[global] CoreV1Client_type_repr  :: go.TypeReprUnderlying CoreV1Clientⁱᵐᵖˡ CoreV1Client.t;
   #[global] CoreV1Client_underlying :: (CoreV1Client) <u (CoreV1Clientⁱᵐᵖˡ);
   #[global] CoreV1Clientⁱᵐᵖˡ_underlying :: (CoreV1Clientⁱᵐᵖˡ) ↓u (CoreV1Clientⁱᵐᵖˡ);
+  #[global] CoreV1Client'ptr_PersistentVolumeClaims_unfold :: MethodUnfold (go.PointerType (CoreV1Client)) "PersistentVolumeClaims" (CoreV1Client__PersistentVolumeClaimsⁱᵐᵖˡ);
   #[global] CoreV1Client'ptr_Pods_unfold :: MethodUnfold (go.PointerType (CoreV1Client)) "Pods" (CoreV1Client__Podsⁱᵐᵖˡ);
+  #[global] CoreV1Client'ptr_ServiceAccounts_unfold :: MethodUnfold (go.PointerType (CoreV1Client)) "ServiceAccounts" (CoreV1Client__ServiceAccountsⁱᵐᵖˡ);
 }.
 
 Module EndpointsGetter.
@@ -1155,17 +1156,16 @@ Class PersistentVolumeClaimsGetter_Assumptions {ext : ffi_syntax} `{!GoGlobalCon
 Module PersistentVolumeClaimInterface.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Definition t : Type := interface.t.
+#[global] Arguments t : clear implicits.
 End def.
 End PersistentVolumeClaimInterface.
 
+Definition PersistentVolumeClaimInterfaceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "Apply"%go (go.Signature [code.context.context.Context; go.PointerType code.k8s_io.client_go.applyconfigurations.core.v1.v1.PersistentVolumeClaimApplyConfiguration; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ApplyOptions] false [go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim; go.error]); go.MethodElem "ApplyStatus"%go (go.Signature [code.context.context.Context; go.PointerType code.k8s_io.client_go.applyconfigurations.core.v1.v1.PersistentVolumeClaimApplyConfiguration; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ApplyOptions] false [go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim; go.error]); go.MethodElem "Create"%go (go.Signature [code.context.context.Context; go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.CreateOptions] false [go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim; go.error]); go.MethodElem "Delete"%go (go.Signature [code.context.context.Context; go.string; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] false [go.error]); go.MethodElem "DeleteCollection"%go (go.Signature [code.context.context.Context; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ListOptions] false [go.error]); go.MethodElem "Get"%go (go.Signature [code.context.context.Context; go.string; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.GetOptions] false [go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim; go.error]); go.MethodElem "List"%go (go.Signature [code.context.context.Context; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ListOptions] false [go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaimList; go.error]); go.MethodElem "Patch"%go (go.Signature [code.context.context.Context; go.string; code.k8s_io.apimachinery.pkg.types.types.PatchType; go.SliceType go.byte; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.PatchOptions; go.SliceType go.string] true [go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim; go.error]); go.MethodElem "Update"%go (go.Signature [code.context.context.Context; go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions] false [go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim; go.error]); go.MethodElem "UpdateStatus"%go (go.Signature [code.context.context.Context; go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions] false [go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim; go.error]); go.MethodElem "Watch"%go (go.Signature [code.context.context.Context; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ListOptions] false [code.k8s_io.apimachinery.pkg.watch.watch.Interface; go.error]); go.TypeElem [go.TypeTerm PersistentVolumeClaimExpansion]].
+
 Class PersistentVolumeClaimInterface_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
-  #[global] PersistentVolumeClaimInterface_type_repr  :: go.TypeReprUnderlying PersistentVolumeClaimInterfaceⁱᵐᵖˡ PersistentVolumeClaimInterface.t;
   #[global] PersistentVolumeClaimInterface_underlying :: (PersistentVolumeClaimInterface) <u (PersistentVolumeClaimInterfaceⁱᵐᵖˡ);
-  #[global] PersistentVolumeClaimInterfaceⁱᵐᵖˡ_underlying :: (PersistentVolumeClaimInterfaceⁱᵐᵖˡ) ↓u (PersistentVolumeClaimInterfaceⁱᵐᵖˡ);
 }.
 
 Module persistentVolumeClaims.
@@ -1537,17 +1537,16 @@ Class ServiceAccountsGetter_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `
 Module ServiceAccountInterface.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Definition t : Type := interface.t.
+#[global] Arguments t : clear implicits.
 End def.
 End ServiceAccountInterface.
 
+Definition ServiceAccountInterfaceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.InterfaceType [go.MethodElem "Apply"%go (go.Signature [code.context.context.Context; go.PointerType code.k8s_io.client_go.applyconfigurations.core.v1.v1.ServiceAccountApplyConfiguration; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ApplyOptions] false [go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount; go.error]); go.MethodElem "Create"%go (go.Signature [code.context.context.Context; go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.CreateOptions] false [go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount; go.error]); go.MethodElem "CreateToken"%go (go.Signature [code.context.context.Context; go.string; go.PointerType code.k8s_io.api.authentication.v1.v1.TokenRequest; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.CreateOptions] false [go.PointerType code.k8s_io.api.authentication.v1.v1.TokenRequest; go.error]); go.MethodElem "Delete"%go (go.Signature [code.context.context.Context; go.string; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] false [go.error]); go.MethodElem "DeleteCollection"%go (go.Signature [code.context.context.Context; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ListOptions] false [go.error]); go.MethodElem "Get"%go (go.Signature [code.context.context.Context; go.string; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.GetOptions] false [go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount; go.error]); go.MethodElem "List"%go (go.Signature [code.context.context.Context; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ListOptions] false [go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccountList; go.error]); go.MethodElem "Patch"%go (go.Signature [code.context.context.Context; go.string; code.k8s_io.apimachinery.pkg.types.types.PatchType; go.SliceType go.byte; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.PatchOptions; go.SliceType go.string] true [go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount; go.error]); go.MethodElem "Update"%go (go.Signature [code.context.context.Context; go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions] false [go.PointerType code.k8s_io.api.core.v1.v1.ServiceAccount; go.error]); go.MethodElem "Watch"%go (go.Signature [code.context.context.Context; code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ListOptions] false [code.k8s_io.apimachinery.pkg.watch.watch.Interface; go.error]); go.TypeElem [go.TypeTerm ServiceAccountExpansion]].
+
 Class ServiceAccountInterface_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
-  #[global] ServiceAccountInterface_type_repr  :: go.TypeReprUnderlying ServiceAccountInterfaceⁱᵐᵖˡ ServiceAccountInterface.t;
   #[global] ServiceAccountInterface_underlying :: (ServiceAccountInterface) <u (ServiceAccountInterfaceⁱᵐᵖˡ);
-  #[global] ServiceAccountInterfaceⁱᵐᵖˡ_underlying :: (ServiceAccountInterfaceⁱᵐᵖˡ) ↓u (ServiceAccountInterfaceⁱᵐᵖˡ);
 }.
 
 Module serviceAccounts.
@@ -1643,5 +1642,6 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] import_applyconfigurations_core_v1_Assumption :: code.k8s_io.client_go.applyconfigurations.core.v1.v1.Assumptions;
   #[global] import_gentype_Assumption :: code.k8s_io.client_go.gentype.gentype.Assumptions;
   #[global] import_rest_Assumption :: code.k8s_io.client_go.rest.rest.Assumptions;
+  #[global] import_api_authentication_v1_Assumption :: code.k8s_io.api.authentication.v1.v1.Assumptions;
 }.
 End v1.

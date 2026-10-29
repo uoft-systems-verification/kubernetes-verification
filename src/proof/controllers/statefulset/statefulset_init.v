@@ -10,6 +10,11 @@ From New.proof.k8s_io.kubernetes.pkg Require Export controller_init.
 From New.proof.kubernetes_model Require Export apimodel_init.
 From New.proof Require Export reflect_init strconv_init strings.
 From New.proof.controllers Require Export common_init.
+From New.proof Require Export context.
+From New.proof.k8s_io.client_go Require Export kubernetes_init.
+From New.proof.k8s_io.client_go.listers.apps Require Export v1_init.
+From New.proof.k8s_io.client_go.listers.core Require Export v1_init.
+From New.proof.k8s_io.client_go.tools Require Export cache_init.
 Require Export New.generatedproof.controllers.statefulset.
 From New.proof Require Import proof_prelude.
 

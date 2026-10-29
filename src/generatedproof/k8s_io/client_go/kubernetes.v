@@ -3,6 +3,7 @@ Require Export New.proof.proof_prelude.
 Require Export New.manualproof.k8s_io.client_go.kubernetes.
 Require Export New.generatedproof.k8s_io.client_go.kubernetes.typed.apps.v1.
 Require Export New.generatedproof.k8s_io.client_go.kubernetes.typed.core.v1.
+Require Export New.generatedproof.k8s_io.client_go.kubernetes.typed.rbac.v1.
 Require Export New.golang.theory.
 Require Export New.code.k8s_io.client_go.kubernetes.
 

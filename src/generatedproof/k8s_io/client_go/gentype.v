@@ -3,6 +3,7 @@ Require Export New.proof.proof_prelude.
 Require Export New.manualproof.k8s_io.client_go.gentype.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.runtime.
+Require Export New.generatedproof.k8s_io.apimachinery.pkg.types.
 Require Export New.generatedproof.k8s_io.client_go.rest.
 Require Export New.golang.theory.
 Require Export New.code.k8s_io.client_go.gentype.

@@ -3,6 +3,7 @@ From New.proof.k8s_io.api.core Require Export v1_init.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller_init.
 From New.proof.kubernetes_model Require Export apimodel_init.
+From New.proof.k8s_io.client_go.tools Require Export cache_init.
 Require Export New.generatedproof.controllers.common.
 From New.proof Require Import proof_prelude.
 

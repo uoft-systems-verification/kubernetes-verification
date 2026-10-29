@@ -3,7 +3,6 @@ package replicaset
 import (
 	"context"
 	"controllers/common"
-	"kubernetes_model/apimodel"
 	"sort"
 	"sync"
 
@@ -15,6 +14,8 @@ import (
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	clientset "k8s.io/client-go/kubernetes"
 	appslisters "k8s.io/client-go/listers/apps/v1"
+	corelisters "k8s.io/client-go/listers/core/v1"
+	"k8s.io/client-go/tools/cache"
 	// "k8s.io/klog/v2"
 	"k8s.io/kubernetes/pkg/controller"
 	upstreamrs "k8s.io/kubernetes/pkg/controller/replicaset"
@@ -34,13 +35,13 @@ const (
 
 // getReplicaSetsWithSameController returns a list of ReplicaSets with the same
 // owner as the given ReplicaSet.
-func getReplicaSetsWithSameController(rs *apps.ReplicaSet) []*apps.ReplicaSet {
+func getReplicaSetsWithSameController(rsIndexer cache.Indexer, rs *apps.ReplicaSet) []*apps.ReplicaSet {
 	controllerRef := metav1.GetControllerOf(rs)
 	if controllerRef == nil {
 		return nil
 	}
 
-	objects, err := apimodel.ModelState.ByIndex("ReplicaSet", "controllerUID", string(controllerRef.UID))
+	objects, err := rsIndexer.ByIndex("controllerUID", string(controllerRef.UID))
 	if err != nil {
 		return nil
 	}
@@ -53,17 +54,17 @@ func getReplicaSetsWithSameController(rs *apps.ReplicaSet) []*apps.ReplicaSet {
 
 // getIndirectlyRelatedPods returns all pods that are owned by a ReplicaSet
 // with the same controller owner as rs.
-func getIndirectlyRelatedPods(rs *apps.ReplicaSet) ([]*v1.Pod, error) {
+func getIndirectlyRelatedPods(rsIndexer cache.Indexer, podLister corelisters.PodLister, rs *apps.ReplicaSet) ([]*v1.Pod, error) {
 	relatedPods := []*v1.Pod{}
 	// `seen` works as a `Set` to keep track of pods that have already been considered (Like fingerprints in model checker).
 	seen := make(map[types.UID]*apps.ReplicaSet)
-	for _, relatedRS := range getReplicaSetsWithSameController(rs) {
+	for _, relatedRS := range getReplicaSetsWithSameController(rsIndexer, rs) {
 		selector, err := metav1.LabelSelectorAsSelector(relatedRS.Spec.Selector)
 		if err != nil {
 			// An invalid selector does not match any pods.
 			continue
 		}
-		pods, err := apimodel.ModelState.PodList(relatedRS.Namespace, selector)
+		pods, err := podLister.Pods(relatedRS.Namespace).List(selector)
 		if err != nil {
 			return nil, err
 		}
@@ -105,7 +106,7 @@ func getPodsRankedByRelatedPodsOnSameNode(podsToRank, relatedPods []*v1.Pod) con
 	return controller.ActivePodsWithRanks{Pods: podsToRank, Rank: ranks, Now: metav1.Now()}
 }
 
-func manageReplicas(ctx context.Context, kubeClient *clientset.Clientset, burstReplicas int, activePods []*v1.Pod, rs *apps.ReplicaSet) error {
+func manageReplicas(ctx context.Context, kubeClient *clientset.Clientset, rsIndexer cache.Indexer, podLister corelisters.PodLister, burstReplicas int, activePods []*v1.Pod, rs *apps.ReplicaSet) error {
 	diff := len(activePods) - int(*(rs.Spec.Replicas))
 	if diff < 0 {
 		diff *= -1
@@ -147,7 +148,7 @@ func manageReplicas(ctx context.Context, kubeClient *clientset.Clientset, burstR
 			diff = burstReplicas
 		}
 
-		relatedPods, err := getIndirectlyRelatedPods(rs)
+		relatedPods, err := getIndirectlyRelatedPods(rsIndexer, podLister, rs)
 		if err != nil {
 			return err
 		}
@@ -220,7 +221,7 @@ func slowStartBatch(count int, initialBatchSize int, fn func() error) (int, erro
 	return successes, nil
 }
 
-func syncReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rsLister appslisters.ReplicaSetLister, burstReplicas int, rscClock clock.PassiveClock, controllerFeatures upstreamrs.ReplicaSetControllerFeatures, namespace, name string) error {
+func syncReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rsLister appslisters.ReplicaSetLister, rsIndexer cache.Indexer, podLister corelisters.PodLister, podIndexer cache.Indexer, burstReplicas int, rscClock clock.PassiveClock, controllerFeatures upstreamrs.ReplicaSetControllerFeatures, namespace, name string) error {
 	// Logging never affects the verified behavior, so the logger is omitted.
 	// logger := klog.FromContext(ctx)
 	// use <namespace, name> localize a unique ReplicaSet
@@ -232,7 +233,7 @@ func syncReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rsList
 		return err
 	}
 
-	allRSPods, err := common.FilterPodsByOwner(&rs.ObjectMeta, "ReplicaSet")
+	allRSPods, err := common.FilterPodsByOwner(podIndexer, &rs.ObjectMeta, "ReplicaSet")
 	if err != nil {
 		return err
 	}
@@ -247,7 +248,7 @@ func syncReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rsList
 
 	var manageReplicasErr error
 	if rs.DeletionTimestamp == nil {
-		manageReplicasErr = manageReplicas(ctx, kubeClient, burstReplicas, activePods, rs)
+		manageReplicasErr = manageReplicas(ctx, kubeClient, rsIndexer, podLister, burstReplicas, activePods, rs)
 	}
 	rs = rs.DeepCopy()
 	// Keep one time for status and the future next-availability-check calculation.

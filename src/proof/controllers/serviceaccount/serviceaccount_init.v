@@ -3,6 +3,9 @@ From New.proof.k8s_io.api.core Require Export v1_init.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors_init.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 From New.proof.kubernetes_model Require Export apimodel_init.
+From New.proof Require Export context.
+From New.proof.k8s_io.client_go Require Export kubernetes_init.
+From New.proof.k8s_io.client_go.listers.core Require Export v1_init.
 Require Export New.generatedproof.controllers.serviceaccount.
 From New.proof Require Import proof_prelude.
 

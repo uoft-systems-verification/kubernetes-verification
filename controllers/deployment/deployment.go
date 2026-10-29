@@ -1,12 +1,14 @@
 package deployment
 
 import (
-	"kubernetes_model/apimodel"
+	"context"
 
 	apps "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	clientset "k8s.io/client-go/kubernetes"
+	appslisters "k8s.io/client-go/listers/apps/v1"
 	"k8s.io/kubernetes/pkg/controller"
 	deploymentutil "k8s.io/kubernetes/pkg/controller/deployment/util"
 	labelsutil "k8s.io/kubernetes/pkg/util/labels"
@@ -96,13 +98,13 @@ func findOldReplicaSets(deployment *apps.Deployment, rsList []*apps.ReplicaSet) 
 // This controller models neither annotations nor events. Upstream also reads
 // and writes *rs.Spec.Replicas directly, relying on API defaulting to make it
 // non-nil; here replicasOfRS treats nil as 0 and the copy gets a fresh pointer.
-func scaleReplicaSet(rs *apps.ReplicaSet, newScale int32) (bool, *apps.ReplicaSet, error) {
+func scaleReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rs *apps.ReplicaSet, newScale int32) (bool, *apps.ReplicaSet, error) {
 	if replicasOfRS(rs) == newScale {
 		return false, rs, nil
 	}
 	rsCopy := rs.DeepCopy()
 	rsCopy.Spec.Replicas = &newScale
-	updated, err := apimodel.ModelState.ReplicaSetUpdateTx(rsCopy.Namespace, rsCopy)
+	updated, err := kubeClient.AppsV1().ReplicaSets(rsCopy.Namespace).Update(ctx, rsCopy, metav1.UpdateOptions{})
 	if err != nil {
 		return false, rs, err
 	}
@@ -111,7 +113,7 @@ func scaleReplicaSet(rs *apps.ReplicaSet, newScale int32) (bool, *apps.ReplicaSe
 
 // getNewReplicaSet returns the deployment's new ReplicaSet, creating it with a
 // deterministic name and the deployment's replica count if it does not exist.
-func getNewReplicaSet(d *apps.Deployment, rsList []*apps.ReplicaSet) (*apps.ReplicaSet, error) {
+func getNewReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rsLister appslisters.ReplicaSetLister, d *apps.Deployment, rsList []*apps.ReplicaSet) (*apps.ReplicaSet, error) {
 	existingNewRS := findNewReplicaSet(d, rsList)
 	if existingNewRS != nil {
 		return existingNewRS, nil
@@ -138,11 +140,12 @@ func getNewReplicaSet(d *apps.Deployment, rsList []*apps.ReplicaSet) (*apps.Repl
 		},
 	}
 
-	createdRS, err := apimodel.ModelState.ReplicaSetCreate(d.Namespace, newRS)
+	createdRS, err := kubeClient.AppsV1().ReplicaSets(d.Namespace).Create(ctx, newRS, metav1.CreateOptions{})
 	if apierrors.IsAlreadyExists(err) {
 		// No-collision assumption: a ReplicaSet with this deterministic name
-		// already holds the same template, so adopt it.
-		return apimodel.ModelState.ReplicaSetGet(d.Namespace, newRS.Name)
+		// already holds the same template. Read it from the lister, as upstream
+		// does after AlreadyExists (and return its error if the cache lags).
+		return rsLister.ReplicaSets(newRS.Namespace).Get(newRS.Name)
 	}
 	if err != nil {
 		return nil, err
@@ -152,16 +155,16 @@ func getNewReplicaSet(d *apps.Deployment, rsList []*apps.ReplicaSet) (*apps.Repl
 
 // reconcileNewReplicaSet scales the new ReplicaSet to the deployment's desired
 // replica count.
-func reconcileNewReplicaSet(newRS *apps.ReplicaSet, d *apps.Deployment) (bool, error) {
-	scaled, _, err := scaleReplicaSet(newRS, replicasOf(d))
+func reconcileNewReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, newRS *apps.ReplicaSet, d *apps.Deployment) (bool, error) {
+	scaled, _, err := scaleReplicaSet(ctx, kubeClient, newRS, replicasOf(d))
 	return scaled, err
 }
 
 // reconcileOldReplicaSets scales every old ReplicaSet down to zero.
-func reconcileOldReplicaSets(oldRSs []*apps.ReplicaSet) (bool, error) {
+func reconcileOldReplicaSets(ctx context.Context, kubeClient *clientset.Clientset, oldRSs []*apps.ReplicaSet) (bool, error) {
 	scaledDown := false
 	for _, rs := range oldRSs {
-		scaled, _, err := scaleReplicaSet(rs, 0)
+		scaled, _, err := scaleReplicaSet(ctx, kubeClient, rs, 0)
 		if err != nil {
 			return scaledDown, err
 		}
@@ -173,26 +176,26 @@ func reconcileOldReplicaSets(oldRSs []*apps.ReplicaSet) (bool, error) {
 }
 
 // rollout performs one reconciliation step of a rollout.
-func rollout(d *apps.Deployment, rsList []*apps.ReplicaSet) error {
+func rollout(ctx context.Context, kubeClient *clientset.Clientset, rsLister appslisters.ReplicaSetLister, d *apps.Deployment, rsList []*apps.ReplicaSet) error {
 	oldRSs := findOldReplicaSets(d, rsList)
-	newRS, err := getNewReplicaSet(d, rsList)
+	newRS, err := getNewReplicaSet(ctx, kubeClient, rsLister, d, rsList)
 	if err != nil {
 		return err
 	}
 
-	_, err = reconcileNewReplicaSet(newRS, d)
+	_, err = reconcileNewReplicaSet(ctx, kubeClient, newRS, d)
 	if err != nil {
 		return err
 	}
 
-	_, err = reconcileOldReplicaSets(oldRSs)
+	_, err = reconcileOldReplicaSets(ctx, kubeClient, oldRSs)
 	return err
 }
 
 // filterReplicaSetsByOwner returns the ReplicaSets in the deployment's namespace
 // whose controller reference points at the deployment.
-func filterReplicaSetsByOwner(d *apps.Deployment) ([]*apps.ReplicaSet, error) {
-	all, err := apimodel.ModelState.ReplicaSetList(d.Namespace, labels.Everything())
+func filterReplicaSetsByOwner(rsLister appslisters.ReplicaSetLister, d *apps.Deployment) ([]*apps.ReplicaSet, error) {
+	all, err := rsLister.ReplicaSets(d.Namespace).List(labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -206,8 +209,8 @@ func filterReplicaSetsByOwner(d *apps.Deployment) ([]*apps.ReplicaSet, error) {
 	return result, nil
 }
 
-func syncDeployment(namespace, name string) error {
-	d, err := apimodel.ModelState.DeploymentGet(namespace, name)
+func syncDeployment(ctx context.Context, kubeClient *clientset.Clientset, dLister appslisters.DeploymentLister, rsLister appslisters.ReplicaSetLister, namespace, name string) error {
+	d, err := dLister.Deployments(namespace).Get(name)
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -215,7 +218,7 @@ func syncDeployment(namespace, name string) error {
 		return err
 	}
 
-	rsList, err := filterReplicaSetsByOwner(d)
+	rsList, err := filterReplicaSetsByOwner(rsLister, d)
 	if err != nil {
 		return err
 	}
@@ -224,5 +227,5 @@ func syncDeployment(namespace, name string) error {
 		return nil
 	}
 
-	return rollout(d, rsList)
+	return rollout(ctx, kubeClient, rsLister, d, rsList)
 }

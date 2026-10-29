@@ -9,6 +9,9 @@ From New.proof.k8s_io.kubernetes.pkg Require Export controller_init.
 From New.proof.k8s_io.kubernetes.pkg.controller.deployment Require Export util_init.
 From New.proof.k8s_io.kubernetes.pkg.util Require Export labels_init.
 From New.proof.kubernetes_model Require Export apimodel_init.
+From New.proof Require Export context.
+From New.proof.k8s_io.client_go Require Export kubernetes_init.
+From New.proof.k8s_io.client_go.listers.apps Require Export v1_init.
 Require Export New.generatedproof.controllers.deployment.
 From New.proof Require Import proof_prelude.
 

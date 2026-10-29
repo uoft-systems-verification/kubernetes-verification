@@ -2,6 +2,7 @@
 Require Export New.proof.proof_prelude.
 Require Export New.manualproof.k8s_io.client_go.kubernetes.typed.core.v1.
 Require Export New.generatedproof.context.
+Require Export New.generatedproof.k8s_io.api.authentication.v1.
 Require Export New.generatedproof.k8s_io.api.core.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.types.
@@ -835,26 +836,6 @@ Proof. Admitted.
 End def.
 End PersistentVolumeClaimsGetter.
 
-Module PersistentVolumeClaimInterface.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance PersistentVolumeClaimInterface_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.PersistentVolumeClaimInterface.t). Admitted.
-
-#[global] Instance PersistentVolumeClaimInterface_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.PersistentVolumeClaimInterface.t) (v1.PersistentVolumeClaimInterfaceⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End PersistentVolumeClaimInterface.
-
 Module persistentVolumeClaims.
 Section def.
 
@@ -1295,26 +1276,6 @@ Proof. Admitted.
 
 End def.
 End ServiceAccountsGetter.
-
-Module ServiceAccountInterface.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance ServiceAccountInterface_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.ServiceAccountInterface.t). Admitted.
-
-#[global] Instance ServiceAccountInterface_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.ServiceAccountInterface.t) (v1.ServiceAccountInterfaceⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End ServiceAccountInterface.
 
 Module serviceAccounts.
 Section def.

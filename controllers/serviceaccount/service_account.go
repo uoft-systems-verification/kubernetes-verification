@@ -1,11 +1,13 @@
 package serviceaccount
 
 import (
-	"kubernetes_model/apimodel"
+	"context"
 
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clientset "k8s.io/client-go/kubernetes"
+	corelisters "k8s.io/client-go/listers/core/v1"
 )
 
 // A simplified serviceaccount controller. The following features are not included:
@@ -18,8 +20,8 @@ var serviceAccountsToEnsure = []v1.ServiceAccount{
 }
 
 // syncNamespace ensures that an active namespace has each configured ServiceAccount.
-func syncNamespace(key string) error {
-	namespace, err := apimodel.ModelState.NamespaceGet(key)
+func syncNamespace(ctx context.Context, kubeClient *clientset.Clientset, nsLister corelisters.NamespaceLister, saLister corelisters.ServiceAccountLister, key string) error {
+	namespace, err := nsLister.Get(key)
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -31,7 +33,7 @@ func syncNamespace(key string) error {
 	}
 
 	for _, serviceAccount := range serviceAccountsToEnsure {
-		_, err := apimodel.ModelState.ServiceAccountGet(namespace.Name, serviceAccount.Name)
+		_, err := saLister.ServiceAccounts(namespace.Name).Get(serviceAccount.Name)
 		if err == nil {
 			continue
 		}
@@ -40,7 +42,7 @@ func syncNamespace(key string) error {
 		}
 
 		serviceAccount.Namespace = namespace.Name
-		_, err = apimodel.ModelState.ServiceAccountCreate(namespace.Name, &serviceAccount)
+		_, err = kubeClient.CoreV1().ServiceAccounts(namespace.Name).Create(ctx, &serviceAccount, metav1.CreateOptions{})
 		if apierrors.IsAlreadyExists(err) {
 			continue
 		}

@@ -1,4 +1,8 @@
 translate = [
+    "DeploymentLister",
+    "DeploymentNamespaceLister",
+    "StatefulSetLister",
+    "StatefulSetNamespaceLister",
     "ReplicaSetLister",
     "ReplicaSetNamespaceLister",
 ]
@@ -10,5 +14,7 @@ imports = [
 ]
 
 trusted = [
+    "deploymentLister.Deployments",
     "replicaSetLister.ReplicaSets",
+    "statefulSetLister.StatefulSets",
 ]

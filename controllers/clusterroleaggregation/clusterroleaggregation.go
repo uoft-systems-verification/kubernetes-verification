@@ -1,29 +1,30 @@
 package clusterroleaggregation
 
 import (
+	"context"
 	"sort"
-
-	"kubernetes_model/apimodel"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clientset "k8s.io/client-go/kubernetes"
+	rbaclisters "k8s.io/client-go/listers/rbac/v1"
 )
 
-	// A simplified clusterroleaggregation controller. The following features are not included:
-	// * informer event handling and workqueue scheduling
-	// * cache-key parsing and controller worker lifecycle
-	// * real API-server apply/patch machinery
-	//
-	// A sync operates directly on apimodel.ModelState. The core aggregation semantics are
-	// preserved: selectors are processed in order, matching ClusterRoles are sorted by name
-	// within each selector, the aggregating ClusterRole itself is excluded, duplicate
-	// PolicyRules are removed, and the ClusterRole is updated only when its rules differ
-	// from the desired rules.
+// A simplified clusterroleaggregation controller. The following features are not included:
+// * informer event handling and workqueue scheduling
+// * cache-key parsing and controller worker lifecycle
+// * server-side apply (writes use upstream's Update fallback)
+//
+// Reads come from the ClusterRole lister and writes go through client-go.
+// Selectors are processed in order, matching ClusterRoles are sorted by name
+// within each selector, the aggregating ClusterRole itself is excluded, duplicate
+// PolicyRules are removed, and the ClusterRole is updated only when its rules differ
+// from the desired rules.
 
-func syncClusterRole(name string) error {
-	sharedClusterRole, err := apimodel.ModelState.ClusterRoleGet(name)
+func syncClusterRole(ctx context.Context, kubeClient *clientset.Clientset, clusterRoleLister rbaclisters.ClusterRoleLister, name string) error {
+	sharedClusterRole, err := clusterRoleLister.Get(name)
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -42,7 +43,7 @@ func syncClusterRole(name string) error {
 		if err != nil {
 			return err
 		}
-		clusterRoles, err := apimodel.ModelState.ClusterRoleList(runtimeLabelSelector)
+		clusterRoles, err := clusterRoleLister.List(runtimeLabelSelector)
 		if err != nil {
 			return err
 		}
@@ -68,7 +69,7 @@ func syncClusterRole(name string) error {
 	updated := sharedClusterRole.DeepCopy()
 	updated.Rules = newPolicyRules
 
-	_, err = apimodel.ModelState.ClusterRoleUpdate(updated)
+	_, err = kubeClient.RbacV1().ClusterRoles().Update(ctx, updated, metav1.UpdateOptions{})
 	return err
 }
 

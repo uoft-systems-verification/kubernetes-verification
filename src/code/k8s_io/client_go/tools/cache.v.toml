@@ -1,3 +1,5 @@
-translate = ["!*"]
+translate = ["Indexer"]
 
 imports = ["!*"]
+
+trusted = ["cache.ByIndex"]

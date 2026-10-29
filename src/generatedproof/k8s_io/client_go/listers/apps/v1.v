@@ -210,26 +210,6 @@ Proof. Admitted.
 End def.
 End DaemonSetNamespaceListerExpansion.
 
-Module DeploymentLister.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance DeploymentLister_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.DeploymentLister.t). Admitted.
-
-#[global] Instance DeploymentLister_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.DeploymentLister.t) (v1.DeploymentListerⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End DeploymentLister.
-
 Module deploymentLister.
 Section def.
 
@@ -249,26 +229,6 @@ Proof. Admitted.
 
 End def.
 End deploymentLister.
-
-Module DeploymentNamespaceLister.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance DeploymentNamespaceLister_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.DeploymentNamespaceLister.t). Admitted.
-
-#[global] Instance DeploymentNamespaceLister_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.DeploymentNamespaceLister.t) (v1.DeploymentNamespaceListerⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End DeploymentNamespaceLister.
 
 Module deploymentNamespaceLister.
 Section def.
@@ -450,26 +410,6 @@ Proof. Admitted.
 End def.
 End ReplicaSetNamespaceListerExpansion.
 
-Module StatefulSetLister.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance StatefulSetLister_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.StatefulSetLister.t). Admitted.
-
-#[global] Instance StatefulSetLister_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.StatefulSetLister.t) (v1.StatefulSetListerⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End StatefulSetLister.
-
 Module statefulSetLister.
 Section def.
 
@@ -489,26 +429,6 @@ Proof. Admitted.
 
 End def.
 End statefulSetLister.
-
-Module StatefulSetNamespaceLister.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : v1.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance StatefulSetNamespaceLister_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (v1.StatefulSetNamespaceLister.t). Admitted.
-
-#[global] Instance StatefulSetNamespaceLister_into_val_typed
-   :
-  IntoValTypedUnderlying (v1.StatefulSetNamespaceLister.t) (v1.StatefulSetNamespaceListerⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End StatefulSetNamespaceLister.
 
 Module statefulSetNamespaceLister.
 Section def.

@@ -1,6 +1,7 @@
 From New.golang Require Import defn.
 Require Export New.code.k8s_io.client_go.kubernetes.typed.apps.v1.
 Require Export New.code.k8s_io.client_go.kubernetes.typed.core.v1.
+Require Export New.code.k8s_io.client_go.kubernetes.typed.rbac.v1.
 Module apps_v1 := code.k8s_io.client_go.kubernetes.typed.apps.v1.v1.
 Module core_v1 := code.k8s_io.client_go.kubernetes.typed.core.v1.v1.
 
@@ -40,6 +41,12 @@ Definition Clientset__CoreV1ⁱᵐᵖˡ : val :=
   λ: "c" <>,
     exception_do (let: "c" := (GoAlloc (go.PointerType clientsetType) "c") in
     return: (#(interface.mk_ok (go.PointerType coreV1ClientType) (#null)))).
+
+(* As for CoreV1 and AppsV1, the clientset receiver is abstract. *)
+Definition Clientset__RbacV1ⁱᵐᵖˡ : val :=
+  λ: "c" <>,
+    #(interface.mk_ok
+      (go.PointerType code.k8s_io.client_go.kubernetes.typed.rbac.v1.v1.RbacV1Client) #null).
 
 End code.
 End kubernetes.

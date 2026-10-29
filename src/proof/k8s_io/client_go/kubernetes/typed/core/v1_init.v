@@ -1,3 +1,4 @@
+From New.proof.k8s_io.api.authentication Require Export v1_init.
 From New.proof Require Export context.
 From New.proof.k8s_io.api.core Require Export v1_init.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.

@@ -1,3 +1,6 @@
+From New.proof.k8s_io.api.core Require Export v1_init.
+From New.proof.k8s_io.apimachinery.pkg Require Export labels_init.
+From New.proof.k8s_io.client_go Require Export listers_init.
 Require Export New.generatedproof.k8s_io.client_go.listers.core.v1.
 From New.proof Require Import proof_prelude.
 

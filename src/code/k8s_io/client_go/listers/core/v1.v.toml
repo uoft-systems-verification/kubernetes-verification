@@ -1,3 +1,22 @@
-translate = ["!*"]
+translate = [
+    "NamespaceLister",
+    "ServiceAccountLister",
+    "ServiceAccountNamespaceLister",
+    "PodLister",
+    "PodNamespaceLister",
+    "PersistentVolumeClaimLister",
+    "PersistentVolumeClaimNamespaceLister",
+]
 
-imports = ["!*"]
+imports = [
+    "k8s.io/api/core/v1",
+    "k8s.io/apimachinery/pkg/labels",
+    "k8s.io/client-go/listers",
+]
+
+trusted = [
+    "NewNamespaceLister",
+    "serviceAccountLister.ServiceAccounts",
+    "podLister.Pods",
+    "persistentVolumeClaimLister.PersistentVolumeClaims",
+]

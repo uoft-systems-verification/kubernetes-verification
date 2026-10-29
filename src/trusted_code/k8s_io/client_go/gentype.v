@@ -3,9 +3,11 @@ Require Import New.code.context.
 Require Import New.code.kubernetes_model.apimodel.
 Require Import New.code.k8s_io.api.apps.v1.
 Require Import New.code.k8s_io.api.core.v1.
+Require Import New.code.k8s_io.api.rbac.v1.
 Require Import New.code.k8s_io.apimachinery.pkg.apis.meta.v1.
 Module api_apps_v1 := code.k8s_io.api.apps.v1.v1.
 Module api_core_v1 := code.k8s_io.api.core.v1.v1.
+Module api_rbac_v1 := code.k8s_io.api.rbac.v1.v1.
 Module meta_v1 := code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.
 
 Module gentype.
@@ -80,6 +82,9 @@ Definition Client__Getⁱᵐᵖˡ (T : go.type) : val :=
        case *appsv1.StatefulSet:
            created, err := apimodel.ModelState.StatefulSetCreate(c.namespace, typed)
            return any(created).(T), err
+       case *corev1.ServiceAccount:
+           created, err := apimodel.ModelState.ServiceAccountCreate(c.namespace, typed)
+           return any(created).(T), err
        default:
            panic("unsupported Kubernetes object type")
        }
@@ -106,6 +111,8 @@ Definition Client__Createⁱᵐᵖˡ (T : go.type) : val :=
     clientCreate T (go.PointerType api_core_v1.PersistentVolumeClaim) "PersistentVolumeClaimCreate"%go
   else if decide (T = go.PointerType api_apps_v1.StatefulSet) then
     clientCreate T (go.PointerType api_apps_v1.StatefulSet) "StatefulSetCreate"%go
+  else if decide (T = go.PointerType api_core_v1.ServiceAccount) then
+    clientCreate T (go.PointerType api_core_v1.ServiceAccount) "ServiceAccountCreate"%go
   else
     (λ: "c" "ctx" "obj" "opts", Panic "unsupported Kubernetes object type")%V.
 
@@ -178,6 +185,35 @@ Definition Client__UpdateStatusⁱᵐᵖˡ (T : go.type) : val :=
     clientCreate T (go.PointerType api_apps_v1.ReplicaSet) "ReplicaSetUpdateStatusTx"%go
   else
     (λ: "c" "ctx" "obj" "opts", Panic "unsupported Kubernetes object type for status update")%V.
+
+(* Preserve normal API Update semantics, including resource-version conflicts.
+   In particular, do not redirect a single HTTP Update to PodUpdateTx or
+   ReplicaSetUpdateTx, which refresh resource versions and hide conflicts. *)
+Definition Client__Updateⁱᵐᵖˡ (T : go.type) : val :=
+  if decide (T = go.PointerType api_core_v1.Pod) then
+    clientCreate T (go.PointerType api_core_v1.Pod) "PodUpdate"%go
+  else if decide (T = go.PointerType api_apps_v1.ReplicaSet) then
+    clientCreate T (go.PointerType api_apps_v1.ReplicaSet) "ReplicaSetUpdate"%go
+  else if decide (T = go.PointerType api_rbac_v1.ClusterRole) then
+    (λ: "c" "ctx" "obj" "opts",
+      (MethodResolve (go.PointerType apimodel.State) "ClusterRoleUpdate"%go
+        (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "obj")%V
+  else
+    (λ: "c" "ctx" "obj" "opts", Panic "unsupported Kubernetes object type for update")%V.
+
+(* PodInterface.Patch forwards the patch type, bytes, and subresources exactly.
+   PatchOptions are ignored, as elsewhere in this model (the controller uses
+   empty options). The model implements strategic-merge and UID validation. *)
+Definition Client__Patchⁱᵐᵖˡ (T : go.type) : val :=
+  if decide (T = go.PointerType api_core_v1.Pod) then
+    (λ: "c" "ctx" "name" "pt" "data" "opts" "subresources",
+      let: "namespace" := ![go.string] (StructFieldRef (clientType T) "namespace"%go "c") in
+      (MethodResolve (go.PointerType apimodel.State) "PodPatch"%go
+        (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #())))
+        "namespace" "name" "pt" "data" "subresources")%V
+  else
+    (λ: "c" "ctx" "name" "pt" "data" "opts" "subresources",
+      Panic "unsupported Kubernetes object type for patch")%V.
 
 End code.
 End gentype.

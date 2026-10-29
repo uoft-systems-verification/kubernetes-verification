@@ -1,11 +1,10 @@
 package common
 
 import (
-	"kubernetes_model/apimodel"
-
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/kubernetes/pkg/controller"
 )
 
@@ -25,10 +24,12 @@ func FilterActivePods(pods []*v1.Pod) []*v1.Pod {
 	return result
 }
 
-func FilterPodsByOwner(owner *metav1.ObjectMeta, ownerKind string) ([]*v1.Pod, error) {
+// FilterPodsByOwner reads controlled Pods from the informer index. Orphans are
+// omitted because adoption is outside the simplified controllers' scope.
+func FilterPodsByOwner(podIndexer cache.Indexer, owner *metav1.ObjectMeta, ownerKind string) ([]*v1.Pod, error) {
 	result := []*v1.Pod{}
 	key := controller.PodControllerIndexKey(owner.Namespace, &metav1.OwnerReference{Name: owner.Name, Kind: ownerKind, UID: owner.UID})
-	pods, err := apimodel.ModelState.ByIndex("Pod", controller.PodControllerIndex, key)
+	pods, err := podIndexer.ByIndex(controller.PodControllerIndex, key)
 	if err != nil {
 		return nil, err
 	}
