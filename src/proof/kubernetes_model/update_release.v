@@ -17,7 +17,8 @@ Local Set Default Proof Using "All".
    framed around this contract. The parent relation and [own_children_frag]
    are updated atomically with the object. A released object becomes a living
    orphan, so the whole fragment of its orphan bucket ([own_orphans_frag_of])
-   gains its key; the released object's metadata fragment is returned. *)
+   gains its key; the released object's metadata and spec fragments are
+   returned. *)
 Lemma wp_State__update_release_au γ l kind namespace i kobj parent_key parent_uid dq :
   ∀ Φ,
   is_pkg_init apimodel ∗
@@ -40,7 +41,8 @@ Lemma wp_State__update_release_au γ l kind namespace i kobj parent_key parent_u
           "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
           "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
           "Hown_orphans_frag" ∷ own_orphans_frag_of γ key (DfracOwn 1) (orphans ∪ {[key]}) ∗
-          "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj'))
+          "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
+          "Hown_spec_frag" ∷ own_spec_frag γ key uid dq old_spec)
         ={∅, ⊤}=∗ ▷ Φ (#(interface.ok i'), #interface.nil)%V) ∧
       (∀ err,
         ( "%Hconflict" ∷ ⌜ conflict_error err ⌝ ∗
@@ -664,10 +666,9 @@ Proof.
     "Hinv_Hown_orphans Hown_orphans_frag")
     as "[Hinv_Hown_orphans Hown_orphans_frag]".
   { split; [exact Hnew_deletion_timestamp_none|exact Hnew_parent_none]. }
-  iClear "Hown_spec_frag".
   iDestruct "Hclose" as "[Hclose_success _]".
   iMod ("Hclose_success" $! i1' new_kobj with
-    "[Hdeepown_i1' Hown_children_frag Hown_orphans_frag Hown_meta_frag]") as "HΦ".
+    "[Hdeepown_i1' Hown_children_frag Hown_orphans_frag Hown_meta_frag Hown_spec_frag]") as "HΦ".
   { iSplit.
     { iPureIntro. exact Hvalid_new. }
     iSplit; first (iPureIntro; exact Hupdated_new).
@@ -675,7 +676,7 @@ Proof.
     { iPureIntro. unfold new_kobj.
       rewrite KObjectV.spec_update_objectmeta.
       rewrite Hspec_updated_old Hstored_spec_eq. done. }
-    iFrame "Hdeepown_i1' Hown_children_frag Hown_orphans_frag Hown_meta_frag". }
+    iFrame "Hdeepown_i1' Hown_children_frag Hown_orphans_frag Hown_meta_frag Hown_spec_frag". }
   iModIntro.
   iAssert (([∗ map] i; obj ∈
       <[key:=interface.ok i1]> phys_state;
