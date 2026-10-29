@@ -1,475 +1,147 @@
 From New.proof.controllers.statefulset Require Export statefulset_init.
+From New.object_specs Require Export controllerrevision.
 
-(* Pure desired-state definitions used by all three top-level specifications.
-   Apart from package initialization, this file imports no other statefulset
-   proof, so clients can depend on the specifications without their proofs. *)
-
-Definition pvc_claim_template_names (sts : StatefulSetV.t) : list go_string :=
-  (λ claim_template,
-    claim_template.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.Name'))
-  <$> StatefulSetSpecV.volume_claim_templates_list
-    sts.(StatefulSetV.Spec').
-
-Definition desired_pvc_name set_name claim_template_name ordinal : go_string :=
-  claim_template_name ++ "-"%go ++ set_name ++ "-"%go ++ decimal_string ordinal.
-
-Definition desired_pvc_key sts claim_template_name ordinal : KKey.t := {|
-  KKey.Kind' := PersistentVolumeClaimV.kind;
-  KKey.Namespace' := sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace');
-  KKey.Name' := desired_pvc_name
-    sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') claim_template_name ordinal;
-|}.
-
-Definition desired_pvc_key_candidates sts : list KKey.t :=
-  concat (
-    (λ ordinal,
-      (λ claim_template_name, desired_pvc_key sts claim_template_name ordinal)
-      <$> pvc_claim_template_names sts)
-    <$> seq 0
-      (match sts.(StatefulSetV.Spec').(StatefulSetSpecV.Replicas') with
-       | Some replicas => sint.nat replicas
-       | None => 1%nat
-       end)
-  ).
-
-Definition desired_pvc_keys sts : list KKey.t :=
-  elements (list_to_set (C:=gset KKey.t) (desired_pvc_key_candidates sts)).
-
-Definition new_persistent_volume_claim_labels
-    (set : StatefulSetV.t) (claim_template : PersistentVolumeClaimV.t) :
-    gmap go_string go_string :=
-  let claim_labels :=
-    default ∅
-      claim_template.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.Labels') in
-  let selector_labels :=
-    match set.(StatefulSetV.Spec').(StatefulSetSpecV.Selector') with
-    | Some selector =>
-        default ∅ selector.(LabelSelectorV.MatchLabels')
-    | None => ∅
-    end in
-  selector_labels ∪ claim_labels.
-
-Definition new_persistent_volume_claim
-    (set : StatefulSetV.t) (claim_template : PersistentVolumeClaimV.t)
-    (ordinal : nat) : PersistentVolumeClaimV.t :=
-  let object_meta :=
-    claim_template.(PersistentVolumeClaimV.ObjectMeta')
-      <| ObjectMetaV.Name' :=
-          desired_pvc_name
-            set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
-            claim_template.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.Name')
-            ordinal |>
-      <| ObjectMetaV.Namespace' :=
-          set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') |>
-      <| ObjectMetaV.OwnerReferences' := None |>
-      <| ObjectMetaV.Labels' :=
-          Some (new_persistent_volume_claim_labels set claim_template) |> in
-  claim_template <| PersistentVolumeClaimV.ObjectMeta' := object_meta |>.
+(* Membership uses canonical names, as in upstream PR #141094: web-1 is a
+   member, web-01 is not. A desired Pod matches by identity and revision label;
+   its live PodSpec may differ from the template because of API defaulting.
+   This file contains the contracts and their definitions, without importing
+   StatefulSet program proofs. Construction and supporting lemmas live in common.v. *)
 
 Definition statefulset_replicas (sts : StatefulSetV.t) : nat :=
   match sts.(StatefulSetV.Spec').(StatefulSetSpecV.Replicas') with
-  | Some replicas => sint.nat replicas
-  | None => 1%nat
+  | Some replicas => sint.nat replicas | None => 1%nat
   end.
-
-Definition desired_ordinals (sts : StatefulSetV.t) : list nat :=
-  seq 0 (statefulset_replicas sts).
-
-Definition desired_pod_name (set_name : go_string) (ordinal : nat) : go_string :=
+Definition desired_ordinals sts : list nat := seq 0 (statefulset_replicas sts).
+Definition desired_pod_name (set_name : go_string) ordinal : go_string :=
   set_name ++ "-"%go ++ decimal_string ordinal.
+Definition desired_pod_key sts ordinal : KKey.t :=
+  KKey.mk PodV.kind (desired_pod_name sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal)
+    sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace').
+Definition desired_pod_keys sts : list KKey.t := desired_pod_key sts <$> desired_ordinals sts.
+Definition pvc_claim_template_names (sts : StatefulSetV.t) : list go_string :=
+  (λ claim, claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.Name')) <$>
+    StatefulSetSpecV.volume_claim_templates_list sts.(StatefulSetV.Spec').
+Definition desired_pvc_name set_name claim_name ordinal : go_string :=
+  claim_name ++ "-"%go ++ desired_pod_name set_name ordinal.
+Definition desired_pvc_key sts claim_name ordinal : KKey.t :=
+  KKey.mk PersistentVolumeClaimV.kind
+    (desired_pvc_name sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') claim_name ordinal)
+    sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace').
+Definition desired_pvc_key_candidates sts : list KKey.t :=
+  concat ((λ ordinal, (λ claim, desired_pvc_key sts claim ordinal) <$> pvc_claim_template_names sts)
+    <$> desired_ordinals sts).
+Definition desired_pvc_keys sts : list KKey.t :=
+  elements (list_to_set (C:=gset KKey.t) (desired_pvc_key_candidates sts)).
 
-Definition desired_pod_key sts ordinal : KKey.t := {|
-  KKey.Kind' := PodV.kind;
-  KKey.Namespace' := sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace');
-  KKey.Name' := desired_pod_name
-    sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal;
-|}.
-
-Definition desired_pod_keys (sts : StatefulSetV.t) : list KKey.t :=
-  desired_pod_key sts <$> desired_ordinals sts.
-
-Definition pod_key_is_desired (sts : StatefulSetV.t) (key : KKey.t) : Prop :=
-  key ∈ desired_pod_keys sts.
-
-#[global] Instance pod_key_is_desired_decision sts key :
-    Decision (pod_key_is_desired sts key).
-Proof. unfold pod_key_is_desired. apply _. Defined.
-
-Definition member_name_prefix (set_name : go_string) : go_string :=
-  set_name ++ "-"%go.
-
-Definition parse_member_name (set_name pod_name : go_string) : option nat :=
-  match New.proof.string.prefix_suffix.strip_prefix (member_name_prefix set_name)
-      pod_name with
-  | Some suffix => parse_canonical_decimal_string suffix
-  | None => None
-  end.
-
-Lemma parse_member_name_sound set_name pod_name ordinal :
-  parse_member_name set_name pod_name = Some ordinal →
-  pod_name = desired_pod_name set_name ordinal.
-Proof.
-  unfold parse_member_name.
-  destruct (New.proof.string.prefix_suffix.strip_prefix
-    (member_name_prefix set_name) pod_name) as [suffix|] eqn:Hstrip; [|done].
-  intros Hparse.
-  apply parse_canonical_decimal_string_sound in Hparse.
-  apply New.proof.string.prefix_suffix.strip_prefix_correct in Hstrip.
-  unfold desired_pod_name, member_name_prefix in *.
-  rewrite Hstrip -Hparse.
-  by rewrite List.app_assoc.
-Qed.
-
-Lemma parse_member_name_complete set_name pod_name ordinal :
-  pod_name = desired_pod_name set_name ordinal →
-  parse_member_name set_name pod_name = Some ordinal.
-Proof.
-  intros Hname.
-  unfold parse_member_name.
-  rewrite Hname.
-  unfold desired_pod_name, member_name_prefix.
-  rewrite List.app_assoc.
-  rewrite New.proof.string.prefix_suffix.strip_prefix_complete.
-  apply parse_canonical_decimal_string_decimal_string.
-Qed.
-
-Definition pod_has_int32_member_name (set_name pod_name : go_string) : Prop :=
-  ∃ ordinal : nat,
-    (ordinal <= go_int32_max_nat)%nat ∧
-    pod_name = desired_pod_name set_name ordinal.
-
-#[global] Instance pod_has_int32_member_name_decision set_name pod_name :
-    Decision (pod_has_int32_member_name set_name pod_name).
-Proof.
-  unfold pod_has_int32_member_name.
-  destruct (parse_member_name set_name pod_name) as [ordinal|] eqn:Hparse.
-  - destruct (decide (ordinal <= go_int32_max_nat)%nat) as
-      [Hbound|Hoverflow].
-    + left. exists ordinal. split; [done|].
-      by apply parse_member_name_sound.
-    + right. intros (ordinal' & Hbound & Hname).
-      apply parse_member_name_complete in Hname.
-      rewrite Hparse in Hname. simplify_eq/=. done.
-  - right. intros (ordinal & _ & Hname).
-    apply parse_member_name_complete in Hname. congruence.
-Defined.
-
-Definition pending_pod sts (pod : PodV.t) : Prop :=
-  ¬ is_pod_alive pod ∧
-  pod_has_int32_member_name
-    sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
-    pod.(PodV.ObjectMeta').(ObjectMetaV.Name').
-
-#[global] Instance pending_pod_decision sts pod :
-    Decision (pending_pod sts pod).
-Proof. unfold pending_pod, is_pod_alive. apply _. Defined.
-
-Definition pod_ordinal_suffix (pod_name : go_string) : option go_string :=
-  match list_find (λ b, b = byte_dash) (reverse pod_name) with
-  | Some (idx, _) => Some (reverse (take idx (reverse pod_name)))
-  | None => None
-  end.
-
-Definition parse_pod_ordinal (pod_name : go_string) : option nat :=
-  suffix ← pod_ordinal_suffix pod_name;
-  parse_decimal_string suffix.
-
-Definition pod_identity_matches (sts : StatefulSetV.t) (pod : PodV.t) : Prop :=
-  match parse_member_name
-      sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
-      pod.(PodV.ObjectMeta').(ObjectMetaV.Name'),
-    pod.(PodV.ObjectMeta').(ObjectMetaV.Labels') with
-  | Some ordinal, Some labels =>
-      (ordinal <= go_int32_max_nat)%nat ∧
-      pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace') =
-        sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∧
-      labels !! statefulset_pod_name_label =
-        Some pod.(PodV.ObjectMeta').(ObjectMetaV.Name') ∧
-      labels !! pod_index_label = Some (decimal_string ordinal)
-  | _, _ => False
-  end.
-
-#[global] Instance pod_identity_matches_decision sts pod :
-    Decision (pod_identity_matches sts pod).
-Proof.
-  unfold pod_identity_matches.
-  destruct parse_member_name,
-    (pod.(PodV.ObjectMeta').(ObjectMetaV.Labels')); apply _.
-Defined.
-
-Definition pod_volumes_map_insert
-    (volumes : gmap go_string VolumeV.t) (volume : VolumeV.t) :
-    gmap go_string VolumeV.t :=
-  <[volume.(VolumeV.Name') := volume]> volumes.
-
-Definition pod_volumes_map_of_list (volumes : list VolumeV.t) :
-    gmap go_string VolumeV.t :=
-  fold_left pod_volumes_map_insert volumes ∅.
-
-Definition pod_volume_claim_matches
-    (volumes : gmap go_string VolumeV.t) (set_name : go_string)
-    (ordinal : nat) (claim_template_name : go_string) : Prop :=
-  match volumes !! claim_template_name with
-  | Some volume =>
-      match volume.(VolumeV.VolumeSource').(
-        VolumeSourceV.PersistentVolumeClaim') with
-      | Some pvc =>
-          pvc.(v1.PersistentVolumeClaimVolumeSource.ClaimName') =
-            desired_pvc_name set_name claim_template_name ordinal
-      | None => False
-      end
+(* TODO: connect these pure codec/defaulting/hash operations to library proofs.
+   The semantic matcher includes the enabled feature gate and re-encoding.
+   Payload equality is checked independently of the name hash; no injectivity
+   assumption about the hash or serialization is made. *)
+Parameter revision_template_patch : PodTemplateSpecV.t → list w8.
+Parameter revision_template_payload_matches : PodTemplateSpecV.t → list w8 → bool.
+Parameter revision_candidate_name : go_string → list w8 → w32 → go_string.
+Definition revision_key sts name : KKey.t :=
+  KKey.mk ControllerRevisionV.kind name sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace').
+Definition revision_exact_payload sts (revision : ControllerRevisionV.t) : Prop :=
+  revision.(ControllerRevisionV.Data').(RawExtensionV.Object') = interface.nil ∧
+  revision.(ControllerRevisionV.Data').(RawExtensionV.Raw') =
+    Some (revision_template_patch sts.(StatefulSetV.Spec').(StatefulSetSpecV.Template')).
+Definition revision_represents_desired sts (revision : ControllerRevisionV.t) : Prop :=
+  revision.(ControllerRevisionV.Data').(RawExtensionV.Object') = interface.nil ∧
+  match revision.(ControllerRevisionV.Data').(RawExtensionV.Raw') with
+  | Some raw => raw = revision_template_patch sts.(StatefulSetV.Spec').(StatefulSetSpecV.Template') ∨
+      revision_template_payload_matches sts.(StatefulSetV.Spec').(StatefulSetSpecV.Template') raw = true
   | None => False
   end.
-
-#[global] Instance pod_volume_claim_matches_decision volumes set_name ordinal
-    claim_template_name :
-    Decision (pod_volume_claim_matches volumes set_name ordinal
-      claim_template_name).
+#[global] Instance revision_represents_desired_decision sts revision :
+    Decision (revision_represents_desired sts revision).
 Proof.
-  unfold pod_volume_claim_matches.
-  destruct (volumes !! claim_template_name) as [volume|]; [|apply _].
-  destruct volume.(VolumeV.VolumeSource').(
-    VolumeSourceV.PersistentVolumeClaim'); apply _.
+  unfold revision_represents_desired.
+  destruct revision.(ControllerRevisionV.Data').(RawExtensionV.Raw'); apply _.
 Defined.
+Definition statefulset_revision_label : go_string := "controller-revision-hash"%go.
+Definition pod_revision (pod : PodV.t) : go_string :=
+  default ""%go ((default ∅ pod.(PodV.ObjectMeta').(ObjectMetaV.Labels')) !! statefulset_revision_label).
 
-Definition pod_storage_matches (set : StatefulSetV.t) (pod : PodV.t) : Prop :=
-  match parse_pod_ordinal pod.(PodV.ObjectMeta').(ObjectMetaV.Name') with
-  | Some ordinal =>
-      (ordinal <= go_int32_max_nat)%nat ∧
-      Forall
-        (pod_volume_claim_matches
-          (pod_volumes_map_of_list
-            (PodSpecV.volumes_list pod.(PodV.Spec')))
-          set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal)
-        (pvc_claim_template_names set)
-  | None => False
-  end.
+(* Enumerate desired ordinals rather than specifying a parser or reasoning
+   separately about malformed names and out-of-range members. *)
+Definition revision_pod_matches sts revision_name (pod : PodV.t) : bool :=
+  existsb (λ ordinal, bool_decide (
+    PodV.key pod = desired_pod_key sts ordinal ∧
+    (default ∅ pod.(PodV.ObjectMeta').(ObjectMetaV.Labels')) !! statefulset_pod_name_label =
+      Some pod.(PodV.ObjectMeta').(ObjectMetaV.Name') ∧
+    (default ∅ pod.(PodV.ObjectMeta').(ObjectMetaV.Labels')) !! pod_index_label = Some (decimal_string ordinal) ∧
+    pod_revision pod = revision_name)) (desired_ordinals sts).
 
-#[global] Instance pod_storage_matches_decision set pod :
-    Decision (pod_storage_matches set pod).
-Proof.
-  unfold pod_storage_matches.
-  destruct (parse_pod_ordinal
-    pod.(PodV.ObjectMeta').(ObjectMetaV.Name')); apply _.
-Defined.
-
-Definition storage_claim_volume (set : StatefulSetV.t) (ordinal : nat)
-    (claim_template_name : go_string) : VolumeV.t :=
-  {| VolumeV.Name' := claim_template_name;
-     VolumeV.VolumeSource' :=
-       (VolumeSourceV.zero <| VolumeSourceV.PersistentVolumeClaim' :=
-            Some
-              {| v1.PersistentVolumeClaimVolumeSource.ClaimName' :=
-                   desired_pvc_name
-                     set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
-                     claim_template_name ordinal;
-                 v1.PersistentVolumeClaimVolumeSource.ReadOnly' := false |}
-       |>)
-  |}.
-
-Definition init_storage_volumes (set : StatefulSetV.t) (pod : PodV.t)
-    (ordinal : nat) (claim_template_names : list go_string) :
-    list VolumeV.t :=
-  (storage_claim_volume set ordinal <$> claim_template_names) ++
-  filter
-    (λ volume, volume.(VolumeV.Name') ∉ claim_template_names)
-    (PodSpecV.volumes_list pod.(PodV.Spec')).
-
-(* The map iteration order is exposed as [claim_template_names].  Its set is
-   fixed by the StatefulSet, while its order is intentionally unspecified by
-   Go.  Existing Pod volumes controlled by a claim template are replaced;
-   all other volumes retain their original order. *)
-Definition init_storage (set : StatefulSetV.t) (pod : PodV.t)
-    (ordinal : nat) (claim_template_names : list go_string) : PodV.t :=
-  pod <| PodV.Spec' :=
-    pod.(PodV.Spec') <| PodSpecV.Volumes' :=
-      Some (init_storage_volumes set pod ordinal claim_template_names) |> |>.
-
-Definition without_statefulset_fields := PodAPI.without_managed.
-
-Definition desired_pod_labels (sts : StatefulSetV.t) (ordinal : nat) : PodAPI.string_map :=
-  let meta := sts.(StatefulSetV.Spec').(StatefulSetSpecV.Template').(PodTemplateSpecV.ObjectMeta') in
-  Some (<[pod_index_label := decimal_string ordinal]>
-    (<[statefulset_pod_name_label := desired_pod_name sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal]>
-      (default ∅ meta.(ObjectMetaV.Labels')))).
-
-Definition desired_pod_annotations (sts : StatefulSetV.t) : PodAPI.string_map :=
-  let meta := sts.(StatefulSetV.Spec').(StatefulSetSpecV.Template').(PodTemplateSpecV.ObjectMeta') in
-  Some (default ∅ meta.(ObjectMetaV.Annotations')).
-
-Definition desired_prepared_spec (sts : StatefulSetV.t) (pod_name : go_string) : PodSpecV.t :=
-  let ordinal := default 0%nat (parse_pod_ordinal pod_name) in
-  without_statefulset_fields (PodAPI.create_spec (desired_pod_labels sts ordinal)
-    (desired_pod_annotations sts)
-    (without_statefulset_fields sts.(StatefulSetV.Spec').(StatefulSetSpecV.Template').(PodTemplateSpecV.Spec'))).
-
-Definition pod_immutable_matches (sts : StatefulSetV.t) (pod : PodV.t) : Prop :=
-  pod.(PodV.Spec').(PodSpecV.Hostname') =
-    pod.(PodV.ObjectMeta').(ObjectMetaV.Name') ∧
-  pod.(PodV.Spec').(PodSpecV.Subdomain') =
-    sts.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') ∧
-  pod_storage_matches sts pod ∧
-  without_statefulset_fields pod.(PodV.Spec') =
-    desired_prepared_spec sts pod.(PodV.ObjectMeta').(ObjectMetaV.Name').
-
-#[global] Instance pod_immutable_matches_decision sts pod :
-    Decision (pod_immutable_matches sts pod).
-Proof.
-  unfold pod_immutable_matches, without_statefulset_fields.
-  destruct (decide
-    (pod.(PodV.Spec').(PodSpecV.Hostname') =
-      pod.(PodV.ObjectMeta').(ObjectMetaV.Name'))) as [Hhostname|Hhostname].
-  2: { right. intros (H & _). contradiction. }
-  destruct (decide
-    (pod.(PodV.Spec').(PodSpecV.Subdomain') =
-      sts.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName')))
-    as [Hsubdomain|Hsubdomain].
-  2: { right. intros (_ & H & _). contradiction. }
-  destruct (decide (pod_storage_matches sts pod)) as [Hstorage|Hstorage].
-  2: { right. intros (_ & _ & H & _). contradiction. }
-  destruct (decide (without_statefulset_fields pod.(PodV.Spec') =
-    desired_prepared_spec sts pod.(PodV.ObjectMeta').(ObjectMetaV.Name')))
-    as [Hrest|Hrest].
-  2: { right. intros (_ & _ & _ & H). contradiction. }
-  left. split_and!; done.
-Defined.
-
-Definition pod_match (sts : StatefulSetV.t) (pod : PodV.t) : Prop :=
-  pod_identity_matches sts pod ∧ pod_immutable_matches sts pod.
-
-(** A constructor produces a create request. API preparation has not yet
-    happened, so this deliberately differs from the stored-Pod invariant. *)
-Definition pod_creation_request_matches (sts : StatefulSetV.t) (pod : PodV.t) : Prop :=
-  pod_identity_matches sts pod ∧
-  pod.(PodV.Spec').(PodSpecV.Hostname') = pod.(PodV.ObjectMeta').(ObjectMetaV.Name') ∧
-  pod.(PodV.Spec').(PodSpecV.Subdomain') = sts.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') ∧
-  pod_storage_matches sts pod ∧
-  without_statefulset_fields pod.(PodV.Spec') =
-    without_statefulset_fields sts.(StatefulSetV.Spec').(StatefulSetSpecV.Template').(PodTemplateSpecV.Spec') ∧
-  ∃ ordinal,
-    pod.(PodV.ObjectMeta').(ObjectMetaV.Name') =
-      desired_pod_name sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal ∧
-    pod.(PodV.ObjectMeta').(ObjectMetaV.Labels') = desired_pod_labels sts ordinal ∧
-    pod.(PodV.ObjectMeta').(ObjectMetaV.Annotations') = desired_pod_annotations sts.
-
-Lemma create_volumes_map_fold volumes (initial : gmap go_string VolumeV.t) :
-  fold_left pod_volumes_map_insert (PodAPI.create_volume <$> volumes) (PodAPI.create_volume <$> initial) =
-  PodAPI.create_volume <$> fold_left pod_volumes_map_insert volumes initial.
-Proof.
-  revert initial. induction volumes as [|volume volumes IH]; intros initial; simpl; first done.
-  rewrite /pod_volumes_map_insert /= -fmap_insert. apply IH.
-Qed.
-
-Lemma create_volumes_map volumes :
-  pod_volumes_map_of_list (PodAPI.create_volume <$> volumes) =
-  PodAPI.create_volume <$> pod_volumes_map_of_list volumes.
-Proof.
-  unfold pod_volumes_map_of_list.
-  rewrite -(create_volumes_map_fold volumes ∅) fmap_empty. done.
-Qed.
-
-Lemma create_volume_claim_matches volumes set_name ordinal claim_name :
-  pod_volume_claim_matches (pod_volumes_map_of_list (PodAPI.create_volume <$> volumes))
-    set_name ordinal claim_name ↔
-  pod_volume_claim_matches (pod_volumes_map_of_list volumes) set_name ordinal claim_name.
-Proof.
-  rewrite create_volumes_map /pod_volume_claim_matches lookup_fmap.
-  destruct (pod_volumes_map_of_list volumes !! claim_name) as [volume|]; last done.
-  rewrite /PodAPI.create_volume /=. done.
-Qed.
-
-Lemma pod_storage_matches_prepared set pod :
-  pod_storage_matches set (pod <| PodV.Spec' := PodV.prepared_spec pod |>) ↔ pod_storage_matches set pod.
-Proof.
-  unfold pod_storage_matches. simpl.
-  destruct (parse_pod_ordinal pod.(PodV.ObjectMeta').(ObjectMetaV.Name')); last done.
-  rewrite /PodV.prepared_spec /PodAPI.create_spec /PodSpecV.volumes_list /=.
-  destruct pod.(PodV.Spec').(PodSpecV.Volumes') as [volumes|]; simpl; last done.
-  split; intros [Hbound Hclaims]; split; try exact Hbound.
-  - eapply Forall_impl; last exact Hclaims.
-    intros name Hclaim. by apply (proj1 (create_volume_claim_matches volumes _ _ _)).
-  - eapply Forall_impl; last exact Hclaims.
-    intros name Hclaim. by apply (proj2 (create_volume_claim_matches volumes _ _ _)).
-Qed.
-
-Definition stateful_pod_request_spec (sts : StatefulSetV.t) ordinal claim_names : PodSpecV.t :=
-  let spec := sts.(StatefulSetV.Spec').(StatefulSetSpecV.Template').(PodTemplateSpecV.Spec') in
-  spec <| PodSpecV.Volumes' := Some ((storage_claim_volume sts ordinal <$> claim_names) ++
-      filter (λ volume, volume.(VolumeV.Name') ∉ claim_names) (PodSpecV.volumes_list spec)) |>
-    <| PodSpecV.Hostname' := desired_pod_name sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal |>
-    <| PodSpecV.Subdomain' := sts.(StatefulSetV.Spec').(StatefulSetSpecV.ServiceName') |>.
-
-#[global] Instance pod_match_decision sts pod : Decision (pod_match sts pod).
-Proof. unfold pod_match. apply _. Defined.
-
-Definition pod_has_int32_member_key
-    (sts : StatefulSetV.t) (pod : PodV.t) : Prop :=
-  pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace') =
-    sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∧
-  pod_has_int32_member_name
-    sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
-    pod.(PodV.ObjectMeta').(ObjectMetaV.Name').
-
-#[global] Instance pod_has_int32_member_key_decision sts pod :
-    Decision (pod_has_int32_member_key sts pod).
-Proof. unfold pod_has_int32_member_key. apply _. Defined.
-
+(* Snapshots contain living objects. revision_history includes owned history
+   and any foreign revision supplied for equal-payload name reuse. Only owned
+   revisions belong in the StatefulSet child index. Metadata is returned
+   separately because status writes can change the StatefulSet resourceVersion. *)
+Record revision_state := {
+  revision_metadata : ObjectMetaV.t;
+  revision_status : StatefulSetStatusV.t;
+  revision_pods : list PodV.t;
+  revision_pvcs : list PersistentVolumeClaimV.t;
+  revision_history : list ControllerRevisionV.t;
+  revision_create_slot : reservation_status;
+  revision_terminating_bound : nat;
+}.
+Definition owned_revision_history sts state : list ControllerRevisionV.t :=
+  filter (λ revision, meta_parent_ref revision.(ControllerRevisionV.ObjectMeta') =
+    Some (StatefulSetV.key sts, sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID'))) state.(revision_history).
+Definition revision_create_name sts state : go_string :=
+  revision_candidate_name sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name')
+    (revision_template_patch sts.(StatefulSetV.Spec').(StatefulSetSpecV.Template'))
+    (default (W32 0) state.(revision_status).(StatefulSetStatusV.CollisionCount')).
+Definition revision_child_keys sts state : gset KKey.t :=
+  list_to_set (PodV.key <$> state.(revision_pods)) ∪
+  list_to_set (ControllerRevisionV.key <$> owned_revision_history sts state).
 Definition missing_pod_keys sts (pods : list PodV.t) : list KKey.t :=
   filter (λ key, key ∉ (PodV.key <$> pods)) (desired_pod_keys sts).
+Definition missing_pvc_keys sts (pvcs : list PersistentVolumeClaimV.t) : list KKey.t :=
+  filter (λ key, key ∉ (PersistentVolumeClaimV.key <$> pvcs)) (desired_pvc_keys sts).
+Definition revision_available sts revision_name state : bool :=
+  existsb (λ revision, bool_decide (
+    revision.(ControllerRevisionV.ObjectMeta').(ObjectMetaV.Name') = revision_name ∧
+    revision_represents_desired sts revision)) state.(revision_history).
 
-Definition living_pods (all_pods : list PodV.t) : list PodV.t :=
-  filter is_pod_alive all_pods.
+(* One distance for the whole desired state. A missing suitable revision costs
+   1, as do a missing Pod/PVC and an extra Pod. A desired Pod with incorrect
+   identity or revision costs 2: deleting it leaves a missing Pod of cost 1.
+   The revision target is fixed across each before/after comparison. *)
+Definition match_distance sts revision_name state : nat :=
+  (if revision_available sts revision_name state then 0%nat else 1%nat) +
+  length (missing_pod_keys sts state.(revision_pods)) + length (missing_pvc_keys sts state.(revision_pvcs)) +
+  fold_right Nat.add 0%nat ((λ pod, if decide (PodV.key pod ∈ desired_pod_keys sts)
+    then if revision_pod_matches sts revision_name pod then 0%nat else 2%nat
+    else 1%nat) <$> state.(revision_pods)).
 
-Definition pod_reservation_identity (pod : PodV.t) : KKey.t * types.UID.t :=
-  (PodV.key pod, pod.(PodV.ObjectMeta').(ObjectMetaV.UID')).
+Definition current_state_matches sts revision_name state : Prop :=
+  revision_available sts revision_name state = true ∧
+  PodV.key <$> state.(revision_pods) ≡ₚ desired_pod_keys sts ∧
+  Forall (λ pod, revision_pod_matches sts revision_name pod = true) state.(revision_pods) ∧
+  missing_pvc_keys sts state.(revision_pvcs) = [].
 
-Definition needed_pods sts pods : list PodV.t :=
-  filter (λ pod, pod_key_is_desired sts (PodV.key pod)) pods.
-
-Definition outdated_pods sts pods : list PodV.t :=
-  filter (λ pod, ¬ pod_match sts pod) (needed_pods sts pods).
-
-Definition bad_name_pods sts pods : list PodV.t :=
-  filter (λ pod, ¬ pod_has_int32_member_key sts pod) pods.
-
-Definition condemned_pods sts pods : list PodV.t :=
-  filter (λ pod,
-    pod_has_int32_member_key sts pod ∧
-    ¬ pod_key_is_desired sts (PodV.key pod)) pods.
-
-Definition pod_distance sts pods : nat :=
-  length (missing_pod_keys sts pods) +
-  2 * length (outdated_pods sts pods) +
-  length (condemned_pods sts pods) +
-  length (bad_name_pods sts pods).
-
-Definition missing_pvc_keys sts (pvcs : list PersistentVolumeClaimV.t) :
-    list KKey.t :=
-  filter (λ key, key ∉ (PersistentVolumeClaimV.key <$> pvcs))
-    (desired_pvc_keys sts).
-
-Definition pvc_distance sts pvcs : nat :=
-  length (missing_pvc_keys sts pvcs).
-
-(* Although the Pod snapshots in the top-level specs are living, this metric
-   is also applied to raw index results and intermediate lists containing
-   terminating Pods. A Pod stops contributing as soon as deletion starts, so
-   that transition decreases the distance without waiting for physical removal. *)
-Definition match_distance sts all_pods pvcs : nat :=
-  pod_distance sts (living_pods all_pods) + pvc_distance sts pvcs.
-
-Definition pods_match sts pods : Prop :=
-  PodV.key <$> pods ≡ₚ desired_pod_keys sts ∧
-  Forall is_pod_alive pods ∧
-  Forall (pod_match sts) pods.
-
-Definition pvcs_match sts (pvcs : list PersistentVolumeClaimV.t) : Prop :=
-  ∀ key, key ∈ desired_pvc_keys sts →
-    key ∈ (PersistentVolumeClaimV.key <$> pvcs).
-
-Definition current_state_matches sts pods pvcs : Prop :=
-  pods_match sts pods ∧ pvcs_match sts pvcs.
-
+Definition revision_status_without_bookkeeping (status : StatefulSetStatusV.t) : StatefulSetStatusV.t :=
+  status <| StatefulSetStatusV.CurrentRevision' := ""%go |>
+    <| StatefulSetStatusV.UpdateRevision' := ""%go |> <| StatefulSetStatusV.CollisionCount' := None |>.
+Definition revision_preserved sts before after : Prop :=
+  revision_status_without_bookkeeping before.(revision_status) =
+    revision_status_without_bookkeeping after.(revision_status) ∧
+  (∀ old new, old ∈ before.(revision_history) → new ∈ after.(revision_history) →
+    ControllerRevisionV.key old = ControllerRevisionV.key new →
+    old.(ControllerRevisionV.ObjectMeta').(ObjectMetaV.UID') =
+      new.(ControllerRevisionV.ObjectMeta').(ObjectMetaV.UID') →
+    old.(ControllerRevisionV.Data') = new.(ControllerRevisionV.Data') ∧
+    meta_parent_ref old.(ControllerRevisionV.ObjectMeta') = meta_parent_ref new.(ControllerRevisionV.ObjectMeta')) ∧
+  (* History referenced by a desired Pod survives even if this call deletes the Pod. *)
+  (∀ pod old, pod ∈ before.(revision_pods) → PodV.key pod ∈ desired_pod_keys sts →
+    old ∈ before.(revision_history) →
+    pod_revision pod = old.(ControllerRevisionV.ObjectMeta').(ObjectMetaV.Name') →
+    ∃ new, new ∈ after.(revision_history) ∧ ControllerRevisionV.key new = ControllerRevisionV.key old ∧
+      new.(ControllerRevisionV.ObjectMeta').(ObjectMetaV.UID') =
+        old.(ControllerRevisionV.ObjectMeta').(ObjectMetaV.UID') ∧
+      new.(ControllerRevisionV.Data') = old.(ControllerRevisionV.Data')).
 Definition pod_meta_except_resource_version_changed
     (pods pods' : list PodV.t) : Prop :=
   ∃ pod pod',
@@ -492,178 +164,189 @@ Definition pods_progress_observed (pods pods' : list PodV.t) : Prop :=
   pod_meta_except_resource_version_changed pods pods' ∨
   pod_spec_changed pods pods'.
 
-Definition input_requirement (sts : StatefulSetV.t) : Prop :=
-  (* Generated Pod names are also hostnames and label values, so they must
-     remain within the DNS-1123 label limit after adding the ordinal. *)
-  (∀ ordinal,
-    (ordinal < statefulset_replicas sts)%nat →
-    valid_dns1123_label
-      (desired_pod_name
-        sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ordinal)) ∧
-  (* StatefulSet admission does not validate Pod-template finalizers, although
-     Pod create validates the finalizers copied by the controller. *)
-  valid_finalizers
-    ((sts.(StatefulSetV.Spec').(StatefulSetSpecV.Template')).(
-      PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers')) ∧
-  (* StatefulSet admission validates claim-template specs but not all metadata
-     copied to the PVC submitted by the controller. *)
-  Forall
-    (λ claim_template,
-      ∀ ordinal,
-        (ordinal < statefulset_replicas sts)%nat →
-        PersistentVolumeClaimV.valid_create PersistentVolumeClaimV.kind
-          sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
-          (new_persistent_volume_claim sts claim_template ordinal))
-    (StatefulSetSpecV.volume_claim_templates_list sts.(StatefulSetV.Spec')) ∧
-  (∀ ordinal claim_names,
-    (ordinal < statefulset_replicas sts)%nat →
-    NoDup claim_names →
-    list_to_set (C:=gset go_string) claim_names = list_to_set (pvc_claim_template_names sts) →
-    let spec := stateful_pod_request_spec sts ordinal claim_names in
-    PodAPI.validate_spec (PodAPI.schema_defaults spec) = true ∧
-    PodAPI.validate_annotations (desired_pod_annotations sts)
-      (PodAPI.create_spec (desired_pod_labels sts ordinal) (desired_pod_annotations sts) spec) = true ∧
-    PodAPI.validate_spec
-      (PodAPI.create_spec (desired_pod_labels sts ordinal) (desired_pod_annotations sts) spec) = true).
+Definition state_progress_observed before after : Prop :=
+  pods_progress_observed before.(revision_pods) after.(revision_pods) ∨
+  list_to_set (C:=gset KKey.t) (PersistentVolumeClaimV.key <$> before.(revision_pvcs)) ≠
+    list_to_set (C:=gset KKey.t) (PersistentVolumeClaimV.key <$> after.(revision_pvcs)) ∨
+  ¬ ((λ revision, (ControllerRevisionV.key revision, revision.(ControllerRevisionV.Data'))) <$>
+      before.(revision_history) ≡ₚ
+     (λ revision, (ControllerRevisionV.key revision, revision.(ControllerRevisionV.Data'))) <$>
+      after.(revision_history)).
+
+Definition revision_protected_names state : gset go_string :=
+  {[state.(revision_status).(StatefulSetStatusV.CurrentRevision');
+    state.(revision_status).(StatefulSetStatusV.UpdateRevision')]} ∪
+  list_to_set (pod_revision <$> state.(revision_pods)).
+Definition revision_history_within_limit sts state : Prop :=
+  let unused := filter (λ revision,
+    revision.(ControllerRevisionV.ObjectMeta').(ObjectMetaV.Name') ∉ revision_protected_names state)
+    (owned_revision_history sts state) in
+  match sts.(StatefulSetV.Spec').(StatefulSetSpecV.RevisionHistoryLimit') with
+  | Some limit => sint.Z limit < 0 ∨ (length unused ≤ sint.nat limit)%nat
+  | None => (length unused ≤ 10)%nat
+  end.
+
+(* A stable target is either the settled owned history entry or an equal-Raw
+   candidate reused from outside that history. Foreign reuse does not adopt it. *)
+Definition revision_target_stable sts update state : Prop :=
+  (update ∈ owned_revision_history sts state ∧
+    (∀ old, old ∈ owned_revision_history sts state →
+      ControllerRevisionV.key old ≠ ControllerRevisionV.key update →
+      sint.Z old.(ControllerRevisionV.Revision') < sint.Z update.(ControllerRevisionV.Revision')) ∧
+    (revision_exact_payload sts update ∨
+      (∀ old, old ∈ owned_revision_history sts state → ¬ revision_exact_payload sts old))) ∨
+  (update ∉ owned_revision_history sts state ∧ revision_exact_payload sts update ∧
+    update.(ControllerRevisionV.ObjectMeta').(ObjectMetaV.Name') = revision_create_name sts state ∧
+    (∀ old, old ∈ owned_revision_history sts state → ¬ revision_represents_desired sts old)).
+Definition revision_fixed_point sts state : Prop :=
+  ∃ update, update ∈ state.(revision_history) ∧ revision_represents_desired sts update ∧
+    revision_target_stable sts update state ∧
+    current_state_matches sts update.(ControllerRevisionV.ObjectMeta').(ObjectMetaV.Name') state ∧
+    state.(revision_status).(StatefulSetStatusV.CurrentRevision') =
+      update.(ControllerRevisionV.ObjectMeta').(ObjectMetaV.Name') ∧
+    state.(revision_status).(StatefulSetStatusV.UpdateRevision') =
+      update.(ControllerRevisionV.ObjectMeta').(ObjectMetaV.Name') ∧
+    is_Some state.(revision_status).(StatefulSetStatusV.CollisionCount') ∧
+    state.(revision_terminating_bound) = 0%nat ∧ revision_history_within_limit sts state.
+
+Definition revision_state_wf sts state : Prop :=
+  ObjectMetaV.without_resource_version state.(revision_metadata) =
+    ObjectMetaV.without_resource_version sts.(StatefulSetV.ObjectMeta') ∧
+  NoDup (PodV.key <$> state.(revision_pods)) ∧ NoDup (PersistentVolumeClaimV.key <$> state.(revision_pvcs)) ∧
+  NoDup (ControllerRevisionV.key <$> state.(revision_history)) ∧
+  (∀ count, state.(revision_status).(StatefulSetStatusV.CollisionCount') = Some count → 0 ≤ sint.Z count) ∧
+  Forall (λ revision,
+    revision.(ControllerRevisionV.ObjectMeta').(ObjectMetaV.Namespace') =
+      sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∧
+    ((snd <$> meta_parent_ref revision.(ControllerRevisionV.ObjectMeta')) =
+       Some sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') →
+      meta_parent_ref revision.(ControllerRevisionV.ObjectMeta') =
+        Some (StatefulSetV.key sts, sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')) ∧
+      (∃ owner, owner ∈ default [] revision.(ControllerRevisionV.ObjectMeta').(ObjectMetaV.OwnerReferences') ∧
+        owner.(OwnerReferenceV.Controller') = Some true ∧ owner.(OwnerReferenceV.APIVersion') = "apps/v1"%go) ∧
+      (match sts.(StatefulSetV.Spec').(StatefulSetSpecV.Selector') with
+       | Some selector =>
+           LabelSelectorV.matches selector revision.(ControllerRevisionV.ObjectMeta').(ObjectMetaV.Labels')
+       | None => False
+       end))) state.(revision_history).
 
 Section specs.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
-Context {sem : go.Semantics}
-  {package_sem : code.controllers.statefulset.statefulset.Assumptions}.
+Context {sem : go.Semantics} {package_sem : code.controllers.statefulset.statefulset.Assumptions}.
 Collection W := sem + package_sem.
-#[local] Instance base_common_sem : common.Assumptions | 100 :=
-  code.controllers.statefulset.statefulset.import_common_Assumption.
-#[local] Instance controller_sem : controller.Assumptions :=
-  code.controllers.statefulset.statefulset.import_controller_Assumption.
-#[local] Instance runtime_sem :
-    code.k8s_io.apimachinery.pkg.runtime.runtime.Assumptions :=
-  controller.import_runtime_Assumption.
-#[local] Instance runtime_object_underlying_eq :
-    runtime.Object ≤u runtime.Objectⁱᵐᵖˡ.
-Proof using package_sem. apply _. Qed.
-#[local] Instance meta_object_underlying_eq :
-    meta_v1.Object ≤u meta_v1.Objectⁱᵐᵖˡ.
-Proof using package_sem. apply _. Qed.
-#[local] Instance base_apimodel_sem : apimodel.Assumptions | 100 :=
-  common.import_apimodel_Assumption.
-#[local] Instance object_meta_v1_sem :
-    code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions :=
-  apimodel.import_apis_meta_v1_Assumption.
-#[local] Instance object_apps_v1_sem :
-    code.k8s_io.api.apps.v1.v1.Assumptions :=
-  apimodel.import_api_apps_v1_Assumption.
-#[local] Instance object_core_v1_sem :
-    code.k8s_io.api.core.v1.v1.Assumptions :=
-  code.k8s_io.api.apps.v1.v1.import_core_v1_Assumption.
-#[local] Instance apimodel_sem : apimodel.Assumptions | 0.
-Proof using package_sem.
-  constructor; try exact object_core_v1_sem; try apply _.
-Defined.
-#[local] Instance common_sem : common.Assumptions | 0.
-Proof using package_sem.
-  constructor; try exact apimodel_sem; try apply _.
-Defined.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
-Record all_fractions := {
-  sts_dq : dfrac;
-  pod_dq : dfrac;
-  children_dq : dfrac;
-  pvc_dq : dfrac;
-}.
+(* Each candidate is available or occupied by the exact proposed payload.
+   The occupied witness belongs to revision_history, whose metadata/spec
+   fragments are supplied below even when that object has a foreign owner.
+   Unequal-payload collisions and deleting candidate names are excluded.
+   TODO: prove the occupied-name AlreadyExists API helper; Get can use the
+   metadata/spec fragments supplied here. *)
+Definition own_revision_create_slot γ sts state dq : iProp Σ :=
+  own_reserved_frag γ (revision_key sts (revision_create_name sts state)) dq state.(revision_create_slot).
+Definition revision_create_pre γ sts state dq : iProp Σ :=
+  let key := revision_key sts (revision_create_name sts state) in
+  (own_available_reserved_frag γ dq key ∗ ⌜ state.(revision_create_slot) = Available ⌝) ∨
+  ∃ revision, own_occupied_reserved_frag γ dq key revision.(ControllerRevisionV.ObjectMeta').(ObjectMetaV.UID') ∗
+    ⌜ state.(revision_create_slot) = Occupied revision.(ControllerRevisionV.ObjectMeta').(ObjectMetaV.UID') ∧
+      revision ∈ state.(revision_history) ∧ ControllerRevisionV.key revision = key ∧
+      revision_exact_payload sts revision ⌝.
 
-Definition mutating_fractions dq : all_fractions :=
-  {| sts_dq := dq; pod_dq := 1; children_dq := 1; pvc_dq := 1 |}.
-
-Definition stability_fractions dq : all_fractions :=
-  {| sts_dq := dq; pod_dq := dq; children_dq := dq; pvc_dq := dq |}.
-
-Definition owned_resources γ sts pods pvcs fractions (ready : bool) : iProp Σ :=
-  "Hown_sts_meta_frag" ∷ own_meta_frag γ (StatefulSetV.key sts)
-    sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') fractions.(sts_dq) sts.(StatefulSetV.ObjectMeta') ∗
-  "Hown_sts_spec_frag" ∷ own_spec_frag γ (StatefulSetV.key sts)
-    sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') fractions.(sts_dq)
-      (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
-  "Hown_pod_frags" ∷ ([∗ list] pod ∈ pods,
-    own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') fractions.(pod_dq)
-      pod.(PodV.ObjectMeta') ∗
-    own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') fractions.(pod_dq)
-      (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
-  "Hoccupied_pod_frags" ∷ ([∗ list] pod ∈ pods,
-    own_occupied_reserved_frag γ fractions.(pod_dq) (PodV.key pod)
-      pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
-  "Hreserved_pod_frags" ∷ ([∗ list] key ∈ missing_pod_keys sts pods,
-    if ready then
-      own_available_reserved_frag γ fractions.(pod_dq) key
-    else
-      own_available_reserved_frag γ fractions.(pod_dq) key ∨
-        ∃ uid, own_deleting_reserved_frag γ fractions.(pod_dq) key uid)%I ∗
-  "Hown_children_frag" ∷ own_children_frag γ (StatefulSetV.key sts)
-    sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') fractions.(children_dq) (list_to_set (PodV.key <$> pods)) ∗
-  "Hown_terminating_children_frag" ∷
-    (if ready then
-      own_terminating_children_frag γ (StatefulSetV.key sts)
-        sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 0%nat
-    else
-      ∃ terminating_bound, own_terminating_children_frag γ (StatefulSetV.key sts)
-        sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') terminating_bound)%I ∗
-  "Hown_pvc_frags" ∷ ([∗ list] pvc ∈ pvcs,
-    own_meta_frag γ (PersistentVolumeClaimV.key pvc)
-      pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') fractions.(pvc_dq)
-      pvc.(PersistentVolumeClaimV.ObjectMeta')) ∗
-  "Hoccupied_pvc_frags" ∷ ([∗ list] pvc ∈ pvcs,
-    own_occupied_reserved_frag γ fractions.(pvc_dq) (PersistentVolumeClaimV.key pvc)
+(* The desired spec may be shared. All mutable resources use one fraction:
+   full ownership for progress/preservation, a shared fraction for stability.
+   ready requires available missing-Pod names and no terminating children. *)
+Definition owned_resources γ sts state spec_dq dq (ready : bool) : iProp Σ :=
+  own_meta_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq
+    state.(revision_metadata) ∗
+  own_spec_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') spec_dq
+    (ObjectSpecV.StatefulSetSpec sts.(StatefulSetV.Spec')) ∗
+  own_status_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq
+    (ObjectStatusV.StatefulSetStatus state.(revision_status)) ∗
+  ([∗ list] pod ∈ state.(revision_pods),
+    own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq pod.(PodV.ObjectMeta') ∗
+    own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq
+      (ObjectSpecV.PodSpec pod.(PodV.Spec')) ∗
+    own_occupied_reserved_frag γ dq (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
+  ([∗ list] key ∈ missing_pod_keys sts state.(revision_pods),
+    own_available_reserved_frag γ dq key ∨
+      if ready then False else ∃ uid, own_deleting_reserved_frag γ dq key uid) ∗
+  ([∗ list] revision ∈ state.(revision_history),
+    own_meta_frag γ (ControllerRevisionV.key revision) revision.(ControllerRevisionV.ObjectMeta').(ObjectMetaV.UID') dq
+      revision.(ControllerRevisionV.ObjectMeta') ∗
+    own_spec_frag γ (ControllerRevisionV.key revision) revision.(ControllerRevisionV.ObjectMeta').(ObjectMetaV.UID') dq
+      (ObjectSpecV.ControllerRevisionSpec (ControllerRevisionV.spec revision))) ∗
+  ([∗ list] revision ∈ filter (λ revision,
+      revision.(ControllerRevisionV.ObjectMeta').(ObjectMetaV.Name') ≠ revision_create_name sts state)
+      state.(revision_history),
+    own_occupied_reserved_frag γ dq (ControllerRevisionV.key revision)
+      revision.(ControllerRevisionV.ObjectMeta').(ObjectMetaV.UID')) ∗
+  own_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') dq
+    (revision_child_keys sts state) ∗
+  own_terminating_children_frag γ (StatefulSetV.key sts) sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')
+    state.(revision_terminating_bound) ∗
+  ([∗ list] pvc ∈ state.(revision_pvcs),
+    own_meta_frag γ (PersistentVolumeClaimV.key pvc) pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') dq
+      pvc.(PersistentVolumeClaimV.ObjectMeta') ∗
+    own_occupied_reserved_frag γ dq (PersistentVolumeClaimV.key pvc)
       pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∗
-  "Hreserved_pvc_frags" ∷ ([∗ list] key ∈ missing_pvc_keys sts pvcs,
-    own_available_reserved_frag γ fractions.(pvc_dq) key) ∗
-  (* Fractional pod fragments allow duplicate entries to own compatible shares; match_distance cannot detect duplicates.
-     Record key uniqueness explicitly because current_state_matches compares the full key list up to permutation. *)
-  "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝.
+  ([∗ list] key ∈ missing_pvc_keys sts state.(revision_pvcs), own_available_reserved_frag γ dq key) ∗
+  ⌜ revision_state_wf sts state ∧ (ready = true → state.(revision_terminating_bound) = 0%nat) ⌝.
 
-Definition progress_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
+(* TODO: migrate the program proof and establish the input requirements for
+   successful codec operations, generated requests, and revision counters.
+   Like ReplicaSet progress, this contract requires success and an observed
+   change with a shorter distance unless the desired state has been reached. *)
+Definition progress_spec γ l namespace name sts dq state : iProp Σ :=
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
-      "#Hisk" ∷ is_kubernetes γ l ∗
-      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "Hresources" ∷ owned_resources γ sts pods pvcs (mutating_fractions dq) true ∗
-      "%Hinput_requirement" ∷ ⌜ input_requirement sts ⌝ ∗
-      "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
-      "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
+      is_kubernetes γ l ∗
+      (global_addr apimodel.ModelState) ↦□ l ∗
+      owned_resources γ sts state dq 1 true ∗
+      revision_create_pre γ sts state 1 ∗
+      ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
+      ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
     @! statefulset.syncStatefulSet #namespace #name
-  {{{ pods' pvcs' (err : interface.t), RET #err;
-      owned_resources γ sts pods' pvcs' (mutating_fractions dq) false ∗
-      ⌜ current_state_matches sts pods' pvcs' ∨
-        (pods_progress_observed pods pods' ∧ match_distance sts pods' pvcs' < match_distance sts pods pvcs) ⌝
+  {{{ state' revision_name, RET #interface.nil;
+      owned_resources γ sts state' dq 1 false ∗
+      own_revision_create_slot γ sts state' 1 ∗
+      ⌜ revision_preserved sts state state' ⌝ ∗
+      ⌜ revision_available sts revision_name state' = true ∧
+        state'.(revision_status).(StatefulSetStatusV.UpdateRevision') = revision_name ⌝ ∗
+      ⌜ current_state_matches sts revision_name state' ∨
+        (state_progress_observed state state' ∧ match_distance sts revision_name state' <
+          match_distance sts revision_name state)%nat ⌝
   }}}.
 
-Definition preservation_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
+Definition preservation_spec γ l namespace name sts dq state : iProp Σ :=
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
-      "#Hisk" ∷ is_kubernetes γ l ∗
-      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "Hresources" ∷ owned_resources γ sts pods pvcs (mutating_fractions dq) false ∗
-      "%Hinput_requirement" ∷ ⌜ input_requirement sts ⌝ ∗
-      "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
-      "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
+      is_kubernetes γ l ∗
+      (global_addr apimodel.ModelState) ↦□ l ∗
+      owned_resources γ sts state dq 1 false ∗
+      revision_create_pre γ sts state 1 ∗
+      ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
+      ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
     @! statefulset.syncStatefulSet #namespace #name
-  {{{ pods' pvcs' (err : interface.t), RET #err;
-      owned_resources γ sts pods' pvcs' (mutating_fractions dq) false ∗
-      ⌜ match_distance sts pods' pvcs' ≤ match_distance sts pods pvcs ⌝
+  {{{ state' (err : interface.t), RET #err;
+      owned_resources γ sts state' dq 1 false ∗
+      own_revision_create_slot γ sts state' 1 ∗
+      ⌜ revision_preserved sts state state' ⌝
   }}}.
 
-Definition stability_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
+Definition stability_spec γ l namespace name sts dq state : iProp Σ :=
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
-      "#Hisk" ∷ is_kubernetes γ l ∗
-      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "Hresources" ∷ owned_resources γ sts pods pvcs (stability_fractions dq) true ∗
-      "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
-      "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
-      "%Hmatch" ∷ ⌜ current_state_matches sts pods pvcs ⌝
+      is_kubernetes γ l ∗
+      (global_addr apimodel.ModelState) ↦□ l ∗
+      owned_resources γ sts state dq dq true ∗
+      revision_create_pre γ sts state dq ∗
+      ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
+      ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
+      ⌜ revision_fixed_point sts state ⌝
   }}}
     @! statefulset.syncStatefulSet #namespace #name
   {{{ (err : interface.t), RET #err;
-      owned_resources γ sts pods pvcs (stability_fractions dq) true
+      owned_resources γ sts state dq dq true ∗
+      revision_create_pre γ sts state dq
   }}}.
-
 End specs.

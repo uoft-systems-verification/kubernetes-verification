@@ -1,5 +1,4 @@
-From New.proof.controllers.statefulset Require Export distance.
-From New.proof.controllers.statefulset Require Import common.
+From New.proof.controllers.statefulset Require Export common.
 
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -9,16 +8,13 @@ Collection W := sem + package_sem.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
-Lemma distance_zero_implies_match γ sts pods pvcs dqs ready :
-  owned_resources γ sts pods pvcs dqs ready -∗
-  ⌜ match_distance sts pods pvcs = 0%nat ↔ current_state_matches sts pods pvcs ⌝.
+Lemma distance_zero_implies_match γ sts revision_name state spec_dq dq ready :
+  owned_resources γ sts state spec_dq dq ready -∗
+  ⌜ match_distance sts revision_name state = 0%nat ↔ current_state_matches sts revision_name state ⌝.
 Proof.
-  iIntros "Hresources". iNamed "Hresources".
-  iPoseProof (own_pod_frags_living with "Hown_pod_frags") as "%Hpods_living".
-  iPureIntro.
-  apply match_distance_zero_matches_of_living_nodup; last exact Hpods_nodup.
-  intros pod Hpod. rewrite Forall_forall in Hpods_living.
-  apply Hpods_living. by rewrite -list_elem_of_In.
+  iIntros "(_ & _ & _ & _ & _ & _ & _ & _ & _ & _ & _ & %Hwf)".
+  destruct Hwf as [[_ [Hnodup _]] _].
+  iPureIntro. by apply match_distance_zero_matches_of_nodup.
 Qed.
 
 End proof.

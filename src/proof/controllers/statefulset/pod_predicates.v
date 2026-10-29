@@ -1,4 +1,4 @@
-From New.proof.controllers.statefulset Require Export top_level.
+From New.proof.controllers.statefulset Require Export common.
 
 Definition pod_has_member_name (set_name pod_name : go_string) : Prop :=
   ∃ ordinal, pod_name = desired_pod_name set_name ordinal.

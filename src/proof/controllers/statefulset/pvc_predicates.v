@@ -1,4 +1,4 @@
-From New.proof.controllers.statefulset Require Export top_level.
+From New.proof.controllers.statefulset Require Export common.
 
 Definition new_persistent_volume_claim_key
     (set : StatefulSetV.t) (claim_template : PersistentVolumeClaimV.t)

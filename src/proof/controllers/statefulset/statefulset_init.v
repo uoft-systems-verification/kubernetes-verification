@@ -7,6 +7,14 @@ From New.proof.k8s_io.api.core Require Export v1_init.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export errors_init.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 From New.proof.k8s_io.kubernetes.pkg Require Export controller_init.
+From New.proof.k8s_io.kubernetes.pkg Require Export features_init.
+From New.proof.k8s_io.apiserver.pkg.util Require Export feature_init.
+From New.proof.k8s_io.kubernetes.pkg.api Require Export legacyscheme_init.
+From New.proof.k8s_io.kubernetes.pkg.controller Require Export history_init.
+From New.proof.k8s_io.client_go.kubernetes Require Export scheme_init.
+From New.proof.k8s_io.apimachinery.pkg.util Require Export strategicpatch_init.
+From New.proof Require Export bytes_init.
+From New.proof.encoding Require Export json_init.
 From New.proof.kubernetes_model Require Export apimodel_init.
 From New.proof Require Export reflect_init strconv_init strings.
 From New.proof.controllers Require Export common_init.
