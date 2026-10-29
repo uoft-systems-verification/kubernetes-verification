@@ -5,6 +5,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -211,4 +212,17 @@ func (s *State) StatefulSetUpdateStatusTx(namespace string, rs *appsv1.StatefulS
 	}
 
 	return updatedRS, nil
+}
+
+// ClusterRoleUpdateTx retries resource-version conflicts for cluster-scoped updates.
+func (s *State) ClusterRoleUpdateTx(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
+	obj, err := s.updateTx("ClusterRole", "", cr)
+	if err != nil {
+		return nil, err
+	}
+	updated, ok := obj.(*rbacv1.ClusterRole)
+	if !ok {
+		return nil, fmt.Errorf("transactional update returned unexpected type %T", obj)
+	}
+	return updated, nil
 }

@@ -1,3 +1,4 @@
+From New.proof.k8s_io.apimachinery.pkg.types Require Export types_init.
 From New.proof.k8s_io.apimachinery.pkg.apis.meta Require Export v1_init.
 From New.proof.k8s_io.apimachinery.pkg Require Export runtime_init.
 From New.proof.k8s_io.client_go Require Export rest_init.

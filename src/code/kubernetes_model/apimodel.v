@@ -5501,14 +5501,14 @@ Definition State__ControllerRevisionPatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx
     else do:  #());;;
     return: (TypeAssert (go.PointerType code.k8s_io.api.apps.v1.v1.ControllerRevision) (![go.InterfaceType []] "obj"), Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: transaction.go:15:6 *)
+(* go: transaction.go:16:6 *)
 Definition preconditionUIDMismatchⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "options" "metadata",
     exception_do (let: "metadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "metadata") in
     let: "options" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "options") in
     return: ((((![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "Preconditions"%go "options")) ≠⟨go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions) UntypedNil)) && ((![go.PointerType code.k8s_io.apimachinery.pkg.types.types.UID] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions "UID"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "Preconditions"%go "options")))) ≠⟨go.PointerType code.k8s_io.apimachinery.pkg.types.types.UID⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.apimachinery.pkg.types.types.UID) UntypedNil))) && ((![code.k8s_io.apimachinery.pkg.types.types.UID] (![go.PointerType code.k8s_io.apimachinery.pkg.types.types.UID] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions "UID"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "Preconditions"%go "options"))))) ≠⟨code.k8s_io.apimachinery.pkg.types.types.UID⟩ ((MethodResolve code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "GetUID"%go (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object] "metadata")) #())))).
 
-(* go: transaction.go:19:6 *)
+(* go: transaction.go:20:6 *)
 Definition setPreconditionResourceVersionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "options" "metadata",
     exception_do (let: "metadata" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Object "metadata") in
@@ -5525,7 +5525,7 @@ Definition setPreconditionResourceVersionⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx
     do:  ((StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions "ResourceVersion"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Preconditions] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions "Preconditions"%go (![go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.DeleteOptions] "options")))) <-[go.PointerType go.string] "$r0");;;
     return: #()).
 
-(* go: transaction.go:27:17 *)
+(* go: transaction.go:28:17 *)
 Definition State__deleteTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "key" "options",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -5587,7 +5587,7 @@ Definition State__deleteTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
       else do:  #());;;
       return: (![go.error] "err"))).
 
-(* go: transaction.go:60:17 *)
+(* go: transaction.go:61:17 *)
 Definition State__updateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "kind" "namespace" "obj",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -5679,7 +5679,7 @@ Definition State__updateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
       else do:  #());;;
       return: (![go.InterfaceType []] "updatedObj", ![go.error] "err"))).
 
-(* go: transaction.go:103:17 *)
+(* go: transaction.go:104:17 *)
 Definition State__PodUpdateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "pod",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -5714,7 +5714,7 @@ Definition State__PodUpdateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalC
     else do:  #());;;
     return: (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "updatedPod", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: transaction.go:117:17 *)
+(* go: transaction.go:118:17 *)
 Definition State__ReplicaSetUpdateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -5749,7 +5749,7 @@ Definition State__ReplicaSetUpdateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : Go
     else do:  #());;;
     return: (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "updatedRS", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: transaction.go:131:17 *)
+(* go: transaction.go:132:17 *)
 Definition State__updateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "kind" "namespace" "obj",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -5841,7 +5841,7 @@ Definition State__updateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
       else do:  #());;;
       return: (![go.InterfaceType []] "updatedObj", ![go.error] "err"))).
 
-(* go: transaction.go:174:17 *)
+(* go: transaction.go:175:17 *)
 Definition State__ReplicaSetUpdateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -5876,7 +5876,7 @@ Definition State__ReplicaSetUpdateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gct
     else do:  #());;;
     return: (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "updatedRS", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: transaction.go:188:17 *)
+(* go: transaction.go:189:17 *)
 Definition State__ControllerRevisionUpdateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -5911,7 +5911,7 @@ Definition State__ControllerRevisionUpdateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_g
     else do:  #());;;
     return: (![go.PointerType code.k8s_io.api.apps.v1.v1.ControllerRevision] "updatedRS", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: transaction.go:202:17 *)
+(* go: transaction.go:203:17 *)
 Definition State__StatefulSetUpdateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "s" "namespace" "rs",
     exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
@@ -5945,6 +5945,42 @@ Definition State__StatefulSetUpdateStatusTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gc
        (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
     else do:  #());;;
     return: (![go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "updatedRS", Convert go.untyped_nil go.error UntypedNil)).
+
+(* ClusterRoleUpdateTx retries resource-version conflicts for cluster-scoped updates.
+
+   go: transaction.go:218:17 *)
+Definition State__ClusterRoleUpdateTxⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "s" "cr",
+    exception_do (let: "s" := (GoAlloc (go.PointerType State) "s") in
+    let: "cr" := (GoAlloc (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) "cr") in
+    let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    let: "obj" := (GoAlloc (go.InterfaceType []) (GoZeroVal (go.InterfaceType []) #())) in
+    let: ("$ret0", "$ret1") := (let: "$a0" := #"ClusterRole"%go in
+    let: "$a1" := #""%go in
+    let: "$a2" := (Convert (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) (go.InterfaceType []) (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "cr")) in
+    (MethodResolve (go.PointerType State) "updateTx"%go (![go.PointerType State] "s")) "$a0" "$a1" "$a2") in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("obj" <-[go.InterfaceType []] "$r0");;;
+    do:  ("err" <-[go.error] "$r1");;;
+    (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+    then return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) UntypedNil, ![go.error] "err")
+    else do:  #());;;
+    let: "ok" := (GoAlloc go.bool (GoZeroVal go.bool #())) in
+    let: "updated" := (GoAlloc (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) (GoZeroVal (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) #())) in
+    let: ("$ret0", "$ret1") := (TypeAssert2 (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) (![go.InterfaceType []] "obj")) in
+    let: "$r0" := "$ret0" in
+    let: "$r1" := "$ret1" in
+    do:  ("updated" <-[go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "$r0");;;
+    do:  ("ok" <-[go.bool] "$r1");;;
+    (if: (⟨go.bool⟩! (![go.bool] "ok"))
+    then
+      return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole) UntypedNil, let: "$a0" := #"transactional update returned unexpected type %T"%go in
+       let: "$a1" := ((let: "$sl0" := (![go.InterfaceType []] "obj") in
+       CompositeLiteral (go.SliceType go.any) (LiteralValue [KeyedElement None (ElementExpression go.any "$sl0")]))) in
+       (FuncResolve code.fmt.fmt.Errorf [] #()) "$a0" "$a1")
+    else do:  #());;;
+    return: (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "updated", Convert go.untyped_nil go.error UntypedNil)).
 
 #[global] Instance info' : PkgInfo pkg_id.apimodel :=
 {|
@@ -6062,6 +6098,7 @@ Class State_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext
   #[global] State'ptr_ClusterRoleMutList_unfold :: MethodUnfold (go.PointerType (State)) "ClusterRoleMutList" (State__ClusterRoleMutListⁱᵐᵖˡ);
   #[global] State'ptr_ClusterRolePatch_unfold :: MethodUnfold (go.PointerType (State)) "ClusterRolePatch" (State__ClusterRolePatchⁱᵐᵖˡ);
   #[global] State'ptr_ClusterRoleUpdate_unfold :: MethodUnfold (go.PointerType (State)) "ClusterRoleUpdate" (State__ClusterRoleUpdateⁱᵐᵖˡ);
+  #[global] State'ptr_ClusterRoleUpdateTx_unfold :: MethodUnfold (go.PointerType (State)) "ClusterRoleUpdateTx" (State__ClusterRoleUpdateTxⁱᵐᵖˡ);
   #[global] State'ptr_ControllerRevisionCreate_unfold :: MethodUnfold (go.PointerType (State)) "ControllerRevisionCreate" (State__ControllerRevisionCreateⁱᵐᵖˡ);
   #[global] State'ptr_ControllerRevisionDelete_unfold :: MethodUnfold (go.PointerType (State)) "ControllerRevisionDelete" (State__ControllerRevisionDeleteⁱᵐᵖˡ);
   #[global] State'ptr_ControllerRevisionGet_unfold :: MethodUnfold (go.PointerType (State)) "ControllerRevisionGet" (State__ControllerRevisionGetⁱᵐᵖˡ);

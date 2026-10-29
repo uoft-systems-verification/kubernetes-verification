@@ -1,3 +1,4 @@
+From New.proof.controllers Require Import client_tactics.
 From New.proof Require Import wp_keep.
 From New.proof.controllers.statefulset Require Export create_pvc.
 From New.proof.kubernetes_model Require Import create_named.
@@ -8,7 +9,9 @@ Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {package_sem : code.controllers.statefulset.statefulset.Assumptions}.
-Collection W := sem + package_sem.
+Context {model_sem : apimodel.Assumptions}.
+Context {client_ctx : code.context.context.Context.t} {kube_client : loc}.
+Collection W := sem + package_sem + model_sem.
 #[local] Instance base_common_sem : common.Assumptions | 100 :=
   code.controllers.statefulset.statefulset.import_common_Assumption.
 #[local] Instance controller_sem : controller.Assumptions :=
@@ -18,12 +21,12 @@ Collection W := sem + package_sem.
   controller.import_runtime_Assumption.
 #[local] Instance runtime_object_underlying_eq :
     runtime.Object ≤u runtime.Objectⁱᵐᵖˡ.
-Proof using package_sem. apply _. Qed.
+Proof using package_sem model_sem. apply _. Qed.
 #[local] Instance meta_object_underlying_eq :
     meta_v1.Object ≤u meta_v1.Objectⁱᵐᵖˡ.
-Proof using package_sem. apply _. Qed.
+Proof using package_sem model_sem. apply _. Qed.
 #[local] Instance base_apimodel_sem : apimodel.Assumptions | 100 :=
-  common.import_apimodel_Assumption.
+  model_sem.
 #[local] Instance object_meta_v1_sem :
     code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions :=
   apimodel.import_apis_meta_v1_Assumption.
@@ -34,15 +37,15 @@ Proof using package_sem. apply _. Qed.
     code.k8s_io.api.core.v1.v1.Assumptions :=
   code.k8s_io.api.apps.v1.v1.import_core_v1_Assumption.
 #[local] Instance apimodel_sem : apimodel.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact object_core_v1_sem; try apply _.
 Defined.
 #[local] Instance common_sem : common.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact apimodel_sem; try apply _.
 Defined.
 Context `{!kubernetesModelG Σ}.
-Local Set Default Proof Using "All".
+Local Set Default Proof Using "All - client_ctx - kube_client".
 
 Context `{!KObjectV.ObjectInterfaceAssumptions}.
 
@@ -58,6 +61,7 @@ Lemma wp_createStatefulPod γ model_l set_l pod_l
       "#Hisk" ∷ is_kubernetes γ model_l ∗
       "#Hglobal_l" ∷
         (global_addr apimodel.ModelState) ↦□ model_l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpod" ∷ PodV.deepown_l pod_l pod 1 ∗
       "%Hordinal_bound" ∷
@@ -110,7 +114,7 @@ Lemma wp_createStatefulPod γ model_l set_l pod_l
                 (new_persistent_volume_claim
                   set claim_template ordinal) ⌝))
   }}}
-    @! statefulset.createStatefulPod #set_l #pod_l
+    @! statefulset.createStatefulPod #client_ctx #kube_client #controller_client.claim_lister #set_l #pod_l
   {{{ (pod' : PodV.t) (uid : types.UID.t), RET #interface.nil;
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpvc_states" ∷
@@ -190,6 +194,7 @@ Proof.
   rewrite Hset_meta_Hdeepown_namespace.
   iAssert (is_pkg_init apimodel) as "#Hapimodel".
   { iPkgInit. }
+  wp_client_model.
   wp_apply (wp_State__PodCreate_named_available
     γ model_l
     set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
@@ -210,7 +215,7 @@ Proof.
     - exact Hpod_parent. }
   iIntros (pod_l' pod' uid) "Hcreate".
   iNamedPrefix "Hcreate" "Hcreate_".
-  wp_auto_keep.
+  wp_controller_auto.
   wp_apply (wp_IsAlreadyExists interface.nil with "[]").
   replace (bool_decide (already_exists_error interface.nil)) with false by
     (symmetry; apply bool_decide_false; exact already_exists_error_nil).
@@ -292,6 +297,7 @@ Lemma wp_createStatefulPod_deleting γ model_l set_l pod_l
   {{{ "#Hpkg" ∷ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ model_l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpod" ∷ PodV.deepown_l pod_l pod 1 ∗
       "%Hordinal_bound" ∷ ⌜ (ordinal ≤ go_int32_max_nat)%nat ⌝ ∗
@@ -319,7 +325,7 @@ Lemma wp_createStatefulPod_deleting γ model_l set_l pod_l
          ⌜ PersistentVolumeClaimV.valid_create PersistentVolumeClaimV.kind set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
             (new_persistent_volume_claim set claim_template ordinal) ⌝))
   }}}
-    @! statefulset.createStatefulPod #set_l #pod_l
+    @! statefulset.createStatefulPod #client_ctx #kube_client #controller_client.claim_lister #set_l #pod_l
   {{{ RET #interface.nil;
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpvc_states" ∷ ([∗ set] claim_template_name ∈ list_to_set (pvc_claim_template_names set),
@@ -375,6 +381,7 @@ Proof.
   wp_auto_keep. rewrite Hset_meta_Hdeepown_namespace.
   iAssert (is_pkg_init apimodel) as "#Hapimodel".
   { iPkgInit. }
+  wp_client_model.
   wp_apply (wp_State__PodCreate_named γ model_l
     set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') (desired_pod_key set ordinal) pod_l pod
     (StatefulSetV.key set) set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') children old_uid
@@ -394,7 +401,7 @@ Proof.
     destruct Hpod_created as
       (_ & Hpod_meta_created & Hpod_generation & Hpod_spec_created & Hpod_status_created &
       Hpod_prepared_spec & Hpod_prepared_status).
-    subst created err. wp_auto_keep.
+    subst created err. wp_controller_auto.
     wp_apply (wp_IsAlreadyExists interface.nil with "[]").
     replace (bool_decide (already_exists_error interface.nil)) with false by
       (symmetry; apply bool_decide_false; exact already_exists_error_nil).
@@ -413,7 +420,7 @@ Proof.
     subst created.
     pose proof (already_exists_error_not_nil err Halready_exists) as Herr.
     destruct err as [err_v|]; last contradiction.
-    wp_auto_keep.
+    wp_controller_auto.
     wp_apply (wp_IsAlreadyExists (interface.ok err_v) with "[]").
     replace (bool_decide (already_exists_error (interface.ok err_v))) with true by
       (symmetry; apply bool_decide_eq_true_2; exact Halready_exists).
@@ -436,6 +443,7 @@ Lemma wp_createStatefulPod_preservation γ model_l set_l pod_l
   {{{ "#Hpkg" ∷ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ model_l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpod" ∷ PodV.deepown_l pod_l pod 1 ∗
       "%Hordinal_bound" ∷ ⌜ (ordinal ≤ go_int32_max_nat)%nat ⌝ ∗
@@ -453,7 +461,7 @@ Lemma wp_createStatefulPod_preservation γ model_l set_l pod_l
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 children ∗
       "Hpvc_states" ∷ stateful_pod_create_pvc_inputs γ set ordinal
   }}}
-    @! statefulset.createStatefulPod #set_l #pod_l
+    @! statefulset.createStatefulPod #client_ctx #kube_client #controller_client.claim_lister #set_l #pod_l
   {{{ RET #interface.nil;
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpvc_states" ∷ stateful_pod_create_pvc_outputs γ set ordinal ∗

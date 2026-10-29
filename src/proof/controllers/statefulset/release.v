@@ -1,3 +1,4 @@
+From New.proof.controllers Require Import client_tactics.
 From New.proof Require Import wp_keep.
 From New.proof.controllers.statefulset Require Export pod_predicates.
 From New.proof.controllers.statefulset Require Export ordinal.
@@ -13,7 +14,9 @@ Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {package_sem : code.controllers.statefulset.statefulset.Assumptions}.
-Collection W := sem + package_sem.
+Context {model_sem : apimodel.Assumptions}.
+Context {client_ctx : code.context.context.Context.t} {kube_client : loc}.
+Collection W := sem + package_sem + model_sem.
 #[local] Instance base_common_sem : common.Assumptions | 100 :=
   code.controllers.statefulset.statefulset.import_common_Assumption.
 #[local] Instance controller_sem : controller.Assumptions :=
@@ -23,12 +26,12 @@ Collection W := sem + package_sem.
   controller.import_runtime_Assumption.
 #[local] Instance runtime_object_underlying_eq :
     runtime.Object ≤u runtime.Objectⁱᵐᵖˡ.
-Proof using package_sem. apply _. Qed.
+Proof using package_sem model_sem. apply _. Qed.
 #[local] Instance meta_object_underlying_eq :
     meta_v1.Object ≤u meta_v1.Objectⁱᵐᵖˡ.
-Proof using package_sem. apply _. Qed.
+Proof using package_sem model_sem. apply _. Qed.
 #[local] Instance base_apimodel_sem : apimodel.Assumptions | 100 :=
-  common.import_apimodel_Assumption.
+  model_sem.
 #[local] Instance object_meta_v1_sem :
     code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions :=
   apimodel.import_apis_meta_v1_Assumption.
@@ -39,16 +42,16 @@ Proof using package_sem. apply _. Qed.
     code.k8s_io.api.core.v1.v1.Assumptions :=
   code.k8s_io.api.apps.v1.v1.import_core_v1_Assumption.
 #[local] Instance apimodel_sem : apimodel.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact object_core_v1_sem; try apply _.
 Defined.
 #[local] Instance common_sem : common.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact apimodel_sem; try apply _.
 Defined.
 Context `{!kubernetesModelG Σ}.
 Context `{!KObjectV.ObjectInterfaceAssumptions}.
-Local Set Default Proof Using "All".
+Local Set Default Proof Using "All - client_ctx - kube_client".
 
 Definition owner_references_without_uid
     (uid : types.UID.t) (owner_references : list OwnerReferenceV.t) :
@@ -273,6 +276,7 @@ Lemma wp_releasePod_combined γ model_l set_l pod_l
       "#Hisk" ∷ is_kubernetes γ model_l ∗
       "#Hglobal_l" ∷
         (global_addr apimodel.ModelState) ↦□ model_l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpod" ∷ PodV.deepown_l pod_l pod dq_pod ∗
       "%Hvalid_pod" ∷ ⌜ PodV.valid pod ⌝ ∗
@@ -295,7 +299,7 @@ Lemma wp_releasePod_combined γ model_l set_l pod_l
           own_children_frag γ (StatefulSetV.key set)
             set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 children)%I
   }}}
-    @! statefulset.releasePod #set_l #pod_l
+    @! statefulset.releasePod #client_ctx #kube_client #set_l #pod_l
   {{{ (err : interface.t), RET #err;
       "%Herr" ∷ ⌜ terminating = false → err = interface.nil ⌝ ∗
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
@@ -310,6 +314,7 @@ Lemma wp_releasePod_combined γ model_l set_l pod_l
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto_keep.
+  iPersist "ctx". iPersist "kubeClient".
   iAssert (is_pkg_init code.k8s_io.api.core.v1.pkg_id.v1)
     as "#Hcorev1".
   { iPkgInit. }
@@ -893,12 +898,13 @@ Proof.
       iDestruct "Hrelease_ownership" as
         "(%Hterminating & #Hown_deletion_observed_frag & Hown_terminating_children_frag)".
       iEval (rewrite Hreleased_pod_key Hreleased_pod_uid) in "Hown_deletion_observed_frag".
+      wp_client_model.
       wp_apply (wp_State__PodUpdateTx_release_terminating γ model_l
         (release_pod_input set pod).(PodV.ObjectMeta').(ObjectMetaV.Namespace')
         updatedPod_l (release_pod_input set pod)
         with "[$Hapimodel $Hisk $Hreleased_pod $Hown_deletion_observed_frag]").
       { iFrame "%". }
-      iIntros (returned_pod_l err) "_". wp_auto_keep.
+      iIntros (returned_pod_l err) "_". wp_controller_auto.
       wp_apply (wp_IsNotFound err with "[]").
       destruct (decide (not_found_error err)) as [Hnot_found|Hnot_found].
       * replace (bool_decide (not_found_error err)) with true by
@@ -910,6 +916,7 @@ Proof.
     + iSimpl in "Hrelease_ownership".
       iDestruct "Hrelease_ownership" as
         "(%Hkey_in & Hown_meta & Hown_spec & Hown_children)".
+      wp_client_model.
       wp_apply (wp_State__PodUpdateTx_release γ model_l
         (release_pod_input set pod).(PodV.ObjectMeta').(ObjectMetaV.Namespace')
         updatedPod_l (release_pod_input set pod)
@@ -921,7 +928,7 @@ Proof.
       iIntros (returned_pod_l returned_pod) "Hupdate".
       iDestruct "Hupdate" as
         "(_ & _ & _ & _ & _ & _ & Hreturned_pod & Hown_children)".
-      wp_auto_keep.
+      wp_controller_auto.
       wp_apply (wp_IsNotFound interface.nil with "[]").
       replace (bool_decide (not_found_error interface.nil)) with false by
         (symmetry; apply bool_decide_false; exact not_found_error_nil).
@@ -968,6 +975,7 @@ Lemma wp_releasePodsWithBadNames γ model_l set_l pods_sl
       "#Hisk" ∷ is_kubernetes γ model_l ∗
       "#Hglobal_l" ∷
         (global_addr apimodel.ModelState) ↦□ model_l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpods_sl" ∷ pods_sl ↦* ptrs ∗
       "Hpods" ∷
@@ -1011,7 +1019,7 @@ Lemma wp_releasePodsWithBadNames γ model_l set_l pods_sl
             PodV.key pod ∈ children)
           bad_name_pods ⌝
   }}}
-    @! statefulset.releasePodsWithBadNames #set_l #pods_sl
+    @! statefulset.releasePodsWithBadNames #client_ctx #kube_client #set_l #pods_sl
   {{{ RET #interface.nil;
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpods_sl" ∷ pods_sl ↦* ptrs ∗
@@ -1039,6 +1047,7 @@ Proof.
     PodV.key PodV.ObjectMeta' (filter Bad pods)
     with "Hown_meta") as "%Hbad_name_pods_nodup".
   wp_auto_keep.
+  iPersist "ctx". iPersist "kubeClient".
   iDestruct (own_slice_len with "Hpods_sl") as
     %(Hpods_sl_len1 & Hpods_sl_len2).
   iDestruct (own_slice_wf with "Hpods_sl") as
@@ -1384,6 +1393,7 @@ Lemma wp_releasePodsWithBadNames_combined γ model_l set_l pods_sl
   {{{ "#Hpkg" ∷ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ model_l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpods_sl" ∷ pods_sl ↦* ptrs ∗
       "Hpods" ∷ ([∗ list] ptr;pod ∈ ptrs;pods, PodV.deepown_l ptr pod dq_pods) ∗
@@ -1409,7 +1419,7 @@ Lemma wp_releasePodsWithBadNames_combined γ model_l set_l pods_sl
           (StatefulSetV.key set, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID'))) pods ⌝ ∗
       "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝
   }}}
-    @! statefulset.releasePodsWithBadNames #set_l #pods_sl
+    @! statefulset.releasePodsWithBadNames #client_ctx #kube_client #set_l #pods_sl
   {{{ (n : nat) (err : interface.t), RET #err;
       "%Hn" ∷ ⌜ n ≤ length pods ⌝ ∗
       "%Hdone" ∷ ⌜ err = interface.nil → n = length pods ⌝ ∗
@@ -1437,6 +1447,7 @@ Proof.
       pod.(PodV.ObjectMeta').(ObjectMetaV.Name')).
   set BadLiving := (λ pod : PodV.t, Bad pod ∧ is_pod_alive pod).
   wp_auto_keep.
+  iPersist "ctx". iPersist "kubeClient".
   iDestruct (own_slice_len with "Hpods_sl") as %(Hpods_sl_len1 & Hpods_sl_len2).
   iDestruct (own_slice_wf with "Hpods_sl") as %Hpods_sl_cap.
   iDestruct (big_sepL2_length with "Hpods") as %Hpods_len.

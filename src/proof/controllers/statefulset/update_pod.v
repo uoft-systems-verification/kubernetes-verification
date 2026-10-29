@@ -1,3 +1,4 @@
+From New.proof.controllers Require Import client_tactics.
 From New.proof Require Import wp_keep.
 From New.proof.controllers.statefulset Require Export pod_identity.
 From New.proof.k8s_io.api.core Require Export v1.
@@ -9,7 +10,9 @@ Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {package_sem : code.controllers.statefulset.statefulset.Assumptions}.
-Collection W := sem + package_sem.
+Context {model_sem : apimodel.Assumptions}.
+Context {client_ctx : code.context.context.Context.t} {kube_client : loc}.
+Collection W := sem + package_sem + model_sem.
 #[local] Instance base_common_sem : common.Assumptions | 100 :=
   code.controllers.statefulset.statefulset.import_common_Assumption.
 #[local] Instance controller_sem : controller.Assumptions :=
@@ -19,12 +22,12 @@ Collection W := sem + package_sem.
   controller.import_runtime_Assumption.
 #[local] Instance runtime_object_underlying_eq :
     runtime.Object ≤u runtime.Objectⁱᵐᵖˡ.
-Proof using package_sem. apply _. Qed.
+Proof using package_sem model_sem. apply _. Qed.
 #[local] Instance meta_object_underlying_eq :
     meta_v1.Object ≤u meta_v1.Objectⁱᵐᵖˡ.
-Proof using package_sem. apply _. Qed.
+Proof using package_sem model_sem. apply _. Qed.
 #[local] Instance base_apimodel_sem : apimodel.Assumptions | 100 :=
-  common.import_apimodel_Assumption.
+  model_sem.
 #[local] Instance object_meta_v1_sem :
     code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions :=
   apimodel.import_apis_meta_v1_Assumption.
@@ -35,15 +38,15 @@ Proof using package_sem. apply _. Qed.
     code.k8s_io.api.core.v1.v1.Assumptions :=
   code.k8s_io.api.apps.v1.v1.import_core_v1_Assumption.
 #[local] Instance apimodel_sem : apimodel.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact object_core_v1_sem; try apply _.
 Defined.
 #[local] Instance common_sem : common.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact apimodel_sem; try apply _.
 Defined.
 Context `{!kubernetesModelG Σ}.
-Local Set Default Proof Using "All".
+Local Set Default Proof Using "All - client_ctx - kube_client".
 
 (* Existing Pods are updated only to repair mutable identity metadata. These
    conditions are needed only when identity repair causes an update to be
@@ -202,6 +205,7 @@ Lemma wp_updateStatefulPod γ model_l set_l pod_l
       "#Hisk" ∷ is_kubernetes γ model_l ∗
       "#Hglobal_l" ∷
         (global_addr apimodel.ModelState) ↦□ model_l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpod" ∷ PodV.deepown_l pod_l pod dq_pod ∗
       "%Hpod_valid" ∷ ⌜ PodV.valid pod ⌝ ∗
@@ -221,7 +225,7 @@ Lemma wp_updateStatefulPod γ model_l set_l pod_l
         pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
         (ObjectSpecV.PodSpec pod.(PodV.Spec'))
   }}}
-    @! statefulset.updateStatefulPod #set_l #pod_l
+    @! statefulset.updateStatefulPod #client_ctx #kube_client #set_l #pod_l
   {{{ (pod' : PodV.t), RET #interface.nil;
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpod" ∷ PodV.deepown_l pod_l pod dq_pod ∗
@@ -378,6 +382,7 @@ Proof.
       as "HupdatedPod".
     iAssert (is_pkg_init apimodel) as "#Hapimodel".
     { iPkgInit. }
+    wp_client_model.
     wp_apply (wp_State__PodUpdateTx γ model_l
       (update_identity set pod ordinal).(PodV.ObjectMeta').(
         ObjectMetaV.Namespace')
@@ -403,7 +408,7 @@ Proof.
       simpl in Hupdate_Hspec_updated.
       pose proof Hpod_valid as (_ & _ & _ & Hbody & _).
       eapply PodSpecV.updated_same_spec; [exact (proj1 Hbody)|done|exact Hupdate_Hspec_updated]. }
-    wp_auto_keep.
+    wp_controller_auto.
     iApply ("HΦ" $! returned_pod).
     iFrame "Hset Hpod Hupdate_Hown_meta_frag
       Hupdate_Hown_spec_frag".

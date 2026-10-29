@@ -118,9 +118,10 @@ Definition syncClusterRoleⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
     do:  ("updated" <-[go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "$r0");;;
     let: "$r0" := (![go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule] "newPolicyRules") in
     do:  ((StructFieldRef code.k8s_io.api.rbac.v1.v1.ClusterRole "Rules"%go (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "updated")) <-[go.SliceType code.k8s_io.api.rbac.v1.v1.PolicyRule] "$r0");;;
+    let: "updateOptions" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![code.context.context.Context] "ctx") in
     let: "$a1" := (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "updated") in
-    let: "$a2" := (CompositeLiteral code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions (LiteralValue [])) in
+    let: "$a2" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions] "updateOptions") in
     (MethodResolve code.k8s_io.client_go.kubernetes.typed.rbac.v1.v1.ClusterRoleInterface "Update"%go ((MethodResolve code.k8s_io.client_go.kubernetes.typed.rbac.v1.v1.RbacV1Interface "ClusterRoles"%go ((MethodResolve (go.PointerType code.k8s_io.client_go.kubernetes.kubernetes.Clientset) "RbacV1"%go (![go.PointerType code.k8s_io.client_go.kubernetes.kubernetes.Clientset] "kubeClient")) #())) #())) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
@@ -128,14 +129,14 @@ Definition syncClusterRoleⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
     do:  ("err" <-[go.error] "$r1");;;
     return: (![go.error] "err")).
 
-(* go: clusterroleaggregation.go:78:17 *)
+(* go: clusterroleaggregation.go:79:17 *)
 Definition byName__Lenⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "r" <>,
     exception_do (let: "r" := (GoAlloc byName "r") in
     return: (let: "$a0" := (![byName] "r") in
      (FuncResolve go.len [byName] #()) "$a0")).
 
-(* go: clusterroleaggregation.go:82:17 *)
+(* go: clusterroleaggregation.go:83:17 *)
 Definition byName__Lessⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "r" "i" "j",
     exception_do (let: "r" := (GoAlloc byName "r") in
@@ -143,7 +144,7 @@ Definition byName__Lessⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext
     let: "i" := (GoAlloc go.int "i") in
     return: ((![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Name"%go (StructFieldRef code.k8s_io.api.rbac.v1.v1.ClusterRole "ObjectMeta"%go (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] (IndexRef byName (![byName] "r", ![go.int] "i")))))) <⟨go.string⟩ (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Name"%go (StructFieldRef code.k8s_io.api.rbac.v1.v1.ClusterRole "ObjectMeta"%go (![go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] (IndexRef byName (![byName] "r", ![go.int] "j")))))))).
 
-(* go: clusterroleaggregation.go:86:17 *)
+(* go: clusterroleaggregation.go:87:17 *)
 Definition byName__Swapⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "r" "i" "j",
     exception_do (let: "r" := (GoAlloc byName "r") in
@@ -155,7 +156,7 @@ Definition byName__Swapⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext
     do:  ((IndexRef byName (![byName] "r", ![go.int] "j")) <-[go.PointerType code.k8s_io.api.rbac.v1.v1.ClusterRole] "$r1");;;
     return: #()).
 
-(* go: clusterroleaggregation.go:90:6 *)
+(* go: clusterroleaggregation.go:91:6 *)
 Definition ruleExistsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "rules" "rule",
     exception_do (let: "rule" := (GoAlloc code.k8s_io.api.rbac.v1.v1.PolicyRule "rule") in

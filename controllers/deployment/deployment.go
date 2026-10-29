@@ -104,7 +104,8 @@ func scaleReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rs *a
 	}
 	rsCopy := rs.DeepCopy()
 	rsCopy.Spec.Replicas = &newScale
-	updated, err := kubeClient.AppsV1().ReplicaSets(rsCopy.Namespace).Update(ctx, rsCopy, metav1.UpdateOptions{})
+	var updateOptions metav1.UpdateOptions
+	updated, err := kubeClient.AppsV1().ReplicaSets(rsCopy.Namespace).Update(ctx, rsCopy, updateOptions)
 	if err != nil {
 		return false, rs, err
 	}
@@ -140,7 +141,8 @@ func getNewReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rsLi
 		},
 	}
 
-	createdRS, err := kubeClient.AppsV1().ReplicaSets(d.Namespace).Create(ctx, newRS, metav1.CreateOptions{})
+	var createOptions metav1.CreateOptions
+	createdRS, err := kubeClient.AppsV1().ReplicaSets(d.Namespace).Create(ctx, newRS, createOptions)
 	if apierrors.IsAlreadyExists(err) {
 		// No-collision assumption: a ReplicaSet with this deterministic name
 		// already holds the same template. Read it from the lister, as upstream

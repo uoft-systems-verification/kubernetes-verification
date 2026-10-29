@@ -73,7 +73,8 @@ Section specs.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {package_sem : code.controllers.replicaset.replicaset.Assumptions}.
-Collection W := sem + package_sem.
+Context {model_sem : apimodel.Assumptions}.
+Collection W := sem + package_sem + model_sem.
 #[local] Instance base_common_sem : common.Assumptions | 100 :=
   code.controllers.replicaset.replicaset.import_common_Assumption.
 #[local] Instance controller_sem : controller.Assumptions :=
@@ -83,12 +84,12 @@ Collection W := sem + package_sem.
   controller.import_runtime_Assumption.
 #[local] Instance runtime_object_underlying_eq :
     runtime.Object ≤u runtime.Objectⁱᵐᵖˡ.
-Proof using package_sem. apply _. Qed.
+Proof using package_sem model_sem. apply _. Qed.
 #[local] Instance meta_object_underlying_eq :
     meta_v1.Object ≤u meta_v1.Objectⁱᵐᵖˡ.
-Proof using package_sem. apply _. Qed.
+Proof using package_sem model_sem. apply _. Qed.
 #[local] Instance base_apimodel_sem : apimodel.Assumptions | 100 :=
-  common.import_apimodel_Assumption.
+  model_sem.
 #[local] Instance object_meta_v1_sem :
     code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions :=
   apimodel.import_apis_meta_v1_Assumption.
@@ -99,11 +100,11 @@ Proof using package_sem. apply _. Qed.
     code.k8s_io.api.core.v1.v1.Assumptions :=
   code.k8s_io.api.apps.v1.v1.import_core_v1_Assumption.
 #[local] Instance apimodel_sem : apimodel.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact object_core_v1_sem; try apply _.
 Defined.
 #[local] Instance common_sem : common.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact apimodel_sem; try apply _.
 Defined.
 Context `{!kubernetesModelG Σ}.
@@ -167,6 +168,7 @@ Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) (bur
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "%Hclock" ∷ ⌜ rsc_clock = real_clock ⌝ ∗
       "Hresources" ∷ owned_resources γ rs pods (mutating_fractions dq) true ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement rs ⌝ ∗
@@ -182,7 +184,7 @@ Definition progress_spec γ l (ctx : context.Context.t) (kube_client : loc) (bur
       "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
-    @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #burst
+    @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #controller_client.indexer #controller_client.pod_lister #controller_client.indexer #burst
       #rsc_clock #controller_features #namespace #name
   (* The sync succeeds: [manageReplicas] succeeds under these preconditions, and
      the computed status is valid under the bounds above, so the status write
@@ -205,6 +207,7 @@ Definition preservation_spec γ l (ctx : context.Context.t) (kube_client : loc) 
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "%Hclock" ∷ ⌜ rsc_clock = real_clock ⌝ ∗
       "Hresources" ∷ owned_resources γ rs pods (mutating_fractions dq) false ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement rs ⌝ ∗
@@ -212,7 +215,7 @@ Definition preservation_spec γ l (ctx : context.Context.t) (kube_client : loc) 
       "%Hnamespace_eq" ∷ ⌜ namespace = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
-    @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #burst
+    @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #controller_client.indexer #controller_client.pod_lister #controller_client.indexer #burst
       #rsc_clock #controller_features #namespace #name
   (* The status write may be rejected, for example when a pod count overflows
      int32 in calculateStatus; the sync then returns that error. Pods are not
@@ -233,6 +236,7 @@ Definition stability_spec γ l (ctx : context.Context.t) (kube_client : loc) (bu
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "%Hclock" ∷ ⌜ rsc_clock = real_clock ⌝ ∗
       "Hresources" ∷ owned_resources γ rs pods (stability_fractions dq) true ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement rs ⌝ ∗
@@ -240,7 +244,7 @@ Definition stability_spec γ l (ctx : context.Context.t) (kube_client : loc) (bu
       "%Hname_eq" ∷ ⌜ name = rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
       "%Hmatch" ∷ ⌜ current_state_matches rs pods ⌝
   }}}
-    @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #burst
+    @! replicaset.syncReplicaSet #ctx #kube_client #replica_set_lister #controller_client.indexer #controller_client.pod_lister #controller_client.indexer #burst
       #rsc_clock #controller_features #namespace #name
   {{{ (rs' : ReplicaSetV.t) (err : interface.t), RET #err;
       owned_resources γ rs' pods (stability_fractions dq) true

@@ -1,3 +1,4 @@
+From New.proof.k8s_io.apimachinery.pkg Require Export labels_init.
 From New.proof.k8s_io.apimachinery.pkg Require Export runtime_init.
 From New.proof.k8s_io.apimachinery.pkg.runtime Require Export schema_init.
 From New.proof.k8s_io.client_go.tools Require Export cache_init.

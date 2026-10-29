@@ -1,3 +1,4 @@
+From New.proof.controllers Require Import client_tactics.
 From New.proof Require Import wp_keep.
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model.tx Require Export update.
@@ -16,11 +17,13 @@ Section proof.
 Context `{hG: !heapGS Σ}.
 Context {sem : go.Semantics}
   {package_sem : code.controllers.deployment.deployment.Assumptions}.
-Collection W := sem + package_sem.
+Context {model_sem : apimodel.Assumptions}.
+Context {client_ctx : code.context.context.Context.t} {kube_client : loc}.
+Collection W := sem + package_sem + model_sem.
 #[local] Instance controller_sem : controller.Assumptions :=
   code.controllers.deployment.deployment.import_controller_Assumption.
 #[local] Instance base_apimodel_sem : apimodel.Assumptions | 100 :=
-  code.controllers.deployment.deployment.import_apimodel_Assumption.
+  model_sem.
 #[local] Instance object_meta_v1_sem :
     code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions :=
   apimodel.import_apis_meta_v1_Assumption.
@@ -33,11 +36,11 @@ Collection W := sem + package_sem.
 #[local] Instance intstr_sem : intstr.Assumptions :=
   code.k8s_io.api.apps.v1.v1.import_intstr_Assumption.
 #[local] Instance apimodel_sem : apimodel.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact object_core_v1_sem; try apply _.
 Defined.
 Context `{!kubernetesModelG Σ}.
-Local Set Default Proof Using "All".
+Local Set Default Proof Using "All - client_ctx - kube_client".
 Context `{!KObjectV.ObjectInterfaceAssumptions}.
 
 (* ---------------------------------------------------------------- *)
@@ -61,6 +64,7 @@ Lemma wp_scaleReplicaSet γ model_l rs_l (rs : ReplicaSetV.t)
   {{{ "#Hpkg" ∷ is_pkg_init code.controllers.deployment.pkg_id.deployment ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ model_l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "Hrs" ∷ ReplicaSetV.deepown_l rs_l rs dq ∗
       "%Hrs_valid" ∷ ⌜ ReplicaSetV.valid rs ⌝ ∗
       "%Hscale_nonneg" ∷ ⌜ 0 ≤ sint.Z new_scale ⌝ ∗
@@ -71,7 +75,7 @@ Lemma wp_scaleReplicaSet γ model_l rs_l (rs : ReplicaSetV.t)
         rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
         (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec'))
   }}}
-    @! deployment.scaleReplicaSet #rs_l #new_scale
+    @! deployment.scaleReplicaSet #client_ctx #kube_client #rs_l #new_scale
   {{{ (scaled : bool) (rs'_l : loc) (rs' : ReplicaSetV.t),
       RET (#scaled, #rs'_l, #interface.nil);
       "Hrs" ∷ ReplicaSetV.deepown_l rs_l rs dq ∗
@@ -113,12 +117,14 @@ Proof.
     iIntros (copy_l) "(Hcopy & Hrs_ptr & Hrs)".
     iAssert (ReplicaSetV.deepown_l rs_l rs dq) with "[Hrs_ptr Hrs]" as "Hrs".
     { iExists rs_phy. iFrame. }
-    wp_auto_keep.
+    wp_pures_keep. wp_store. wp_pures_keep. wp_load. wp_pures_keep.
     iPoseProof (ReplicaSetV.deepown_l_split with "Hcopy") as
       "(%Hcopy_nn & Hc_tm & Hc_om & Hc_spec & Hc_st)".
     iDestruct "Hc_spec" as (spec_c) "[Hspec_field Hspec]".
     iNamedPrefix "Hspec" "Hsp_".
-    wp_auto_keep.
+    wp_pures_keep.
+    wp_store.
+    wp_pures_keep.
     (* The store put the *local* newScale cell into the copy's Spec.Replicas
        field, so ownership of that local moves into the object. Nothing reads
        it again. *)
@@ -161,6 +167,7 @@ Proof.
     destruct Hmeta_frag_valid as (_ & _ & _ & Hmeta_valid & Hdeletion).
     destruct Hrs_valid as (Htm_valid & Hrv_valid & Hom_valid & Hspec_valid & Hst_valid).
     pose proof Hom_valid as (_ & Hname_nonempty & _ & _ & _ & Huid_valid & _).
+    wp_client_model.
     wp_apply (wp_State__ReplicaSetUpdateTx γ model_l
       rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace')
       copy_l (rs_scaled rs new_scale) (ReplicaSetV.key rs)
@@ -184,7 +191,7 @@ Proof.
         apply rs_scaled_spec_valid_create; [exact (proj1 Hspec_valid)|done].
       - exact Hdeletion. }
     iIntros (rs'_l rs') "Hupd". iNamedPrefix "Hupd" "Hu_".
-    wp_auto_keep.
+    wp_controller_auto.
     iApply ("HΦ" $! true rs'_l rs').
     iFrame "Hrs Hu_Hown_meta_frag Hu_Hown_spec_frag".
     iSplit; [iPureIntro; exact Hu_Hkey_eq'|].

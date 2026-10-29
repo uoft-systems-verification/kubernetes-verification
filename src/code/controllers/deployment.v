@@ -153,11 +153,12 @@ Definition scaleReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
     do:  ("rsCopy" <-[go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "$r0");;;
     let: "$r0" := "newScale" in
     do:  ((StructFieldRef code.k8s_io.api.apps.v1.v1.ReplicaSetSpec "Replicas"%go (StructFieldRef code.k8s_io.api.apps.v1.v1.ReplicaSet "Spec"%go (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "rsCopy"))) <-[go.PointerType go.int32] "$r0");;;
+    let: "updateOptions" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions #())) in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "updated" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![code.context.context.Context] "ctx") in
     let: "$a1" := (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "rsCopy") in
-    let: "$a2" := (CompositeLiteral code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions (LiteralValue [])) in
+    let: "$a2" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions] "updateOptions") in
     (MethodResolve code.k8s_io.client_go.kubernetes.typed.apps.v1.v1.ReplicaSetInterface "Update"%go (let: "$a0" := (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Namespace"%go (StructFieldRef code.k8s_io.api.apps.v1.v1.ReplicaSet "ObjectMeta"%go (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "rsCopy")))) in
     (MethodResolve code.k8s_io.client_go.kubernetes.typed.apps.v1.v1.AppsV1Interface "ReplicaSets"%go ((MethodResolve (go.PointerType code.k8s_io.client_go.kubernetes.kubernetes.Clientset) "AppsV1"%go (![go.PointerType code.k8s_io.client_go.kubernetes.kubernetes.Clientset] "kubeClient")) #())) "$a0")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
@@ -172,7 +173,7 @@ Definition scaleReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
 (* getNewReplicaSet returns the deployment's new ReplicaSet, creating it with a
    deterministic name and the deployment's replica count if it does not exist.
 
-   go: deployment.go:116:6 *)
+   go: deployment.go:117:6 *)
 Definition getNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "rsLister" "d" "rsList",
     exception_do (let: "rsList" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)) "rsList") in
@@ -228,11 +229,12 @@ Definition getNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
     CompositeLiteral code.k8s_io.api.apps.v1.v1.ReplicaSetSpec (LiteralValue [KeyedElement (Some (KeyField "Replicas"%go)) (ElementExpression (go.PointerType go.int32) "$v0"); KeyedElement (Some (KeyField "MinReadySeconds"%go)) (ElementExpression go.int32 "$v1"); KeyedElement (Some (KeyField "Selector"%go)) (ElementExpression (go.PointerType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.LabelSelector) "$v2"); KeyedElement (Some (KeyField "Template"%go)) (ElementExpression code.k8s_io.api.core.v1.v1.PodTemplateSpec "$v3")])) in
     CompositeLiteral code.k8s_io.api.apps.v1.v1.ReplicaSet (LiteralValue [KeyedElement (Some (KeyField "ObjectMeta"%go)) (ElementExpression code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "$v0"); KeyedElement (Some (KeyField "Spec"%go)) (ElementExpression code.k8s_io.api.apps.v1.v1.ReplicaSetSpec "$v1")]))) in
     do:  ("newRS" <-[go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "$r0");;;
+    let: "createOptions" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.CreateOptions (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.CreateOptions #())) in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: "createdRS" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![code.context.context.Context] "ctx") in
     let: "$a1" := (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "newRS") in
-    let: "$a2" := (CompositeLiteral code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.CreateOptions (LiteralValue [])) in
+    let: "$a2" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.CreateOptions] "createOptions") in
     (MethodResolve code.k8s_io.client_go.kubernetes.typed.apps.v1.v1.ReplicaSetInterface "Create"%go (let: "$a0" := (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Namespace"%go (StructFieldRef code.k8s_io.api.apps.v1.v1.Deployment "ObjectMeta"%go (![go.PointerType code.k8s_io.api.apps.v1.v1.Deployment] "d")))) in
     (MethodResolve code.k8s_io.client_go.kubernetes.typed.apps.v1.v1.AppsV1Interface "ReplicaSets"%go ((MethodResolve (go.PointerType code.k8s_io.client_go.kubernetes.kubernetes.Clientset) "AppsV1"%go (![go.PointerType code.k8s_io.client_go.kubernetes.kubernetes.Clientset] "kubeClient")) #())) "$a0")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
@@ -255,7 +257,7 @@ Definition getNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
 (* reconcileNewReplicaSet scales the new ReplicaSet to the deployment's desired
    replica count.
 
-   go: deployment.go:158:6 *)
+   go: deployment.go:160:6 *)
 Definition reconcileNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "newRS" "d",
     exception_do (let: "d" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) "d") in
@@ -280,7 +282,7 @@ Definition reconcileNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
 
 (* reconcileOldReplicaSets scales every old ReplicaSet down to zero.
 
-   go: deployment.go:164:6 *)
+   go: deployment.go:166:6 *)
 Definition reconcileOldReplicaSetsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "oldRSs",
     exception_do (let: "oldRSs" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)) "oldRSs") in
@@ -319,7 +321,7 @@ Definition reconcileOldReplicaSetsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
 
 (* rollout performs one reconciliation step of a rollout.
 
-   go: deployment.go:179:6 *)
+   go: deployment.go:181:6 *)
 Definition rolloutⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "rsLister" "d" "rsList",
     exception_do (let: "rsList" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)) "rsList") in
@@ -372,7 +374,7 @@ Definition rolloutⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : v
 (* filterReplicaSetsByOwner returns the ReplicaSets in the deployment's namespace
    whose controller reference points at the deployment.
 
-   go: deployment.go:197:6 *)
+   go: deployment.go:199:6 *)
 Definition filterReplicaSetsByOwnerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "rsLister" "d",
     exception_do (let: "d" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) "d") in
@@ -411,7 +413,7 @@ Definition filterReplicaSetsByOwnerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
       else do:  #())));;;
     return: (![go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)] "result", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: deployment.go:212:6 *)
+(* go: deployment.go:214:6 *)
 Definition syncDeploymentⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "dLister" "rsLister" "namespace" "name",
     exception_do (let: "name" := (GoAlloc go.string "name") in

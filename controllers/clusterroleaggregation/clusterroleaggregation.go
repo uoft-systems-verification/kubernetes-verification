@@ -69,7 +69,8 @@ func syncClusterRole(ctx context.Context, kubeClient *clientset.Clientset, clust
 	updated := sharedClusterRole.DeepCopy()
 	updated.Rules = newPolicyRules
 
-	_, err = kubeClient.RbacV1().ClusterRoles().Update(ctx, updated, metav1.UpdateOptions{})
+	var updateOptions metav1.UpdateOptions
+	_, err = kubeClient.RbacV1().ClusterRoles().Update(ctx, updated, updateOptions)
 	return err
 }
 

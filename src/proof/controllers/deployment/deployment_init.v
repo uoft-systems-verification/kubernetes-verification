@@ -1,3 +1,4 @@
+From New.proof.controllers Require Export client.
 From New.proof Require Export fmt.
 From New.proof Require Export prelude.
 From New.proof.k8s_io.api.apps Require Export v1_init.

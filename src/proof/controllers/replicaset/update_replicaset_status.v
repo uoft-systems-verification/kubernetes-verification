@@ -13,7 +13,8 @@ Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {package_sem : code.controllers.replicaset.replicaset.Assumptions}.
-Collection W := sem + package_sem.
+Context {model_sem : apimodel.Assumptions}.
+Collection W := sem + package_sem + model_sem.
 (* The client instances only serve method resolution; priority 100 keeps them
    from supplying the object-type assumptions used by the model specs. *)
 #[local] Instance clientset_sem : kubernetes.Assumptions | 100 :=
@@ -35,12 +36,12 @@ Collection W := sem + package_sem.
   controller.import_runtime_Assumption.
 #[local] Instance runtime_object_underlying_eq :
     runtime.Object ≤u runtime.Objectⁱᵐᵖˡ.
-Proof using package_sem. apply _. Qed.
+Proof using package_sem model_sem. apply _. Qed.
 #[local] Instance meta_object_underlying_eq :
     meta_v1.Object ≤u meta_v1.Objectⁱᵐᵖˡ.
-Proof using package_sem. apply _. Qed.
+Proof using package_sem model_sem. apply _. Qed.
 #[local] Instance base_apimodel_sem : apimodel.Assumptions | 100 :=
-  common.import_apimodel_Assumption.
+  model_sem.
 #[local] Instance object_meta_v1_sem :
     code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions :=
   apimodel.import_apis_meta_v1_Assumption.
@@ -53,11 +54,11 @@ Proof using package_sem. apply _. Qed.
 (* The same constructed instances as in top_level.v, so that [is_kubernetes]
    in these specs matches the top-level specs. *)
 #[local] Instance apimodel_sem : apimodel.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact object_core_v1_sem; try apply _.
 Defined.
 #[local] Instance common_sem : common.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact apimodel_sem; try apply _.
 Defined.
 Context `{!kubernetesModelG Σ}.
@@ -76,6 +77,7 @@ Lemma wp_updateReplicaSetStatus γ l c rs_l rs_phy rs status_c status dq :
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "#Hclient" ∷ is_rs_client c rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
       "%Hvalid" ∷ ⌜ ReplicaSetV.valid rs ⌝ ∗
       "%Hvalid_status" ∷ ⌜ ReplicaSetStatusV.valid_request (status <| ReplicaSetStatusV.ObservedGeneration' :=
@@ -206,6 +208,7 @@ Lemma wp_updateReplicaSetStatus_general γ l c rs_l rs_phy rs status_c status dq
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "#Hclient" ∷ is_rs_client c rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
       "%Hvalid" ∷ ⌜ ReplicaSetV.valid rs ⌝ ∗
       "Hrs_l" ∷ rs_l ↦ rs_phy ∗

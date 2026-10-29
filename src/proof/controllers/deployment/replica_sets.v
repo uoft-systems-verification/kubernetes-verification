@@ -18,11 +18,12 @@ Section proof.
 Context `{hG: !heapGS Σ}.
 Context {sem : go.Semantics}
   {package_sem : code.controllers.deployment.deployment.Assumptions}.
-Collection W := sem + package_sem.
+Context {model_sem : apimodel.Assumptions}.
+Collection W := sem + package_sem + model_sem.
 #[local] Instance controller_sem : controller.Assumptions :=
   code.controllers.deployment.deployment.import_controller_Assumption.
 #[local] Instance base_apimodel_sem : apimodel.Assumptions | 100 :=
-  code.controllers.deployment.deployment.import_apimodel_Assumption.
+  model_sem.
 #[local] Instance object_meta_v1_sem :
     code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions :=
   apimodel.import_apis_meta_v1_Assumption.
@@ -35,7 +36,7 @@ Collection W := sem + package_sem.
 #[local] Instance intstr_sem : intstr.Assumptions :=
   code.k8s_io.api.apps.v1.v1.import_intstr_Assumption.
 #[local] Instance apimodel_sem : apimodel.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact object_core_v1_sem; try apply _.
 Defined.
 Local Set Default Proof Using "All".

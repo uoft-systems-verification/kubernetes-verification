@@ -42,7 +42,8 @@ func syncNamespace(ctx context.Context, kubeClient *clientset.Clientset, nsListe
 		}
 
 		serviceAccount.Namespace = namespace.Name
-		_, err = kubeClient.CoreV1().ServiceAccounts(namespace.Name).Create(ctx, &serviceAccount, metav1.CreateOptions{})
+		var createOptions metav1.CreateOptions
+		_, err = kubeClient.CoreV1().ServiceAccounts(namespace.Name).Create(ctx, &serviceAccount, createOptions)
 		if apierrors.IsAlreadyExists(err) {
 			continue
 		}

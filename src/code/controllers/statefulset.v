@@ -252,10 +252,11 @@ Definition releasePodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} 
     else do:  #());;;
     let: "$r0" := (![go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.OwnerReference] "ownerReferences") in
     do:  ((StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "OwnerReferences"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Pod "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "updatedPod"))) <-[go.SliceType code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.OwnerReference] "$r0");;;
+    let: "updateOptions" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions #())) in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![code.context.context.Context] "ctx") in
     let: "$a1" := (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "updatedPod") in
-    let: "$a2" := (CompositeLiteral code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions (LiteralValue [])) in
+    let: "$a2" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions] "updateOptions") in
     (MethodResolve code.k8s_io.client_go.kubernetes.typed.core.v1.v1.PodInterface "Update"%go (let: "$a0" := (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Namespace"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Pod "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "updatedPod")))) in
     (MethodResolve code.k8s_io.client_go.kubernetes.typed.core.v1.v1.CoreV1Interface "Pods"%go ((MethodResolve (go.PointerType code.k8s_io.client_go.kubernetes.kubernetes.Clientset) "CoreV1"%go (![go.PointerType code.k8s_io.client_go.kubernetes.kubernetes.Clientset] "kubeClient")) #())) "$a0")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
@@ -268,7 +269,7 @@ Definition releasePodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} 
     else do:  #());;;
     return: (![go.error] "err")).
 
-(* go: stateful_set.go:102:6 *)
+(* go: stateful_set.go:103:6 *)
 Definition releasePodsWithBadNamesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "set" "pods",
     exception_do (let: "pods" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)) "pods") in
@@ -297,7 +298,7 @@ Definition releasePodsWithBadNamesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
       else do:  #()))));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: stateful_set.go:114:6 *)
+(* go: stateful_set.go:115:6 *)
 Definition podInOrdinalRangeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "podName",
     exception_do (let: "podName" := (GoAlloc go.string "podName") in
@@ -309,7 +310,7 @@ Definition podInOrdinalRangeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
     return: (((![go.int] "ordinal") ≥⟨go.int⟩ #(W64 0)) && ((![go.int] "ordinal") ≤⟨go.int⟩ (let: "$a0" := (![go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "set") in
      (FuncResolve endOrdinalOf [] #()) "$a0")))).
 
-(* go: stateful_set.go:119:6 *)
+(* go: stateful_set.go:120:6 *)
 Definition isTerminatingⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "pod") in
@@ -320,7 +321,7 @@ Definition isTerminatingⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
    and Subdomain only during initial Pod creation:
    https://github.com/kubernetes/kubernetes/blob/master/pkg/controller/statefulset/stateful_set_utils.go
 
-   go: stateful_set.go:127:6 *)
+   go: stateful_set.go:128:6 *)
 Definition initIdentityⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "pod") in
@@ -334,7 +335,7 @@ Definition initIdentityⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext
     do:  ((StructFieldRef code.k8s_io.api.core.v1.v1.PodSpec "Subdomain"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Pod "Spec"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod"))) <-[go.string] "$r0");;;
     return: #()).
 
-(* go: stateful_set.go:133:6 *)
+(* go: stateful_set.go:134:6 *)
 Definition updateIdentityⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "pod") in
@@ -361,7 +362,7 @@ Definition updateIdentityⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
     do:  (map.insert go.string (![go.MapType go.string go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Labels"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Pod "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod")))) (Convert go.untyped_string go.string code.k8s_io.api.apps.v1.v1.PodIndexLabel) "$r0");;;
     return: #()).
 
-(* go: stateful_set.go:144:6 *)
+(* go: stateful_set.go:145:6 *)
 Definition identityMatchesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "pod") in
@@ -379,7 +380,7 @@ Definition identityMatchesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
      (FuncResolve podName [] #()) "$a0" "$a1"))) && ((![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Namespace"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Pod "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod")))) =⟨go.string⟩ (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Namespace"%go (StructFieldRef code.k8s_io.api.apps.v1.v1.StatefulSet "ObjectMeta"%go (![go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "set")))))) && ((map.lookup1 go.string go.string (![go.MapType go.string go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Labels"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Pod "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod")))) (Convert go.untyped_string go.string code.k8s_io.api.apps.v1.v1.StatefulSetPodNameLabel)) =⟨go.string⟩ (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Name"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Pod "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod")))))) && ((map.lookup1 go.string go.string (![go.MapType go.string go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Labels"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Pod "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod")))) (Convert go.untyped_string go.string code.k8s_io.api.apps.v1.v1.PodIndexLabel)) =⟨go.string⟩ (let: "$a0" := (![go.int] "ordinal") in
      (FuncResolve code.strconv.strconv.Itoa [] #()) "$a0")))).
 
-(* go: stateful_set.go:154:6 *)
+(* go: stateful_set.go:155:6 *)
 Definition volumeClaimTemplatesByNameⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set",
     exception_do (let: "set" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet) "set") in
@@ -400,7 +401,7 @@ Definition volumeClaimTemplatesByNameⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : G
    StatefulSet Pod. Upstream performs the same initialization before creation:
    https://github.com/kubernetes/kubernetes/blob/master/pkg/controller/statefulset/stateful_set_utils.go
 
-   go: stateful_set.go:165:6 *)
+   go: stateful_set.go:166:6 *)
 Definition initStorageⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "pod") in
@@ -460,7 +461,7 @@ Definition initStorageⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext}
     do:  ((StructFieldRef code.k8s_io.api.core.v1.v1.PodSpec "Volumes"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Pod "Spec"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod"))) <-[go.SliceType code.k8s_io.api.core.v1.v1.Volume] "$r0");;;
     return: #()).
 
-(* go: stateful_set.go:191:6 *)
+(* go: stateful_set.go:192:6 *)
 Definition storageMatchesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "pod") in
@@ -505,7 +506,7 @@ Definition storageMatchesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
       else do:  #())));;;
     return: (#true)).
 
-(* go: stateful_set.go:214:6 *)
+(* go: stateful_set.go:215:6 *)
 Definition newStatefulSetPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "ordinal",
     exception_do (let: "ordinal" := (GoAlloc go.int "ordinal") in
@@ -538,7 +539,7 @@ Definition newStatefulSetPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
     (FuncResolve initStorage [] #()) "$a0" "$a1");;;
     return: (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: stateful_set.go:225:6 *)
+(* go: stateful_set.go:226:6 *)
 Definition newPersistentVolumeClaimⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pod" "claimTemplate",
     exception_do (let: "claimTemplate" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) "claimTemplate") in
@@ -575,7 +576,7 @@ Definition newPersistentVolumeClaimⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
     else do:  #());;;
     return: (![go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim] "claim")).
 
-(* go: stateful_set.go:242:6 *)
+(* go: stateful_set.go:243:6 *)
 Definition createPersistentVolumeClaimⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "claimLister" "set" "pod" "claimTemplate",
     exception_do (let: "claimTemplate" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim) "claimTemplate") in
@@ -601,9 +602,10 @@ Definition createPersistentVolumeClaimⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
     (if: let: "$a0" := (![go.error] "err") in
     (FuncResolve code.k8s_io.apimachinery.pkg.api.errors.errors.IsNotFound [] #()) "$a0"
     then
+      let: "createOptions" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.CreateOptions (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.CreateOptions #())) in
       let: ("$ret0", "$ret1") := (let: "$a0" := (![code.context.context.Context] "ctx") in
       let: "$a1" := (![go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim] "claim") in
-      let: "$a2" := (CompositeLiteral code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.CreateOptions (LiteralValue [])) in
+      let: "$a2" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.CreateOptions] "createOptions") in
       (MethodResolve code.k8s_io.client_go.kubernetes.typed.core.v1.v1.PersistentVolumeClaimInterface "Create"%go (let: "$a0" := (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Namespace"%go (StructFieldRef code.k8s_io.api.core.v1.v1.PersistentVolumeClaim "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.PersistentVolumeClaim] "claim")))) in
       (MethodResolve code.k8s_io.client_go.kubernetes.typed.core.v1.v1.CoreV1Interface "PersistentVolumeClaims"%go ((MethodResolve (go.PointerType code.k8s_io.client_go.kubernetes.kubernetes.Clientset) "CoreV1"%go (![go.PointerType code.k8s_io.client_go.kubernetes.kubernetes.Clientset] "kubeClient")) #())) "$a0")) "$a0" "$a1" "$a2") in
       let: "$r0" := "$ret0" in
@@ -618,7 +620,7 @@ Definition createPersistentVolumeClaimⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : 
     else do:  #());;;
     return: (![go.error] "err")).
 
-(* go: stateful_set.go:255:6 *)
+(* go: stateful_set.go:257:6 *)
 Definition createPersistentVolumeClaimsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "claimLister" "set" "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "pod") in
@@ -646,7 +648,7 @@ Definition createPersistentVolumeClaimsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx :
       else do:  #()))));;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: stateful_set.go:264:6 *)
+(* go: stateful_set.go:266:6 *)
 Definition createStatefulPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "claimLister" "set" "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "pod") in
@@ -665,10 +667,11 @@ Definition createStatefulPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
     (if: Convert go.untyped_bool go.bool ((![go.error] "err") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
     then return: (![go.error] "err")
     else do:  #()));;;
+    let: "createOptions" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.CreateOptions (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.CreateOptions #())) in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![code.context.context.Context] "ctx") in
     let: "$a1" := (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "pod") in
-    let: "$a2" := (CompositeLiteral code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.CreateOptions (LiteralValue [])) in
+    let: "$a2" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.CreateOptions] "createOptions") in
     (MethodResolve code.k8s_io.client_go.kubernetes.typed.core.v1.v1.PodInterface "Create"%go (let: "$a0" := (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Namespace"%go (StructFieldRef code.k8s_io.api.apps.v1.v1.StatefulSet "ObjectMeta"%go (![go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "set")))) in
     (MethodResolve code.k8s_io.client_go.kubernetes.typed.core.v1.v1.CoreV1Interface "Pods"%go ((MethodResolve (go.PointerType code.k8s_io.client_go.kubernetes.kubernetes.Clientset) "CoreV1"%go (![go.PointerType code.k8s_io.client_go.kubernetes.kubernetes.Clientset] "kubeClient")) #())) "$a0")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
@@ -681,7 +684,7 @@ Definition createStatefulPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
     else do:  #());;;
     return: (![go.error] "err")).
 
-(* go: stateful_set.go:275:6 *)
+(* go: stateful_set.go:278:6 *)
 Definition updateStatefulPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "set" "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "pod") in
@@ -699,10 +702,11 @@ Definition updateStatefulPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
     do:  (let: "$a0" := (![go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "set") in
     let: "$a1" := (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "updatedPod") in
     (FuncResolve updateIdentity [] #()) "$a0" "$a1");;;
+    let: "updateOptions" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions #())) in
     let: "err" := (GoAlloc go.error (GoZeroVal go.error #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (![code.context.context.Context] "ctx") in
     let: "$a1" := (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "updatedPod") in
-    let: "$a2" := (CompositeLiteral code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions (LiteralValue [])) in
+    let: "$a2" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.UpdateOptions] "updateOptions") in
     (MethodResolve code.k8s_io.client_go.kubernetes.typed.core.v1.v1.PodInterface "Update"%go (let: "$a0" := (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Namespace"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Pod "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "updatedPod")))) in
     (MethodResolve code.k8s_io.client_go.kubernetes.typed.core.v1.v1.CoreV1Interface "Pods"%go ((MethodResolve (go.PointerType code.k8s_io.client_go.kubernetes.kubernetes.Clientset) "CoreV1"%go (![go.PointerType code.k8s_io.client_go.kubernetes.kubernetes.Clientset] "kubeClient")) #())) "$a0")) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
@@ -711,7 +715,7 @@ Definition updateStatefulPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
     do:  ("err" <-[go.error] "$r1");;;
     return: (![go.error] "err")).
 
-(* go: stateful_set.go:286:6 *)
+(* go: stateful_set.go:290:6 *)
 Definition deletePodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "pod") in
@@ -730,7 +734,7 @@ Definition deletePodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} :
     else do:  #());;;
     return: (Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: stateful_set.go:295:6 *)
+(* go: stateful_set.go:299:6 *)
 Definition findPodByOrdinalⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pods" "ordinal",
     exception_do (let: "ordinal" := (GoAlloc go.int "ordinal") in
@@ -754,7 +758,7 @@ Definition findPodByOrdinalⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
       else do:  #())));;;
     return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.core.v1.v1.Pod) UntypedNil)).
 
-(* go: stateful_set.go:305:6 *)
+(* go: stateful_set.go:309:6 *)
 Definition firstCondemnedPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pods",
     exception_do (let: "pods" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)) "pods") in
@@ -782,7 +786,7 @@ Definition firstCondemnedPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
       else do:  #())));;;
     return: (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "condemned")).
 
-(* go: stateful_set.go:319:6 *)
+(* go: stateful_set.go:323:6 *)
 Definition withoutStatefulSetFieldsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "spec",
     exception_do (let: "spec" := (GoAlloc code.k8s_io.api.core.v1.v1.PodSpec "spec") in
@@ -794,7 +798,7 @@ Definition withoutStatefulSetFieldsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
     do:  ((StructFieldRef code.k8s_io.api.core.v1.v1.PodSpec "Subdomain"%go "spec") <-[go.string] "$r0");;;
     return: (![code.k8s_io.api.core.v1.v1.PodSpec] "spec")).
 
-(* go: stateful_set.go:326:6 *)
+(* go: stateful_set.go:330:6 *)
 Definition podSpecMatchesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pod",
     exception_do (let: "pod" := (GoAlloc (go.PointerType code.k8s_io.api.core.v1.v1.Pod) "pod") in
@@ -816,7 +820,7 @@ Definition podSpecMatchesⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalConte
      let: "$a1" := (Convert code.k8s_io.api.core.v1.v1.PodSpec go.any (![code.k8s_io.api.core.v1.v1.PodSpec] "templateSpec")) in
      (FuncResolve code.reflect.reflect.DeepEqual [] #()) "$a0" "$a1")).
 
-(* go: stateful_set.go:349:6 *)
+(* go: stateful_set.go:353:6 *)
 Definition largestOutdatedPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "set" "pods",
     exception_do (let: "pods" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)) "pods") in
@@ -843,7 +847,7 @@ Definition largestOutdatedPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalC
    processed. A false result without an error tells the caller to stop this
    reconciliation after creating a missing Pod or observing a terminating Pod.
 
-   go: stateful_set.go:362:6 *)
+   go: stateful_set.go:366:6 *)
 Definition reconcileDesiredPodsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "claimLister" "set" "pods",
     exception_do (let: "pods" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)) "pods") in
@@ -923,7 +927,7 @@ Definition reconcileDesiredPodsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
    reconciliation may continue. After observing or deleting one condemned Pod,
    the caller stops this reconciliation and waits for the next observed state.
 
-   go: stateful_set.go:397:6 *)
+   go: stateful_set.go:401:6 *)
 Definition reconcileCondemnedPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "set" "pods",
     exception_do (let: "pods" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)) "pods") in
@@ -953,7 +957,7 @@ Definition reconcileCondemnedPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlob
     else do:  #()));;;
     return: (#false, Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: stateful_set.go:411:6 *)
+(* go: stateful_set.go:415:6 *)
 Definition reconcileOutdatedPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "set" "pods",
     exception_do (let: "pods" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)) "pods") in
@@ -977,7 +981,7 @@ Definition reconcileOutdatedPodⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGloba
      let: "$a2" := (![go.PointerType code.k8s_io.api.core.v1.v1.Pod] "outdated") in
      (FuncResolve deletePod [] #()) "$a0" "$a1" "$a2")).
 
-(* go: stateful_set.go:422:6 *)
+(* go: stateful_set.go:426:6 *)
 Definition reconcileReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "claimLister" "set" "pods",
     exception_do (let: "pods" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)) "pods") in
@@ -1018,7 +1022,7 @@ Definition reconcileReplicasⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
      let: "$a3" := (![go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)] "pods") in
      (FuncResolve reconcileOutdatedPod [] #()) "$a0" "$a1" "$a2" "$a3")).
 
-(* go: stateful_set.go:436:6 *)
+(* go: stateful_set.go:440:6 *)
 Definition syncStatefulSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "setLister" "claimLister" "podIndexer" "namespace" "name",
     exception_do (let: "name" := (GoAlloc go.string "name") in

@@ -530,7 +530,9 @@ Section specs.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {package_sem : code.controllers.statefulset.statefulset.Assumptions}.
-Collection W := sem + package_sem.
+Context {model_sem : apimodel.Assumptions}.
+Context {client_ctx : code.context.context.Context.t} {kube_client : loc}.
+Collection W := sem + package_sem + model_sem.
 #[local] Instance base_common_sem : common.Assumptions | 100 :=
   code.controllers.statefulset.statefulset.import_common_Assumption.
 #[local] Instance controller_sem : controller.Assumptions :=
@@ -540,12 +542,12 @@ Collection W := sem + package_sem.
   controller.import_runtime_Assumption.
 #[local] Instance runtime_object_underlying_eq :
     runtime.Object ≤u runtime.Objectⁱᵐᵖˡ.
-Proof using package_sem. apply _. Qed.
+Proof using package_sem model_sem. apply _. Qed.
 #[local] Instance meta_object_underlying_eq :
     meta_v1.Object ≤u meta_v1.Objectⁱᵐᵖˡ.
-Proof using package_sem. apply _. Qed.
+Proof using package_sem model_sem. apply _. Qed.
 #[local] Instance base_apimodel_sem : apimodel.Assumptions | 100 :=
-  common.import_apimodel_Assumption.
+  model_sem.
 #[local] Instance object_meta_v1_sem :
     code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions :=
   apimodel.import_apis_meta_v1_Assumption.
@@ -556,15 +558,15 @@ Proof using package_sem. apply _. Qed.
     code.k8s_io.api.core.v1.v1.Assumptions :=
   code.k8s_io.api.apps.v1.v1.import_core_v1_Assumption.
 #[local] Instance apimodel_sem : apimodel.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact object_core_v1_sem; try apply _.
 Defined.
 #[local] Instance common_sem : common.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact apimodel_sem; try apply _.
 Defined.
 Context `{!kubernetesModelG Σ}.
-Local Set Default Proof Using "All".
+Local Set Default Proof Using "All - client_ctx - kube_client".
 
 Record all_fractions := {
   sts_dq : dfrac;
@@ -625,12 +627,14 @@ Definition progress_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "Hresources" ∷ owned_resources γ sts pods pvcs (mutating_fractions dq) true ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement sts ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
-    @! statefulset.syncStatefulSet #namespace #name
+    @! statefulset.syncStatefulSet #client_ctx #kube_client
+      #controller_client.stateful_set_lister #controller_client.claim_lister #controller_client.indexer #namespace #name
   {{{ pods' pvcs' (err : interface.t), RET #err;
       owned_resources γ sts pods' pvcs' (mutating_fractions dq) false ∗
       ⌜ current_state_matches sts pods' pvcs' ∨
@@ -641,12 +645,14 @@ Definition preservation_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "Hresources" ∷ owned_resources γ sts pods pvcs (mutating_fractions dq) false ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement sts ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
-    @! statefulset.syncStatefulSet #namespace #name
+    @! statefulset.syncStatefulSet #client_ctx #kube_client
+      #controller_client.stateful_set_lister #controller_client.claim_lister #controller_client.indexer #namespace #name
   {{{ pods' pvcs' (err : interface.t), RET #err;
       owned_resources γ sts pods' pvcs' (mutating_fractions dq) false ∗
       ⌜ match_distance sts pods' pvcs' ≤ match_distance sts pods pvcs ⌝
@@ -656,12 +662,14 @@ Definition stability_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "Hresources" ∷ owned_resources γ sts pods pvcs (stability_fractions dq) true ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
       "%Hmatch" ∷ ⌜ current_state_matches sts pods pvcs ⌝
   }}}
-    @! statefulset.syncStatefulSet #namespace #name
+    @! statefulset.syncStatefulSet #client_ctx #kube_client
+      #controller_client.stateful_set_lister #controller_client.claim_lister #controller_client.indexer #namespace #name
   {{{ (err : interface.t), RET #err;
       owned_resources γ sts pods pvcs (stability_fractions dq) true
   }}}.

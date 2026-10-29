@@ -1,3 +1,4 @@
+From New.proof.controllers Require Import client_tactics.
 From New.proof Require Import wp_keep.
 From New.proof.controllers.statefulset Require Export reconcile_preservation.
 From New.proof.controllers.statefulset Require Export top_level.
@@ -11,7 +12,9 @@ Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {package_sem : code.controllers.statefulset.statefulset.Assumptions}.
-Collection W := sem + package_sem.
+Context {model_sem : apimodel.Assumptions}.
+Context {client_ctx : code.context.context.Context.t} {kube_client : loc}.
+Collection W := sem + package_sem + model_sem.
 #[local] Instance base_common_sem : common.Assumptions | 100 :=
   code.controllers.statefulset.statefulset.import_common_Assumption.
 #[local] Instance controller_sem : controller.Assumptions :=
@@ -21,12 +24,12 @@ Collection W := sem + package_sem.
   controller.import_runtime_Assumption.
 #[local] Instance runtime_object_underlying_eq :
     runtime.Object ≤u runtime.Objectⁱᵐᵖˡ.
-Proof using package_sem. apply _. Qed.
+Proof using package_sem model_sem. apply _. Qed.
 #[local] Instance meta_object_underlying_eq :
     meta_v1.Object ≤u meta_v1.Objectⁱᵐᵖˡ.
-Proof using package_sem. apply _. Qed.
+Proof using package_sem model_sem. apply _. Qed.
 #[local] Instance base_apimodel_sem : apimodel.Assumptions | 100 :=
-  common.import_apimodel_Assumption.
+  model_sem.
 #[local] Instance object_meta_v1_sem :
     code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions :=
   apimodel.import_apis_meta_v1_Assumption.
@@ -37,15 +40,15 @@ Proof using package_sem. apply _. Qed.
     code.k8s_io.api.core.v1.v1.Assumptions :=
   code.k8s_io.api.apps.v1.v1.import_core_v1_Assumption.
 #[local] Instance apimodel_sem : apimodel.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact object_core_v1_sem; try apply _.
 Defined.
 #[local] Instance common_sem : common.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact apimodel_sem; try apply _.
 Defined.
 Context `{!kubernetesModelG Σ}.
-Local Set Default Proof Using "All".
+Local Set Default Proof Using "All - client_ctx - kube_client".
 
 Lemma elem_of_drop_full {A} (xs : list A) n x :
   x ∈ drop n xs → x ∈ xs.
@@ -186,7 +189,7 @@ Qed.
 Context `{!KObjectV.ObjectInterfaceAssumptions}.
 
 Lemma wp_syncStatefulSet_preservation γ l namespace name sts dq pods pvcs :
-  ⊢ preservation_spec γ l namespace name sts dq pods pvcs.
+  ⊢ preservation_spec (client_ctx:=client_ctx) (kube_client:=kube_client) γ l namespace name sts dq pods pvcs.
 Proof.
   unfold preservation_spec.
   wp_start as "H". iNamed "H". iNamed "Hresources".
@@ -205,6 +208,7 @@ Proof.
   { iPkgInit. }
   iAssert (is_pkg_init apimodel) as "#Hapimodel_init".
   { iPkgInit. }
+  wp_client_model.
   wp_apply (wp_State__StatefulSetGet with
     "[$Hown_sts_meta_frag $Hown_sts_spec_frag]").
   { iFrame "#". iPureIntro.
@@ -214,7 +218,7 @@ Proof.
   iRename "Hget_Hdeepown_l" into "Hset".
   iRename "Hget_Hown_meta_frag" into "Hown_sts_meta_frag".
   iRename "Hget_Hown_spec_frag" into "Hown_sts_spec_frag".
-  wp_auto_keep.
+  wp_controller_auto.
   wp_apply (wp_IsNotFound interface.nil with "[]").
   replace (bool_decide (not_found_error interface.nil)) with false by
     (symmetry; apply bool_decide_false; exact not_found_error_nil).

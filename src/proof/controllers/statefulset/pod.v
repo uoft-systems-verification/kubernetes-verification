@@ -2,6 +2,8 @@ From New.proof Require Import wp_keep.
 From New.proof.controllers.statefulset Require Export pod_identity.
 From New.proof.controllers.statefulset Require Export pod_storage.
 
+Module apps_v1 := code.k8s_io.api.apps.v1.v1.
+
 Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 
 
@@ -10,7 +12,8 @@ Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {package_sem : code.controllers.statefulset.statefulset.Assumptions}.
-Collection W := sem + package_sem.
+Context {model_sem : apimodel.Assumptions}.
+Collection W := sem + package_sem + model_sem.
 #[local] Instance base_common_sem : common.Assumptions | 100 :=
   code.controllers.statefulset.statefulset.import_common_Assumption.
 #[local] Instance controller_sem : controller.Assumptions :=
@@ -19,27 +22,27 @@ Collection W := sem + package_sem.
   controller.import_runtime_Assumption.
 #[local] Instance runtime_object_underlying_eq :
     runtime.Object ≤u runtime.Objectⁱᵐᵖˡ.
-Proof using package_sem. apply _. Qed.
+Proof using package_sem model_sem. apply _. Qed.
 #[local] Instance meta_object_underlying_eq :
     meta_v1.Object ≤u meta_v1.Objectⁱᵐᵖˡ.
-Proof using package_sem. apply _. Qed.
+Proof using package_sem model_sem. apply _. Qed.
 #[local] Instance base_apimodel_sem : apimodel.Assumptions | 100 :=
-  common.import_apimodel_Assumption.
+  model_sem.
 #[local] Instance object_meta_v1_sem :
     code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions :=
   apimodel.import_apis_meta_v1_Assumption.
 #[local] Instance object_apps_v1_sem :
-    code.k8s_io.api.apps.v1.v1.Assumptions :=
+    apps_v1.Assumptions :=
   apimodel.import_api_apps_v1_Assumption.
 #[local] Instance object_core_v1_sem :
     code.k8s_io.api.core.v1.v1.Assumptions :=
-  code.k8s_io.api.apps.v1.v1.import_core_v1_Assumption.
+  apps_v1.import_core_v1_Assumption.
 #[local] Instance apimodel_sem : apimodel.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact object_core_v1_sem; try apply _.
 Defined.
 #[local] Instance common_sem : common.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact apimodel_sem; try apply _.
 Defined.
 Context `{!kubernetesModelG Σ}.
@@ -140,10 +143,10 @@ Proof.
   wp_auto_keep.
   wp_bind ((global_addr apps_v1.SchemeGroupVersion) @!
     (go.PointerType schema.GroupVersion) @! "WithKind" #"StatefulSet"%go)%E.
-  iDestruct (is_pkg_init_unfold_deps with "Hpkg") as
-    "(_ & _ & _ & _ & _ & #Happs_v1_init & _)".
+  iAssert (is_pkg_init code.k8s_io.api.apps.v1.pkg_id.v1) as "#Happs_v1_init".
+  { iPkgInit. }
   wp_apply (New.proof.k8s_io.api.apps.v1.wp_SchemeGroupVersion__WithKind
-    (schema_sem := @code.k8s_io.api.apps.v1.v1.import_schema_Assumption
+    (schema_sem := @apps_v1.import_schema_Assumption
       _ _ _ _ object_apps_v1_sem) "StatefulSet"%go with
     "[$Happs_v1_init]").
   iIntros (gvk) "%Hgvk".

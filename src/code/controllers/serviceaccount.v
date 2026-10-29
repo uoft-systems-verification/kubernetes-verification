@@ -70,9 +70,10 @@ Definition syncNamespaceⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
       else do:  #());;;
       let: "$r0" := (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Name"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Namespace "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Namespace] "namespace")))) in
       do:  ((StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Namespace"%go (StructFieldRef code.k8s_io.api.core.v1.v1.ServiceAccount "ObjectMeta"%go "serviceAccount")) <-[go.string] "$r0");;;
+      let: "createOptions" := (GoAlloc code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.CreateOptions (GoZeroVal code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.CreateOptions #())) in
       let: ("$ret0", "$ret1") := (let: "$a0" := (![code.context.context.Context] "ctx") in
       let: "$a1" := "serviceAccount" in
-      let: "$a2" := (CompositeLiteral code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.CreateOptions (LiteralValue [])) in
+      let: "$a2" := (![code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.CreateOptions] "createOptions") in
       (MethodResolve code.k8s_io.client_go.kubernetes.typed.core.v1.v1.ServiceAccountInterface "Create"%go (let: "$a0" := (![go.string] (StructFieldRef code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta "Name"%go (StructFieldRef code.k8s_io.api.core.v1.v1.Namespace "ObjectMeta"%go (![go.PointerType code.k8s_io.api.core.v1.v1.Namespace] "namespace")))) in
       (MethodResolve code.k8s_io.client_go.kubernetes.typed.core.v1.v1.CoreV1Interface "ServiceAccounts"%go ((MethodResolve (go.PointerType code.k8s_io.client_go.kubernetes.kubernetes.Clientset) "CoreV1"%go (![go.PointerType code.k8s_io.client_go.kubernetes.kubernetes.Clientset] "kubeClient")) #())) "$a0")) "$a0" "$a1" "$a2") in
       let: "$r0" := "$ret0" in

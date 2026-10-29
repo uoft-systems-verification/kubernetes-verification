@@ -92,7 +92,8 @@ func releasePod(ctx context.Context, kubeClient *clientset.Clientset, set *apps.
 		return nil
 	}
 	updatedPod.OwnerReferences = ownerReferences
-	_, err := kubeClient.CoreV1().Pods(updatedPod.Namespace).Update(ctx, updatedPod, metav1.UpdateOptions{})
+	var updateOptions metav1.UpdateOptions
+	_, err := kubeClient.CoreV1().Pods(updatedPod.Namespace).Update(ctx, updatedPod, updateOptions)
 	if apierrors.IsNotFound(err) {
 		return nil
 	}
@@ -243,7 +244,8 @@ func createPersistentVolumeClaim(ctx context.Context, kubeClient *clientset.Clie
 	claim := newPersistentVolumeClaim(set, pod, claimTemplate)
 	_, err := claimLister.PersistentVolumeClaims(claim.Namespace).Get(claim.Name)
 	if apierrors.IsNotFound(err) {
-		_, err = kubeClient.CoreV1().PersistentVolumeClaims(claim.Namespace).Create(ctx, claim, metav1.CreateOptions{})
+		var createOptions metav1.CreateOptions
+		_, err = kubeClient.CoreV1().PersistentVolumeClaims(claim.Namespace).Create(ctx, claim, createOptions)
 		if err != nil && !apierrors.IsAlreadyExists(err) {
 			return err
 		}
@@ -265,7 +267,8 @@ func createStatefulPod(ctx context.Context, kubeClient *clientset.Clientset, cla
 	if err := createPersistentVolumeClaims(ctx, kubeClient, claimLister, set, pod); err != nil {
 		return err
 	}
-	_, err := kubeClient.CoreV1().Pods(set.Namespace).Create(ctx, pod, metav1.CreateOptions{})
+	var createOptions metav1.CreateOptions
+	_, err := kubeClient.CoreV1().Pods(set.Namespace).Create(ctx, pod, createOptions)
 	if apierrors.IsAlreadyExists(err) {
 		return nil
 	}
@@ -279,7 +282,8 @@ func updateStatefulPod(ctx context.Context, kubeClient *clientset.Clientset, set
 
 	updatedPod := pod.DeepCopy()
 	updateIdentity(set, updatedPod)
-	_, err := kubeClient.CoreV1().Pods(updatedPod.Namespace).Update(ctx, updatedPod, metav1.UpdateOptions{})
+	var updateOptions metav1.UpdateOptions
+	_, err := kubeClient.CoreV1().Pods(updatedPod.Namespace).Update(ctx, updatedPod, updateOptions)
 	return err
 }
 

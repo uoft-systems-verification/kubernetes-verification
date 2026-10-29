@@ -1,3 +1,5 @@
+From New.proof.encoding Require Export json_init.
+From New.proof.k8s_io.apimachinery.pkg.types Require Export types_init.
 From New.proof Require Export fmt.
 From New.proof.k8s_io.api.core Require Export v1_init.
 From New.proof.k8s_io.apimachinery.pkg Require Export labels_init.

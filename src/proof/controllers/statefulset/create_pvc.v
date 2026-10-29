@@ -1,3 +1,4 @@
+From New.proof.controllers Require Import client_tactics.
 From New.proof Require Import wp_keep.
 From New.proof.controllers.statefulset Require Export pod_predicates.
 From New.proof.controllers.statefulset Require Export pvc.
@@ -16,7 +17,9 @@ Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {package_sem : code.controllers.statefulset.statefulset.Assumptions}.
-Collection W := sem + package_sem.
+Context {model_sem : apimodel.Assumptions}.
+Context {client_ctx : code.context.context.Context.t} {kube_client : loc}.
+Collection W := sem + package_sem + model_sem.
 #[local] Instance base_common_sem : common.Assumptions | 100 :=
   code.controllers.statefulset.statefulset.import_common_Assumption.
 #[local] Instance controller_sem : controller.Assumptions :=
@@ -26,12 +29,12 @@ Collection W := sem + package_sem.
   controller.import_runtime_Assumption.
 #[local] Instance runtime_object_underlying_eq :
     runtime.Object ≤u runtime.Objectⁱᵐᵖˡ.
-Proof using package_sem. apply _. Qed.
+Proof using package_sem model_sem. apply _. Qed.
 #[local] Instance meta_object_underlying_eq :
     meta_v1.Object ≤u meta_v1.Objectⁱᵐᵖˡ.
-Proof using package_sem. apply _. Qed.
+Proof using package_sem model_sem. apply _. Qed.
 #[local] Instance base_apimodel_sem : apimodel.Assumptions | 100 :=
-  common.import_apimodel_Assumption.
+  model_sem.
 #[local] Instance object_meta_v1_sem :
     code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions :=
   apimodel.import_apis_meta_v1_Assumption.
@@ -42,15 +45,15 @@ Proof using package_sem. apply _. Qed.
     code.k8s_io.api.core.v1.v1.Assumptions :=
   code.k8s_io.api.apps.v1.v1.import_core_v1_Assumption.
 #[local] Instance apimodel_sem : apimodel.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact object_core_v1_sem; try apply _.
 Defined.
 #[local] Instance common_sem : common.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact apimodel_sem; try apply _.
 Defined.
 Context `{!kubernetesModelG Σ}.
-Local Set Default Proof Using "All".
+Local Set Default Proof Using "All - client_ctx - kube_client".
 
 Definition claim_template_maps_related
     (R : v1.PersistentVolumeClaim.t → PersistentVolumeClaimV.t → Prop)
@@ -235,6 +238,7 @@ Lemma wp_createPersistentVolumeClaim_without_claim_templates γ model_l
       "#Hisk" ∷ is_kubernetes γ model_l ∗
       "#Hglobal_l" ∷
         (global_addr apimodel.ModelState) ↦□ model_l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "Hset" ∷ statefulset_without_claim_templates_l
         set_l set dq_set set_phy ∗
       "Hpod" ∷ PodV.deepown_l pod_l pod dq_pod ∗
@@ -282,7 +286,7 @@ Lemma wp_createPersistentVolumeClaim_without_claim_templates γ model_l
             ⌜ valid_namespace
                 set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝))
   }}}
-    @! statefulset.createPersistentVolumeClaim
+    @! statefulset.createPersistentVolumeClaim #client_ctx #kube_client #controller_client.claim_lister
       #set_l #pod_l #claim_template_l
   {{{ RET #interface.nil;
       "Hset" ∷ statefulset_without_claim_templates_l
@@ -330,6 +334,7 @@ Proof.
   iDestruct "Hpvc_state" as "[Hpvc_exists | Hcreate]".
   - iDestruct "Hpvc_exists" as (existing_claim) "H".
     iNamed "H".
+    wp_client_model.
     wp_apply (wp_State__PersistentVolumeClaimGet
       γ model_l
       (new_persistent_volume_claim_key set claim_template ordinal)
@@ -347,7 +352,7 @@ Proof.
       done. }
     iIntros (existing_claim_l existing_claim') "Hget".
     iNamedPrefix "Hget" "Hget_".
-    wp_auto_keep.
+    wp_controller_auto.
     wp_apply (wp_IsNotFound interface.nil with "[]").
     replace (bool_decide (not_found_error interface.nil)) with false by
       (symmetry; apply bool_decide_false; exact not_found_error_nil).
@@ -359,6 +364,7 @@ Proof.
     iPureIntro.
     exact Hkey.
   - iNamed "Hcreate".
+    wp_client_model.
     wp_apply (wp_State__PersistentVolumeClaimGet_reserved
       γ model_l
       (new_persistent_volume_claim_key set claim_template ordinal)
@@ -373,7 +379,7 @@ Proof.
         new_persistent_volume_claim.
       done. }
     iIntros (err) "Hget". iNamed "Hget".
-    wp_auto_keep.
+    wp_controller_auto.
     wp_apply (wp_IsNotFound err with "[]").
     replace (bool_decide (not_found_error err)) with true by
       (symmetry; apply bool_decide_true; exact Hnot_found).
@@ -412,6 +418,7 @@ Proof.
       unfold desired_pvc_name in Hempty.
       apply app_eq_nil in Hempty as [_ Hempty].
       discriminate Hempty. }
+    wp_client_model.
     wp_apply (wp_State__PersistentVolumeClaimCreate_named_orphan
       with "[$Hclaim $Hown_reserved_frag]").
     { iFrame "# %".
@@ -426,7 +433,7 @@ Proof.
     iIntros (created_claim_l created_claim uid) "Hcreated".
     iNamed "Hcreated".
     subst uid.
-    wp_auto_keep.
+    wp_controller_auto.
     iApply "HΦ".
     iFrame "Hset Hpod Hclaim_template_ptr Hclaim_template".
     iExists created_claim.
@@ -446,6 +453,7 @@ Lemma wp_createPersistentVolumeClaim γ model_l
       "#Hisk" ∷ is_kubernetes γ model_l ∗
       "#Hglobal_l" ∷
         (global_addr apimodel.ModelState) ↦□ model_l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpod" ∷ PodV.deepown_l pod_l pod dq_pod ∗
       "Hclaim_template" ∷
@@ -491,7 +499,7 @@ Lemma wp_createPersistentVolumeClaim γ model_l
             ⌜ valid_namespace
                 set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝))
   }}}
-    @! statefulset.createPersistentVolumeClaim
+    @! statefulset.createPersistentVolumeClaim #client_ctx #kube_client #controller_client.claim_lister
       #set_l #pod_l #claim_template_l
   {{{ RET #interface.nil;
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
@@ -570,6 +578,7 @@ Lemma wp_createPersistentVolumeClaims γ model_l set_l pod_l
       "#Hisk" ∷ is_kubernetes γ model_l ∗
       "#Hglobal_l" ∷
         (global_addr apimodel.ModelState) ↦□ model_l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpod" ∷ PodV.deepown_l pod_l pod dq_pod ∗
       "%Hordinal_bound" ∷
@@ -612,7 +621,7 @@ Lemma wp_createPersistentVolumeClaims γ model_l set_l pod_l
                 (new_persistent_volume_claim
                   set claim_template ordinal) ⌝))
   }}}
-    @! statefulset.createPersistentVolumeClaims #set_l #pod_l
+    @! statefulset.createPersistentVolumeClaims #client_ctx #kube_client #controller_client.claim_lister #set_l #pod_l
   {{{ RET #interface.nil;
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpod" ∷ PodV.deepown_l pod_l pod dq_pod ∗
@@ -634,6 +643,7 @@ Lemma wp_createPersistentVolumeClaims γ model_l set_l pod_l
 Proof.
   wp_start as "H". iNamed "H".
   wp_auto_keep.
+  iPersist "ctx". iPersist "kubeClient". iPersist "claimLister".
   wp_apply (wp_volumeClaimTemplatesByName set_l set dq_set with "Hset").
   iIntros (set_phy claim_templates_map claim_templates_list
     claim_templates_phy) "H".

@@ -37,7 +37,8 @@ Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {package_sem : code.controllers.replicaset.replicaset.Assumptions}.
-Collection W := sem + package_sem.
+Context {model_sem : apimodel.Assumptions}.
+Collection W := sem + package_sem + model_sem.
 #[local] Instance base_common_sem : common.Assumptions | 100 :=
   code.controllers.replicaset.replicaset.import_common_Assumption.
 #[local] Instance controller_sem : controller.Assumptions :=
@@ -58,12 +59,12 @@ Collection W := sem + package_sem.
   controller.import_runtime_Assumption.
 #[local] Instance runtime_object_underlying_eq :
   runtime.Object ≤u runtime.Objectⁱᵐᵖˡ.
-Proof using package_sem. apply _. Qed.
+Proof using package_sem model_sem. apply _. Qed.
 #[local] Instance meta_object_underlying_eq :
   meta_v1.Object ≤u meta_v1.Objectⁱᵐᵖˡ.
-Proof using package_sem. apply _. Qed.
+Proof using package_sem model_sem. apply _. Qed.
 #[local] Instance base_apimodel_sem : apimodel.Assumptions | 100 :=
-  common.import_apimodel_Assumption.
+  model_sem.
 #[local] Instance object_meta_v1_sem :
     code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions :=
   apimodel.import_apis_meta_v1_Assumption.
@@ -74,11 +75,11 @@ Proof using package_sem. apply _. Qed.
     code.k8s_io.api.core.v1.v1.Assumptions :=
   code.k8s_io.api.apps.v1.v1.import_core_v1_Assumption.
 #[local] Instance apimodel_sem : apimodel.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact object_core_v1_sem; try apply _.
 Defined.
 #[local] Instance common_sem : common.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact apimodel_sem; try apply _.
 Defined.
 Context `{!kubernetesModelG Σ}.
@@ -235,6 +236,7 @@ Lemma wp_manageReplicas γ l (ctx : context.Context.t) (kube_client : loc) (burs
   {{{ "#Hpkg" ∷ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "Hsl" ∷ sl ↦* ptrs ∗
       (* The pods and the ReplicaSet are only read, so callers pass read-only
          ownership; the pods' ownership is persistent and the ReplicaSet's is
@@ -260,7 +262,7 @@ Lemma wp_manageReplicas γ l (ctx : context.Context.t) (kube_client : loc) (burs
       "%Hburst" ∷ ⌜ 0 < sint.Z burst < 2^31 ⌝ ∗
       "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> (active_pods ++ inactive_pods)) ⌝
   }}}
-    @! replicaset.manageReplicas #ctx #kube_client #burst #sl #rs_l
+    @! replicaset.manageReplicas #ctx #kube_client #controller_client.indexer #controller_client.pod_lister #burst #sl #rs_l
   {{{ pods', RET #interface.nil;
       ⌜ length pods' = capped_replica_count (length active_pods) (sint.nat n) (sint.nat burst) ⌝ ∗
       ⌜ ∀ pod, pod ∈ pods' → is_pod_alive pod ⌝ ∗
@@ -550,7 +552,7 @@ Proof.
 	  iPoseProof (ReplicaSetV.deepown_l_restore _ _ _ Hrs_l_not_null with
 	    "[$Hdeepown_t_l_rs $Hdeepown_m_l_rs $Hdeepown_s_l_rs $Hdeepown_st_l_rs]") as
 	    "Hdeepown_l_rs".
-	  wp_bind (@! replicaset.getIndirectlyRelatedPods #rs_l)%E.
+	  wp_bind (@! replicaset.getIndirectlyRelatedPods #controller_client.indexer #controller_client.pod_lister #rs_l)%E.
 	  wp_apply_keep (wp_getIndirectlyRelatedPods γ l rs_l rs DfracDiscarded with "[$Hdeepown_l_rs]").
 	  { iFrame "#". }
 	  iIntros (related_sl related_ptrs related_pods related_dq)

@@ -1,3 +1,4 @@
+From New.proof.controllers Require Export client.
 From New.proof Require Import wp_keep.
 From New.proof Require Import prelude empty_ffi.
 From New.proof.kubernetes_model Require Export by_index_pod_controller.
@@ -14,7 +15,8 @@ Local Opaque TimeV.deepown TimeView.TimeV.deepown TimeView.LocationV.deepown.
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics} {package_sem : common.Assumptions}.
-Collection W := sem + package_sem.
+Context {model_sem : apimodel.Assumptions}.
+Collection W := sem + package_sem + model_sem.
 #[local] Instance object_meta_v1_sem :
     code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions :=
   apimodel.import_apis_meta_v1_Assumption.
@@ -187,6 +189,7 @@ Lemma wp_FilterPodsByOwner γ l owner owner_kind meta dq1
   {{{ is_pkg_init code.controllers.common.pkg_id.common ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "Hdeepown_l_meta" ∷ ObjectMetaV.deepown_l owner meta dq1 ∗
       "Hown_pod_meta_frags" ∷ ([∗ list] pod;pod_dq ∈ living_pods;pod_dqs,
         own_meta_frag γ (PodV.key pod)
@@ -206,7 +209,7 @@ Lemma wp_FilterPodsByOwner γ l owner owner_kind meta dq1
         slash_free meta.(ObjectMetaV.Name') ∧
         slash_free meta.(ObjectMetaV.UID') ⌝
   }}}
-    @! common.FilterPodsByOwner #owner #owner_kind
+    @! common.FilterPodsByOwner #controller_client.indexer #owner #owner_kind
   {{{ sl ptrs all_pods dq', RET (#sl, #interface.nil);
       sl ↦* ptrs ∗
       ([∗ list] ptr;pod ∈ ptrs;all_pods, PodV.deepown_l ptr pod dq') ∗
@@ -245,6 +248,7 @@ Proof.
   wp_apply_keep (controller.wp_PodControllerIndexKey with "[$Howner_reference]").
   iIntros (index_key) "->". wp_auto_keep.
   iNamedPrefix "Hdeepown_meta" "Htemp_".
+  wp_controller_cache.
   wp_apply_keep (wp_State__ByIndex_podController_combined
     _ _ _ _ pod_dqs _ _ _ children_dq terminating_bound
     with "[$Hown_pod_meta_frags $Hown_children_frag
@@ -330,6 +334,7 @@ Lemma wp_FilterPodsByOwner_with_spec γ l owner owner_kind meta dq1
   {{{ is_pkg_init code.controllers.common.pkg_id.common ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "Hdeepown_l_meta" ∷ ObjectMetaV.deepown_l owner meta dq1 ∗
       "Hown_pod_frags" ∷ ([∗ list] pod;pod_dq ∈ living_pods;pod_dqs,
         own_meta_frag γ (PodV.key pod)
@@ -352,7 +357,7 @@ Lemma wp_FilterPodsByOwner_with_spec γ l owner owner_kind meta dq1
         slash_free meta.(ObjectMetaV.Name') ∧
         slash_free meta.(ObjectMetaV.UID') ⌝
   }}}
-    @! common.FilterPodsByOwner #owner #owner_kind
+    @! common.FilterPodsByOwner #controller_client.indexer #owner #owner_kind
   {{{ sl ptrs pods' dq', RET (#sl, #interface.nil);
       sl ↦* ptrs ∗
       ([∗ list] ptr;pod ∈ ptrs;pods',
@@ -402,6 +407,7 @@ Proof.
   iEval (rewrite big_sepL2_sep) in "Hown_pod_frags".
   iDestruct "Hown_pod_frags" as
     "[Hown_pod_meta_frags Hown_pod_spec_frags]".
+  wp_controller_cache.
   wp_apply_keep (wp_State__ByIndex_podController_combined_with_spec
     _ _ _ _ pod_dqs _ _ _ children_dq
     with "[$Hown_pod_meta_frags $Hown_pod_spec_frags
@@ -523,6 +529,7 @@ Lemma wp_FilterPodsByOwner_uniform_with_spec γ l owner owner_kind meta dq1
   {{{ is_pkg_init code.controllers.common.pkg_id.common ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "Hdeepown_l_meta" ∷ ObjectMetaV.deepown_l owner meta dq1 ∗
       "Hown_pod_frags" ∷ ([∗ list] pod ∈ living_pods,
         own_meta_frag γ (PodV.key pod)
@@ -545,7 +552,7 @@ Lemma wp_FilterPodsByOwner_uniform_with_spec γ l owner owner_kind meta dq1
         slash_free meta.(ObjectMetaV.Name') ∧
         slash_free meta.(ObjectMetaV.UID') ⌝
   }}}
-    @! common.FilterPodsByOwner #owner #owner_kind
+    @! common.FilterPodsByOwner #controller_client.indexer #owner #owner_kind
   {{{ sl ptrs pods' dq', RET (#sl, #interface.nil);
       sl ↦* ptrs ∗
       ([∗ list] ptr;pod ∈ ptrs;pods',
@@ -578,7 +585,7 @@ Lemma wp_FilterPodsByOwner_uniform_with_spec γ l owner owner_kind meta dq1
 Proof.
   iIntros (Φ) "H HΦ".
   iDestruct "H" as
-    "(#Hinit & #Hisk & #Hglobal_l & Hdeepown_l_meta &
+    "(#Hinit & #Hisk & #Hglobal_l & #Hmodel_init & Hdeepown_l_meta &
       Hown_pod_frags & Hown_children_frag &
       Hown_terminating_children_frag &
       %Hnodup & %Hdom_eq & %Hslash_free)".
@@ -635,6 +642,7 @@ Lemma wp_FilterPodsByOwner_uniform γ l owner owner_kind meta dq1 dq2
   {{{ is_pkg_init code.controllers.common.pkg_id.common ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "Hdeepown_l_meta" ∷ ObjectMetaV.deepown_l owner meta dq1 ∗
       "Hown_pod_meta_frags" ∷ ([∗ list] pod ∈ pods,
         own_meta_frag γ (PodV.key pod)
@@ -656,7 +664,7 @@ Lemma wp_FilterPodsByOwner_uniform γ l owner owner_kind meta dq1 dq2
           slash_free meta.(ObjectMetaV.Name') ∧
           slash_free meta.(ObjectMetaV.UID') ⌝
   }}}
-    @! common.FilterPodsByOwner #owner #owner_kind
+    @! common.FilterPodsByOwner #controller_client.indexer #owner #owner_kind
   {{{ sl ptrs pods' dq', RET (#sl, #interface.nil);
       sl ↦* ptrs ∗
       ([∗ list] ptr;pod ∈ ptrs;pods',
@@ -680,7 +688,7 @@ Lemma wp_FilterPodsByOwner_uniform γ l owner owner_kind meta dq1 dq2
 Proof.
   iIntros (Φ) "H HΦ".
   iDestruct "H" as
-    "(#Hinit & #Hisk & #Hglobal_l & Hdeepown_l_meta &
+    "(#Hinit & #Hisk & #Hglobal_l & #Hmodel_init & Hdeepown_l_meta &
       Hown_pod_meta_frags & Hown_children_frag &
       Hown_terminating_children_frag &
       %Hnodup & %Hdom_eq & %Hslash_free)".
@@ -726,6 +734,7 @@ Lemma wp_FilterPodsByOwner_uniform_alive γ l owner owner_kind meta dq1 dq2
   {{{ is_pkg_init code.controllers.common.pkg_id.common ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "Hdeepown_l_meta" ∷ ObjectMetaV.deepown_l owner meta dq1 ∗
       "Hown_pod_meta_frags" ∷ ([∗ list] pod ∈ pods,
         own_meta_frag γ (PodV.key pod)
@@ -747,7 +756,7 @@ Lemma wp_FilterPodsByOwner_uniform_alive γ l owner owner_kind meta dq1 dq2
           slash_free meta.(ObjectMetaV.Name') ∧
           slash_free meta.(ObjectMetaV.UID') ⌝
   }}}
-    @! common.FilterPodsByOwner #owner #owner_kind
+    @! common.FilterPodsByOwner #controller_client.indexer #owner #owner_kind
   {{{ sl ptrs pods' dq', RET (#sl, #interface.nil);
       sl ↦* ptrs ∗
       ([∗ list] ptr;pod ∈ ptrs;pods',
@@ -772,7 +781,7 @@ Lemma wp_FilterPodsByOwner_uniform_alive γ l owner owner_kind meta dq1 dq2
 Proof.
   iIntros (Φ) "H HΦ".
   iDestruct "H" as
-    "(#Hinit & #Hisk & #Hglobal_l & Hdeepown_l_meta &
+    "(#Hinit & #Hisk & #Hglobal_l & #Hmodel_init & Hdeepown_l_meta &
       Hown_pod_meta_frags & Hown_children_frag &
       Hown_terminating_children_frag &
       %Hnodup & %Hdom_eq & %Hslash_free)".
@@ -827,6 +836,7 @@ Lemma wp_FilterPodsByOwner_uniform_combined γ l owner owner_kind meta dq1 dq2
   {{{ is_pkg_init code.controllers.common.pkg_id.common ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "Hdeepown_l_meta" ∷ ObjectMetaV.deepown_l owner meta dq1 ∗
       "Hown_pod_meta_frags" ∷ ([∗ list] pod ∈ living_pods,
         own_meta_frag γ (PodV.key pod)
@@ -844,7 +854,7 @@ Lemma wp_FilterPodsByOwner_uniform_combined γ l owner owner_kind meta dq1 dq2
         slash_free meta.(ObjectMetaV.Name') ∧
         slash_free meta.(ObjectMetaV.UID') ⌝
   }}}
-    @! common.FilterPodsByOwner #owner #owner_kind
+    @! common.FilterPodsByOwner #controller_client.indexer #owner #owner_kind
   {{{ sl ptrs all_pods dq', RET (#sl, #interface.nil);
       sl ↦* ptrs ∗
       ([∗ list] ptr;pod ∈ ptrs;all_pods, PodV.deepown_l ptr pod dq') ∗
@@ -867,7 +877,7 @@ Lemma wp_FilterPodsByOwner_uniform_combined γ l owner owner_kind meta dq1 dq2
 Proof.
   iIntros (Φ) "H HΦ".
   iDestruct "H" as
-    "(#Hinit & #Hisk & #Hglobal_l & Hdeepown_l_meta &
+    "(#Hinit & #Hisk & #Hglobal_l & #Hmodel_init & Hdeepown_l_meta &
       Hown_pod_meta_frags & Hown_children_frag & Hown_terminating_children_frag &
       %Hnodup & %Hdom_eq & %Hslash_free)".
   set pod_dqs := replicate (length living_pods) dq2.

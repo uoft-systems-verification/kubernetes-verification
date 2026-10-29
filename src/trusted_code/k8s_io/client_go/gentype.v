@@ -186,17 +186,18 @@ Definition Client__UpdateStatusⁱᵐᵖˡ (T : go.type) : val :=
   else
     (λ: "c" "ctx" "obj" "opts", Panic "unsupported Kubernetes object type for status update")%V.
 
-(* Preserve normal API Update semantics, including resource-version conflicts.
-   In particular, do not redirect a single HTTP Update to PodUpdateTx or
-   ReplicaSetUpdateTx, which refresh resource versions and hide conflicts. *)
+(* Trusted abstraction requested for controller verification: ordinary client
+   Update forwards to the model's conflict-retrying UpdateTx APIs. As for
+   UpdateStatus above, resource-version conflicts are abstracted away; invalid
+   requests and other model errors are preserved. *)
 Definition Client__Updateⁱᵐᵖˡ (T : go.type) : val :=
   if decide (T = go.PointerType api_core_v1.Pod) then
-    clientCreate T (go.PointerType api_core_v1.Pod) "PodUpdate"%go
+    clientCreate T (go.PointerType api_core_v1.Pod) "PodUpdateTx"%go
   else if decide (T = go.PointerType api_apps_v1.ReplicaSet) then
-    clientCreate T (go.PointerType api_apps_v1.ReplicaSet) "ReplicaSetUpdate"%go
+    clientCreate T (go.PointerType api_apps_v1.ReplicaSet) "ReplicaSetUpdateTx"%go
   else if decide (T = go.PointerType api_rbac_v1.ClusterRole) then
     (λ: "c" "ctx" "obj" "opts",
-      (MethodResolve (go.PointerType apimodel.State) "ClusterRoleUpdate"%go
+      (MethodResolve (go.PointerType apimodel.State) "ClusterRoleUpdateTx"%go
         (![go.PointerType apimodel.State] (GlobalVarAddr apimodel.ModelState #()))) "obj")%V
   else
     (λ: "c" "ctx" "obj" "opts", Panic "unsupported Kubernetes object type for update")%V.

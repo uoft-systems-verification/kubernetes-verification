@@ -1,3 +1,4 @@
+From New.proof.controllers Require Import client_tactics.
 From New.proof Require Import wp_keep.
 From New.proof Require Import prelude empty_ffi.
 From New.proof.controllers.replicaset Require Export get_replica_sets_with_same_controller.
@@ -15,13 +16,14 @@ Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
 Context {sem : go.Semantics}
   {package_sem : code.controllers.replicaset.replicaset.Assumptions}.
-Collection W := sem + package_sem.
+Context {model_sem : apimodel.Assumptions}.
+Collection W := sem + package_sem + model_sem.
 #[local] Instance base_common_sem : common.Assumptions | 100 :=
   code.controllers.replicaset.replicaset.import_common_Assumption.
 #[local] Instance controller_sem : controller.Assumptions :=
   code.controllers.replicaset.replicaset.import_controller_Assumption.
 #[local] Instance base_apimodel_sem : apimodel.Assumptions | 100 :=
-  common.import_apimodel_Assumption.
+  model_sem.
 #[local] Instance object_meta_v1_sem :
     code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.Assumptions :=
   apimodel.import_apis_meta_v1_Assumption.
@@ -32,11 +34,11 @@ Collection W := sem + package_sem.
     code.k8s_io.api.core.v1.v1.Assumptions :=
   code.k8s_io.api.apps.v1.v1.import_core_v1_Assumption.
 #[local] Instance apimodel_sem : apimodel.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact object_core_v1_sem; try apply _.
 Defined.
 #[local] Instance common_sem : common.Assumptions | 0.
-Proof using package_sem.
+Proof using package_sem model_sem.
   constructor; try exact apimodel_sem; try apply _.
 Defined.
 Context `{!kubernetesModelG Σ}.
@@ -58,9 +60,10 @@ Lemma wp_getIndirectlyRelatedPods γ l rs_l rs dq :
   {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
       "Hisk" ∷ is_kubernetes γ l ∗
       "Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
       "Hrs" ∷ ReplicaSetV.deepown_l rs_l rs dq
   }}}
-    @! replicaset.getIndirectlyRelatedPods #rs_l
+    @! replicaset.getIndirectlyRelatedPods #controller_client.indexer #controller_client.pod_lister #rs_l
   {{{ sl ptrs pods dq', RET (#sl, #interface.nil);
       sl ↦* ptrs ∗
       ([∗ list] ptr;pod ∈ ptrs;pods, PodV.deepown_l ptr pod dq') ∗
@@ -75,11 +78,13 @@ Proof.
   iAssert (is_pkg_init apimodel) as "#Hapimodel_init".
   { iPkgInit. }
   wp_auto_keep.
+  iPersist "rsIndexer".
+  iPersist "podLister".
   wp_apply_keep wp_slice_literal. iSplitR; first done.
   iIntros (result_backing_l) "[Hresult_sl Hresult_cap]". wp_auto_keep.
   wp_apply_keep wp_map_make1 as (seen_l) "Hseen".
   wp_apply_keep (wp_getReplicaSetsWithSameController γ l rs_l rs dq with
-    "[$Hrs $Hisk $Hglobal_l]").
+    "[$Hrs $Hisk $Hglobal_l $Hmodel_init]").
   iIntros (related_sets_sl related_set_ptrs related_sets related_dq)
     "(Hrelated_sets_sl & Hrelated_sets & %Hrelated_sets_valid &
       %Hrelated_sets_extra_valid & Hrs)".
@@ -180,6 +185,7 @@ Proof.
     iDestruct (metadata_namespace_eq with "Hthis_rs_meta") as %Hnamespace.
     wp_auto_keep.
     rewrite Hnamespace.
+    wp_client_model.
     wp_apply_keep (wp_State__PodList_weak γ l
       this_rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') selector
       (LabelSelectorV.matches api_selector)
