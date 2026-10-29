@@ -86,25 +86,6 @@ Definition own_orphans_frag γ bk dq ks : iProp Σ :=
 Definition own_orphans_frag_of γ (key : KKey.t) dq (ks : gset KKey.t) : iProp Σ :=
   own_orphans_frag γ (orphan_view.bucket_of key) dq ks.
 
-Lemma own_orphans_frag_of_pod γ pod dq ks :
-  own_orphans_frag_of γ (PodV.key pod) dq ks ⊣⊢
-    own_orphans_frag γ (PodV.kind, pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace')) dq ks.
-Proof. rewrite /own_orphans_frag_of //. Qed.
-
-Lemma meta_parent_ref_namespace_eq meta parent_key parent_uid :
-  meta_parent_ref meta = Some (parent_key, parent_uid) →
-  meta.(ObjectMetaV.Namespace') = parent_key.(KKey.Namespace').
-Proof.
-  unfold meta_parent_ref.
-  destruct meta.(ObjectMetaV.OwnerReferences') as [owner_references|];
-    last done.
-  destruct (list_find
-    (λ owner_reference,
-      owner_reference.(OwnerReferenceV.Controller') = Some true)
-    owner_references) as [[i owner_reference]|]; last done.
-  intros Hparent. inversion Hparent. done.
-Qed.
-
 Definition kubernetes_inv γ l : iProp Σ :=
   ∃ (phys_state_l: loc) (phys_used_uid_l: loc) (phys_used_rv_l: loc)
     (phys_state: gmap KKey.t interface.t) (phys_used_uid : gmap types.UID.t unit) (phys_used_rv : gmap go_string unit)

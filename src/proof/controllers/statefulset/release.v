@@ -919,8 +919,9 @@ Proof.
       (* The released Pod becomes an orphan in the StatefulSet's namespace. *)
       assert (pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace') =
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')) as Hpod_namespace.
-      { exact (meta_parent_ref_namespace_eq _ _ _ Hparent). }
-      iEval (rewrite -Hpod_namespace -own_orphans_frag_of_pod) in "Hown_pod_orphans".
+      { rewrite /meta_parent_ref Howner_references in Hparent.
+        by destruct (list_find _ owner_references) as [[]|]; inversion Hparent. }
+      iEval (rewrite -Hpod_namespace) in "Hown_pod_orphans".
       wp_apply (wp_State__PodUpdateTx_release γ model_l
         (release_pod_input set pod).(PodV.ObjectMeta').(ObjectMetaV.Namespace')
         updatedPod_l (release_pod_input set pod)
@@ -933,7 +934,7 @@ Proof.
       iIntros (returned_pod_l returned_pod) "Hupdate".
       iDestruct "Hupdate" as
         "(_ & _ & _ & _ & _ & _ & Hreturned_pod & Hown_children & Hown_orphans_frag & _)".
-      iEval (rewrite own_orphans_frag_of_pod Hpod_namespace) in "Hown_orphans_frag".
+      iEval (rewrite /own_orphans_frag_of /orphan_view.bucket_of /= Hpod_namespace) in "Hown_orphans_frag".
       wp_auto_keep.
       wp_apply (wp_IsNotFound interface.nil with "[]").
       replace (bool_decide (not_found_error interface.nil)) with false by
