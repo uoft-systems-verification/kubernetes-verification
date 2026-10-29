@@ -35,6 +35,7 @@ import (
 	"k8s.io/kubernetes/pkg/apis/rbac"
 	"k8s.io/kubernetes/pkg/controller"
 	crstrategy "k8s.io/kubernetes/pkg/registry/apps/controllerrevision"
+	daemonsetstrategy "k8s.io/kubernetes/pkg/registry/apps/daemonset"
 	deploymentstrategy "k8s.io/kubernetes/pkg/registry/apps/deployment"
 	rsstrategy "k8s.io/kubernetes/pkg/registry/apps/replicaset"
 	stsstrategy "k8s.io/kubernetes/pkg/registry/apps/statefulset"
@@ -109,6 +110,8 @@ func deepCopy(obj interface{}) interface{} {
 	case *appsv1.StatefulSet:
 		return o.DeepCopy()
 	case *appsv1.Deployment:
+		return o.DeepCopy()
+	case *appsv1.DaemonSet:
 		return o.DeepCopy()
 	case *rbacv1.ClusterRole:
 		return o.DeepCopy()
@@ -434,6 +437,12 @@ func convertVersionedToLegacy(obj interface{}) (interface{}, error) {
 			return nil, errors.NewBadRequest(fmt.Sprintf("failed to convert appsv1.Deployment to internal Deployment: %v", err))
 		}
 		return internalDeployment, nil
+	case *appsv1.DaemonSet:
+		internalDaemonSet := &apps.DaemonSet{}
+		if err := legacyscheme.Scheme.Convert(typed, internalDaemonSet, nil); err != nil {
+			return nil, errors.NewBadRequest(fmt.Sprintf("failed to convert appsv1.DaemonSet to internal DaemonSet: %v", err))
+		}
+		return internalDaemonSet, nil
 	case *rbacv1.ClusterRole:
 		internalClusterRole := &rbac.ClusterRole{}
 		if err := legacyscheme.Scheme.Convert(typed, internalClusterRole, nil); err != nil {
@@ -476,6 +485,8 @@ func applySchemaDefaults(obj interface{}) error {
 		appsv1defaults.SetObjectDefaults_StatefulSet(typed)
 	case *appsv1.Deployment:
 		appsv1defaults.SetObjectDefaults_Deployment(typed)
+	case *appsv1.DaemonSet:
+		appsv1defaults.SetObjectDefaults_DaemonSet(typed)
 	case *rbacv1.ClusterRole:
 		// ClusterRole has no schema defaults.
 	case *appsv1.ControllerRevision:
@@ -501,6 +512,8 @@ func applyStrategyPrepareForCreate(obj interface{}) error {
 		stsstrategy.Strategy.PrepareForCreate(ctx, typed)
 	case *apps.Deployment:
 		deploymentstrategy.Strategy.PrepareForCreate(ctx, typed)
+	case *apps.DaemonSet:
+		daemonsetstrategy.Strategy.PrepareForCreate(ctx, typed)
 	case *rbac.ClusterRole:
 		clusterrolestrategy.Strategy.PrepareForCreate(ctx, typed)
 	case *apps.ControllerRevision:
@@ -528,6 +541,8 @@ func applyAdmissionMutate(obj interface{}) error {
 	case *apps.StatefulSet:
 		return nil
 	case *apps.Deployment:
+		return nil
+	case *apps.DaemonSet:
 		return nil
 	case *rbac.ClusterRole:
 		return nil
@@ -572,6 +587,8 @@ func applyPostPrepareCreateDefaults(obj interface{}) error {
 	case *apps.StatefulSet:
 		return nil
 	case *apps.Deployment:
+		return nil
+	case *apps.DaemonSet:
 		return nil
 	case *rbac.ClusterRole:
 		return nil
@@ -629,6 +646,8 @@ func applyAdmissionMutateForUpdate(obj, oldObj interface{}) error {
 		return nil
 	case *apps.Deployment:
 		return nil
+	case *apps.DaemonSet:
+		return nil
 	case *rbac.ClusterRole:
 		return nil
 	case *apps.ControllerRevision:
@@ -662,6 +681,9 @@ func applyAdmissionValidate(obj interface{}) error {
 	case *apps.Deployment:
 		// This model does not mirror any Deployment-specific validating admission plugins.
 		return nil
+	case *apps.DaemonSet:
+		// This model does not mirror any DaemonSet-specific validating admission plugins.
+		return nil
 	case *rbac.ClusterRole:
 		// This model does not mirror any ClusterRole-specific validating admission plugins.
 		return nil
@@ -674,8 +696,9 @@ func applyAdmissionValidate(obj interface{}) error {
 
 func allowUnconditionalUpdate(kind string) (bool, error) {
 	switch kind {
-	case "Pod", "PersistentVolumeClaim", "ReplicaSet", "StatefulSet", "Deployment", "ControllerRevision", "ServiceAccount", "ClusterRole":
+	case "Pod", "PersistentVolumeClaim", "ReplicaSet", "StatefulSet", "Deployment", "ControllerRevision", "DaemonSet", "ServiceAccount", "ClusterRole":
 		// These strategies return true from AllowUnconditionalUpdate() in release-1.34.
+		// DaemonSet: pkg/registry/apps/daemonset/strategy.go, AllowUnconditionalUpdate.
 		// References:
 		// - https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/core/pod/strategy.go#L157-L159
 		// - https://github.com/kubernetes/kubernetes/blob/release-1.34/pkg/registry/core/persistentvolumeclaim/strategy.go#L134-L136
@@ -703,6 +726,8 @@ func updateStrategyForLegacyObject(obj interface{}) (rest.RESTUpdateStrategy, er
 		return stsstrategy.Strategy, nil
 	case *apps.Deployment:
 		return deploymentstrategy.Strategy, nil
+	case *apps.DaemonSet:
+		return daemonsetstrategy.Strategy, nil
 	case *rbac.ClusterRole:
 		return clusterrolestrategy.Strategy, nil
 	case *apps.ControllerRevision:
@@ -724,6 +749,8 @@ func statusUpdateStrategyForLegacyObject(obj interface{}) (rest.RESTUpdateStrate
 		return stsstrategy.StatusStrategy, nil
 	case *apps.Deployment:
 		return deploymentstrategy.StatusStrategy, nil
+	case *apps.DaemonSet:
+		return daemonsetstrategy.StatusStrategy, nil
 	default:
 		return nil, fmt.Errorf("unsupported object type for status update strategy: %T", obj)
 	}
@@ -756,6 +783,10 @@ func applyStrategyValidate(obj interface{}, name string) error {
 		if errs := deploymentstrategy.Strategy.Validate(ctx, typed); len(errs) > 0 {
 			return errors.NewInvalid(schema.GroupKind{Group: "apps", Kind: "Deployment"}, name, errs)
 		}
+	case *apps.DaemonSet:
+		if errs := daemonsetstrategy.Strategy.Validate(ctx, typed); len(errs) > 0 {
+			return errors.NewInvalid(schema.GroupKind{Group: "apps", Kind: "DaemonSet"}, name, errs)
+		}
 	case *rbac.ClusterRole:
 		if errs := clusterrolestrategy.Strategy.Validate(ctx, typed); len(errs) > 0 {
 			return errors.NewInvalid(schema.GroupKind{Group: "rbac.authorization.k8s.io", Kind: "ClusterRole"}, name, errs)
@@ -784,6 +815,8 @@ func applyStrategyCanonicalize(obj interface{}) error {
 		stsstrategy.Strategy.Canonicalize(typed)
 	case *apps.Deployment:
 		deploymentstrategy.Strategy.Canonicalize(typed)
+	case *apps.DaemonSet:
+		daemonsetstrategy.Strategy.Canonicalize(typed)
 	case *rbac.ClusterRole:
 		clusterrolestrategy.Strategy.Canonicalize(typed)
 	case *apps.ControllerRevision:
@@ -1507,6 +1540,10 @@ func checkGracefulDelete(obj interface{}, options *metav1.DeleteOptions) (bool, 
 		return false, false, nil
 	case *appsv1.Deployment:
 		// Deployments don't support graceful deletion
+		return false, false, nil
+
+	case *appsv1.DaemonSet:
+		// DaemonSets don't support graceful deletion
 		return false, false, nil
 
 	default:

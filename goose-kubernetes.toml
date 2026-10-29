@@ -23,6 +23,7 @@ packages = [
     "./pkg/controller/replicaset",
     # "./pkg/controller/replicaset/metrics",
     "./pkg/features",
+    "./pkg/registry/apps/daemonset",
     "./pkg/registry/apps/deployment",
     "./pkg/registry/apps/controllerrevision",
     "./pkg/registry/apps/replicaset",
