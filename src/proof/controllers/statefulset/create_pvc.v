@@ -224,6 +224,13 @@ Qed.
    NotFound branch creates it and consumes the reservation. *)
 Context `{!KObjectV.ObjectInterfaceAssumptions}.
 
+(* TODO: These PVC specs, and their callers in create_pod.v,
+   reconcile_progress.v and reconcile_preservation.v, still return the PVC
+   orphan bucket existentially. Making it exact needs each spec to know which
+   desired claims already existed, which the per-claim exists-or-missing
+   precondition loses. Either keep StatefulSet's claims in the bucket
+   ([list_to_set (PersistentVolumeClaimV.key <$> pvcs) ⊆ pvc_orphans] in
+   [owned_resources]) or pass the keys of the existing claims to these specs. *)
 Lemma wp_createPersistentVolumeClaim_without_claim_templates γ model_l
     set_l pod_l claim_template_l
     (set : StatefulSetV.t) (pod : PodV.t)

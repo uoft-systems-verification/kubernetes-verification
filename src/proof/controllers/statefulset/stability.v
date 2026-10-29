@@ -39,8 +39,8 @@ Local Set Default Proof Using "All".
 
 Context `{!KObjectV.ObjectInterfaceAssumptions}.
 
-Lemma wp_syncStatefulSet_stability γ l namespace name sts dq pods pvcs pod_orphans pvc_orphans :
-  ⊢ stability_spec γ l namespace name sts dq pods pvcs pod_orphans pvc_orphans.
+Lemma wp_syncStatefulSet_stability γ l namespace name sts dq pods pvcs orphan_pods pvc_orphans :
+  ⊢ stability_spec γ l namespace name sts dq pods pvcs orphan_pods pvc_orphans.
 Proof.
   unfold stability_spec.
   wp_start as "H". iNamed "H". iNamed "Hresources".
@@ -269,7 +269,8 @@ Proof.
   rewrite /owned_resources /=.
   iFrame "Hown_sts_meta_frag Hown_sts_spec_frag
     Hown_pod_frags Hoccupied_pod_frags Hown_pvc_frags Hoccupied_pvc_frags Hown_children_frag
-    Hown_terminating_children_frag Hreserved_pod_frags Hreserved_pvc_frags Hown_pod_orphans Hown_pvc_orphans".
+    Hown_terminating_children_frag Hreserved_pod_frags Hreserved_pvc_frags
+    Hown_orphan_pod_frags Hown_pod_orphans Hown_pvc_orphans".
   iPureIntro. exact Hpods_nodup.
 Qed.
 
