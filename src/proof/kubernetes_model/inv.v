@@ -81,26 +81,15 @@ Definition own_orphans_auth γ state : iProp Σ :=
 Definition own_orphans_frag γ bk dq ks : iProp Σ :=
   orphan_view.own_frag γ.(γ_orphans) bk dq ks.
 
-(** The whole fragment of [key]'s orphan bucket. Making [key] a living orphan
-    requires it. *)
-Definition own_orphans_frag_of γ (key : KKey.t) (ks : gset KKey.t) : iProp Σ :=
-  own_orphans_frag γ (orphan_view.bucket_of key) (DfracOwn 1) ks.
+(** A fragment of [key]'s orphan bucket. Making [key] a living orphan requires
+    the whole fragment. *)
+Definition own_orphans_frag_of γ (key : KKey.t) dq (ks : gset KKey.t) : iProp Σ :=
+  own_orphans_frag γ (orphan_view.bucket_of key) dq ks.
 
-(** The whole orphan bucket fragment for the Pods of namespace [ns], whatever
-    its contents. A controller that releases Pods in [ns] holds it. *)
-Definition own_pod_orphans γ (ns : go_string) : iProp Σ :=
-  ∃ ks, own_orphans_frag γ ("Pod"%go, ns) (DfracOwn 1) ks.
-
-Lemma own_pod_orphans_frag_of γ pod :
-  own_pod_orphans γ pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace') ⊣⊢
-    ∃ ks, own_orphans_frag_of γ (PodV.key pod) ks.
-Proof. rewrite /own_pod_orphans /own_orphans_frag_of //. Qed.
-
-(** The whole orphan bucket fragment for the PersistentVolumeClaims of namespace
-    [ns], whatever its contents. A controller that creates orphan claims in [ns]
-    holds it. *)
-Definition own_pvc_orphans γ (ns : go_string) : iProp Σ :=
-  ∃ ks, own_orphans_frag γ (PersistentVolumeClaimV.kind, ns) (DfracOwn 1) ks.
+Lemma own_orphans_frag_of_pod γ pod dq ks :
+  own_orphans_frag_of γ (PodV.key pod) dq ks ⊣⊢
+    own_orphans_frag γ (PodV.kind, pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace')) dq ks.
+Proof. rewrite /own_orphans_frag_of //. Qed.
 
 Lemma meta_parent_ref_namespace_eq meta parent_key parent_uid :
   meta_parent_ref meta = Some (parent_key, parent_uid) →

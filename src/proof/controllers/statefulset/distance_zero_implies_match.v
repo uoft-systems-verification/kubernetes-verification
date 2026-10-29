@@ -9,8 +9,8 @@ Collection W := sem + package_sem.
 Context `{!kubernetesModelG Σ}.
 Local Set Default Proof Using "All".
 
-Lemma distance_zero_implies_match γ sts pods pvcs dqs ready :
-  owned_resources γ sts pods pvcs dqs ready -∗
+Lemma distance_zero_implies_match γ sts pods pvcs pod_orphans pvc_orphans dqs ready :
+  owned_resources γ sts pods pvcs pod_orphans pvc_orphans dqs ready -∗
   ⌜ match_distance sts pods pvcs = 0%nat ↔ current_state_matches sts pods pvcs ⌝.
 Proof.
   iIntros "Hresources". iNamed "Hresources".

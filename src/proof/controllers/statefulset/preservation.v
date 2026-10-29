@@ -185,8 +185,8 @@ Qed.
 
 Context `{!KObjectV.ObjectInterfaceAssumptions}.
 
-Lemma wp_syncStatefulSet_preservation γ l namespace name sts dq pods pvcs :
-  ⊢ preservation_spec γ l namespace name sts dq pods pvcs.
+Lemma wp_syncStatefulSet_preservation γ l namespace name sts dq pods pvcs pod_orphans pvc_orphans :
+  ⊢ preservation_spec γ l namespace name sts dq pods pvcs pod_orphans pvc_orphans.
 Proof.
   unfold preservation_spec.
   wp_start as "H". iNamed "H". iNamed "Hresources".
@@ -404,6 +404,7 @@ Proof.
   { iFrame "#". iPureIntro. split_and!; done. }
   iIntros (released err) "Hrelease". iNamedPrefix "Hrelease" "Hrelease_".
   iEval (rewrite -Hset_namespace) in "Hrelease_Hown_pod_orphans".
+  iDestruct "Hrelease_Hown_pod_orphans" as (pod_orphans') "Hrelease_Hown_pod_orphans".
   destruct err as [err_ok|].
   { wp_auto_keep.
     set remaining_bad := filter BadLiving (drop released all_pods).
@@ -608,12 +609,11 @@ Proof.
         sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') terminating_bound)%I
       with "[Hrelease_Hown_terminating_children_frag]" as "Hrelease_Hown_terminating_children_frag".
     { iExists terminating_bound. iFrame. }
-    iApply ("HΦ" $! remaining_pods pvcs (interface.ok err_ok)).
-    iFrame "Hrelease_Hown_pod_orphans".
+    iApply ("HΦ" $! remaining_pods pvcs pod_orphans' pvc_orphans (interface.ok err_ok)).
     rewrite /owned_resources /=.
     iFrame "Hown_sts_meta_frag Hown_sts_spec_frag Hremaining_frags Hremaining_occupied
       Hown_pvc_frags Hoccupied_pvc_frags Hremaining_children Hrelease_Hown_terminating_children_frag
-      Hreserved_pod_frags Hreserved_pvc_frags Hown_pvc_orphans".
+      Hreserved_pod_frags Hreserved_pvc_frags Hrelease_Hown_pod_orphans Hown_pvc_orphans".
     iPureIntro. split; done. }
   specialize (Hrelease_Hdone eq_refl). subst released. wp_auto_keep.
   assert (Htake_all_pods : take (length all_pods) all_pods = all_pods).
@@ -713,6 +713,7 @@ Proof.
   iIntros (pods1 pvcs' terminating_bound') "Hreconcile".
   iNamedPrefix "Hreconcile" "Hreconcile_". wp_auto_keep.
   iEval (rewrite -Hset_namespace) in "Hreconcile_Hown_pvc_orphans".
+  iDestruct "Hreconcile_Hown_pvc_orphans" as (pvc_orphans') "Hreconcile_Hown_pvc_orphans".
 
   set pods' := unreserved_pods pending_actual pods1.
   assert (Hfinal_storage_perm :
@@ -809,13 +810,12 @@ Proof.
       sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') terminating_bound)%I
     with "[Hreconcile_Hown_terminating_children_frag]" as "Hreconcile_Hown_terminating_children_frag".
   { iExists terminating_bound'. iFrame. }
-  iApply ("HΦ" $! pods' pvcs' interface.nil).
-  iFrame "Hrelease_Hown_pod_orphans".
+  iApply ("HΦ" $! pods' pvcs' pod_orphans' pvc_orphans' interface.nil).
   rewrite /owned_resources /=.
   iFrame "Hown_sts_meta_frag Hown_sts_spec_frag Hfinal_pod_frags Hfinal_occupied
     Hfinal_pvcs Hfinal_occupied_pvcs Hreconcile_Hown_children
     Hreconcile_Hown_terminating_children_frag Hreconcile_Hreserved_pods
-    Hreconcile_Hreserved_pvcs Hreconcile_Hown_pvc_orphans".
+    Hreconcile_Hreserved_pvcs Hrelease_Hown_pod_orphans Hreconcile_Hown_pvc_orphans".
   iPureIntro. split; done.
 Qed.
 

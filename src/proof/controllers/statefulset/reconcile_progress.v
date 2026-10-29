@@ -2846,7 +2846,7 @@ Context `{!KObjectV.ObjectInterfaceAssumptions}.
 Lemma wp_reconcileDesiredPods γ model_l set_l pods_sl
     (set : StatefulSetV.t) (ptrs : list loc)
     (pods : list PodV.t) (pvcs : list PersistentVolumeClaimV.t)
-    dq_set dq_pods terminating_bound :
+    dq_set dq_pods terminating_bound pvc_orphans :
   {{{ "#Hpkg" ∷
         is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
@@ -2884,7 +2884,9 @@ Lemma wp_reconcileDesiredPods γ model_l set_l pods_sl
         own_available_reserved_frag γ 1 key) ∗
       "Hreserved_pvcs" ∷ ([∗ list] key ∈ missing_pvc_keys set pvcs,
         own_available_reserved_frag γ 1 key) ∗
-      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
+      "Hown_pvc_orphans" ∷ own_orphans_frag γ
+        (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        (DfracOwn 1) pvc_orphans ∗
       "%Hset_valid" ∷ ⌜ StatefulSetV.valid set ⌝ ∗
       "%Hpods_valid" ∷ ⌜ Forall PodV.valid pods ⌝ ∗
       "%Hpods_members" ∷ ⌜ Forall
@@ -2929,7 +2931,9 @@ Lemma wp_reconcileDesiredPods γ model_l set_l pods_sl
         own_available_reserved_frag γ 1 key ∨ ∃ uid, own_deleting_reserved_frag γ 1 key uid) ∗
       "Hreserved_pvcs" ∷ ([∗ list] key ∈ missing_pvc_keys set pvcs',
         own_available_reserved_frag γ 1 key) ∗
-      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
+      "Hown_pvc_orphans" ∷ (∃ pvc_orphans', own_orphans_frag γ
+        (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        (DfracOwn 1) pvc_orphans') ∗
       "%Hdistance" ∷ ⌜
         match_distance set pods' pvcs' ≤ match_distance set pods pvcs ⌝ ∗
       "%Hpods_members" ∷ ⌜ Forall
@@ -3027,7 +3031,9 @@ Proof.
       own_available_reserved_frag γ 1 key) ∗
     "Hreserved_pvcs" ∷ ([∗ list] key ∈ reserved_pvcs,
       own_available_reserved_frag γ 1 key) ∗
-    "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
+    "Hown_pvc_orphans" ∷ (∃ pvc_orphans, own_orphans_frag γ
+      (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+      (DfracOwn 1) pvc_orphans) ∗
     "%Hordinal_range" ∷ ⌜ 0 ≤ sint.Z ordinal ∧
       sint.Z ordinal ≤ Z.of_nat (statefulset_replicas set) ⌝ ∗
     "%Hpvc_wf" ∷ ⌜ ∀ key claim, pvc_map !! key = Some claim →
@@ -3198,6 +3204,7 @@ Proof.
         ltac:(intros; by eapply desired_pvc_key_name_inj)
         Hclaim_valid_lookup with "Hown_pvcs Hreserved_pvcs")
         as "[Hpvc_states Hpvc_finish]".
+      iDestruct "Hown_pvc_orphans" as (pvc_orphans_cur) "Hown_pvc_orphans".
       wp_apply (wp_createPersistentVolumeClaims γ model_l set_l pod_l
         set local_pod (sint.nat ordinal) dq_set dq_pods
         with "[$Hset $Hlocal_pod $Hpvc_states $Hown_pvc_orphans]").
@@ -3480,6 +3487,7 @@ Proof.
         Hclaim_valid_lookup with "Hown_pvcs Hreserved_pvcs")
         as "[Hpvc_states Hpvc_finish]".
       wp_auto_keep.
+      iDestruct "Hown_pvc_orphans" as (pvc_orphans_cur) "Hown_pvc_orphans".
       wp_apply (wp_createStatefulPod γ model_l set_l new_pod_l
         set new_pod (sint.nat ordinal)
         (list_to_set (PodV.key <$> current_pods)) dq_set
@@ -4258,7 +4266,7 @@ Qed.
 Lemma wp_reconcileReplicas_progress γ model_l set_l pods_sl
     (set : StatefulSetV.t) (ptrs : list loc)
     (pods : list PodV.t) (pvcs : list PersistentVolumeClaimV.t)
-    dq_set dq_pods terminating_bound :
+    dq_set dq_pods terminating_bound pvc_orphans :
   {{{ "#Hpkg" ∷
         is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
@@ -4296,7 +4304,9 @@ Lemma wp_reconcileReplicas_progress γ model_l set_l pods_sl
         own_available_reserved_frag γ 1 key) ∗
       "Hreserved_pvcs" ∷ ([∗ list] key ∈ missing_pvc_keys set pvcs,
         own_available_reserved_frag γ 1 key) ∗
-      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
+      "Hown_pvc_orphans" ∷ own_orphans_frag γ
+        (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        (DfracOwn 1) pvc_orphans ∗
       "%Hset_valid" ∷ ⌜ StatefulSetV.valid set ⌝ ∗
       "%Hpods_valid" ∷ ⌜ Forall PodV.valid pods ⌝ ∗
       "%Hpods_members" ∷ ⌜ Forall
@@ -4338,7 +4348,9 @@ Lemma wp_reconcileReplicas_progress γ model_l set_l pods_sl
         own_available_reserved_frag γ 1 key ∨ ∃ uid, own_deleting_reserved_frag γ 1 key uid) ∗
       "Hreserved_pvcs" ∷ ([∗ list] key ∈ missing_pvc_keys set pvcs',
         own_available_reserved_frag γ 1 key) ∗
-      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
+      "Hown_pvc_orphans" ∷ (∃ pvc_orphans', own_orphans_frag γ
+        (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        (DfracOwn 1) pvc_orphans') ∗
       "Hterminating_children_frag" ∷ own_terminating_children_frag γ
         (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID')

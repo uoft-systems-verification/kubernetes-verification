@@ -229,7 +229,7 @@ Lemma wp_createPersistentVolumeClaim_without_claim_templates γ model_l
     (set : StatefulSetV.t) (pod : PodV.t)
     (claim_template : PersistentVolumeClaimV.t) (ordinal : nat)
     dq_set dq_pod dq_claim_template_ptr dq_claim_template
-    set_phy claim_template_phy :
+    set_phy claim_template_phy pvc_orphans :
   {{{ "#Hpkg" ∷
         is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
@@ -281,7 +281,9 @@ Lemma wp_createPersistentVolumeClaim_without_claim_templates γ model_l
           "%Hnamespace_valid" ∷
             ⌜ valid_namespace
                 set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝)) ∗
-      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
+      "Hown_pvc_orphans" ∷ own_orphans_frag γ
+        (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        (DfracOwn 1) pvc_orphans
   }}}
     @! statefulset.createPersistentVolumeClaim
       #set_l #pod_l #claim_template_l
@@ -307,7 +309,9 @@ Lemma wp_createPersistentVolumeClaim_without_claim_templates γ model_l
           "Hreserved" ∷ own_occupied_reserved_frag γ 1
             (new_persistent_volume_claim_key set claim_template ordinal)
             claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∗
-      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
+      "Hown_pvc_orphans" ∷ (∃ pvc_orphans', own_orphans_frag γ
+        (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        (DfracOwn 1) pvc_orphans')
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
@@ -442,7 +446,7 @@ Lemma wp_createPersistentVolumeClaim γ model_l
     set_l pod_l claim_template_l
     (set : StatefulSetV.t) (pod : PodV.t)
     (claim_template : PersistentVolumeClaimV.t) (ordinal : nat)
-    dq_set dq_pod dq_claim_template :
+    dq_set dq_pod dq_claim_template pvc_orphans :
   {{{ "#Hpkg" ∷
         is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
@@ -492,7 +496,9 @@ Lemma wp_createPersistentVolumeClaim γ model_l
           "%Hnamespace_valid" ∷
             ⌜ valid_namespace
                 set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝)) ∗
-      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
+      "Hown_pvc_orphans" ∷ own_orphans_frag γ
+        (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        (DfracOwn 1) pvc_orphans
   }}}
     @! statefulset.createPersistentVolumeClaim
       #set_l #pod_l #claim_template_l
@@ -516,7 +522,9 @@ Lemma wp_createPersistentVolumeClaim γ model_l
           "Hreserved" ∷ own_occupied_reserved_frag γ 1
             (new_persistent_volume_claim_key set claim_template ordinal)
             claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∗
-      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
+      "Hown_pvc_orphans" ∷ (∃ pvc_orphans', own_orphans_frag γ
+        (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        (DfracOwn 1) pvc_orphans')
   }}}.
 Proof.
   iIntros (Φ) "H HΦ". iNamed "H".
@@ -568,7 +576,7 @@ Qed.
    top-level [desired_pvc_keys] progress invariant. *)
 Lemma wp_createPersistentVolumeClaims γ model_l set_l pod_l
     (set : StatefulSetV.t) (pod : PodV.t) (ordinal : nat)
-    dq_set dq_pod :
+    dq_set dq_pod pvc_orphans :
   {{{ "#Hpkg" ∷
         is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
@@ -615,7 +623,9 @@ Lemma wp_createPersistentVolumeClaims γ model_l set_l pod_l
                 set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
                 (new_persistent_volume_claim
                   set claim_template ordinal) ⌝)) ∗
-      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
+      "Hown_pvc_orphans" ∷ own_orphans_frag γ
+        (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        (DfracOwn 1) pvc_orphans
   }}}
     @! statefulset.createPersistentVolumeClaims #set_l #pod_l
   {{{ RET #interface.nil;
@@ -635,7 +645,9 @@ Lemma wp_createPersistentVolumeClaims γ model_l set_l pod_l
             "Hreserved" ∷ own_occupied_reserved_frag γ 1
               (desired_pvc_key set claim_template_name ordinal)
               claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∗
-      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
+      "Hown_pvc_orphans" ∷ (∃ pvc_orphans', own_orphans_frag γ
+        (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        (DfracOwn 1) pvc_orphans')
   }}}.
 Proof.
   wp_start as "H". iNamed "H".
@@ -725,7 +737,9 @@ Proof.
       "Hset" ∷ statefulset_without_claim_templates_l
         set_l set dq_set set_phy ∗
       "Hpod" ∷ PodV.deepown_l pod_l pod dq_pod ∗
-      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
+      "Hown_pvc_orphans" ∷ (∃ pvc_orphans, own_orphans_frag γ
+        (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        (DfracOwn 1) pvc_orphans) ∗
       "Hclaim_templates_slice" ∷
         set_phy.(v1.StatefulSet.Spec').(v1.StatefulSetSpec.VolumeClaimTemplates')
           ↦*{dq_set} claim_templates_list ∗
@@ -837,6 +851,7 @@ Proof.
         iRight.
         iFrame "Hreserved".
         iFrame "%". }
+    iDestruct "Hown_pvc_orphans" as (pvc_orphans_cur) "Hown_pvc_orphans".
     wp_apply
       (wp_createPersistentVolumeClaim_without_claim_templates
         γ model_l set_l pod_l claimTemplate_ptr set pod

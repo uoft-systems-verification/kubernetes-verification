@@ -52,7 +52,7 @@ Context `{!KObjectV.ObjectInterfaceAssumptions}.
    unreachable. *)
 Lemma wp_createStatefulPod γ model_l set_l pod_l
     (set : StatefulSetV.t) (pod : PodV.t) (ordinal : nat)
-    (children : gset KKey.t) dq_set :
+    (children : gset KKey.t) dq_set pvc_orphans :
   {{{ "#Hpkg" ∷
         is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
@@ -109,7 +109,9 @@ Lemma wp_createStatefulPod γ model_l set_l pod_l
                 set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
                 (new_persistent_volume_claim
                   set claim_template ordinal) ⌝)) ∗
-      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
+      "Hown_pvc_orphans" ∷ own_orphans_frag γ
+        (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        (DfracOwn 1) pvc_orphans
   }}}
     @! statefulset.createStatefulPod #set_l #pod_l
   {{{ (pod' : PodV.t) (uid : types.UID.t), RET #interface.nil;
@@ -163,7 +165,9 @@ Lemma wp_createStatefulPod γ model_l set_l pod_l
           (StatefulSetV.key set)
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
           (children ∪ {[desired_pod_key set ordinal]}) ∗
-      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
+      "Hown_pvc_orphans" ∷ (∃ pvc_orphans', own_orphans_frag γ
+        (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        (DfracOwn 1) pvc_orphans')
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto_keep.
@@ -290,7 +294,7 @@ Definition stateful_pod_created γ set pod ordinal children : iProp Σ :=
    success; in the latter case the ordinary creation result is returned. *)
 Lemma wp_createStatefulPod_deleting γ model_l set_l pod_l
     (set : StatefulSetV.t) (pod : PodV.t) (ordinal : nat)
-    (children : gset KKey.t) dq_set old_uid :
+    (children : gset KKey.t) dq_set old_uid pvc_orphans :
   {{{ "#Hpkg" ∷ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ model_l ∗
@@ -320,7 +324,9 @@ Lemma wp_createStatefulPod_deleting γ model_l set_l pod_l
         (own_available_reserved_frag γ 1 (desired_pvc_key set claim_template_name ordinal) ∗
          ⌜ PersistentVolumeClaimV.valid_create PersistentVolumeClaimV.kind set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
             (new_persistent_volume_claim set claim_template ordinal) ⌝)) ∗
-      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
+      "Hown_pvc_orphans" ∷ own_orphans_frag γ
+        (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        (DfracOwn 1) pvc_orphans
   }}}
     @! statefulset.createStatefulPod #set_l #pod_l
   {{{ RET #interface.nil;
@@ -332,7 +338,9 @@ Lemma wp_createStatefulPod_deleting γ model_l set_l pod_l
             claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1 claim.(PersistentVolumeClaimV.ObjectMeta') ∗
           "Hreserved" ∷ own_occupied_reserved_frag γ 1 (desired_pvc_key set claim_template_name ordinal)
             claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∗
-      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
+      "Hown_pvc_orphans" ∷ (∃ pvc_orphans', own_orphans_frag γ
+        (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        (DfracOwn 1) pvc_orphans') ∗
       ((∃ pod' uid,
         "%Hpod_valid" ∷ ⌜ PodV.valid pod' ⌝ ∗
         "%Hpod_meta_created" ∷ ⌜ ObjectMetaV.created
@@ -436,7 +444,7 @@ Qed.
 
 Lemma wp_createStatefulPod_preservation γ model_l set_l pod_l
     (set : StatefulSetV.t) (pod : PodV.t) (ordinal : nat)
-    (children : gset KKey.t) dq_set :
+    (children : gset KKey.t) dq_set pvc_orphans :
   {{{ "#Hpkg" ∷ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ model_l ∗
@@ -456,13 +464,17 @@ Lemma wp_createStatefulPod_preservation γ model_l set_l pod_l
       "Hown_children" ∷ own_children_frag γ (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 children ∗
       "Hpvc_states" ∷ stateful_pod_create_pvc_inputs γ set ordinal ∗
-      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
+      "Hown_pvc_orphans" ∷ own_orphans_frag γ
+        (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        (DfracOwn 1) pvc_orphans
   }}}
     @! statefulset.createStatefulPod #set_l #pod_l
   {{{ RET #interface.nil;
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpvc_states" ∷ stateful_pod_create_pvc_outputs γ set ordinal ∗
-      "Hown_pvc_orphans" ∷ own_pvc_orphans γ set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
+      "Hown_pvc_orphans" ∷ (∃ pvc_orphans', own_orphans_frag γ
+        (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        (DfracOwn 1) pvc_orphans') ∗
       (stateful_pod_created γ set pod ordinal children ∨
        ∃ old_uid,
         own_deleting_reserved_frag γ 1 (desired_pod_key set ordinal) old_uid ∗

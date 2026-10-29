@@ -571,15 +571,16 @@ Record all_fractions := {
   pod_dq : dfrac;
   children_dq : dfrac;
   pvc_dq : dfrac;
+  orphans_dq : dfrac;
 }.
 
 Definition mutating_fractions dq : all_fractions :=
-  {| sts_dq := dq; pod_dq := 1; children_dq := 1; pvc_dq := 1 |}.
+  {| sts_dq := dq; pod_dq := 1; children_dq := 1; pvc_dq := 1; orphans_dq := 1 |}.
 
 Definition stability_fractions dq : all_fractions :=
-  {| sts_dq := dq; pod_dq := dq; children_dq := dq; pvc_dq := dq |}.
+  {| sts_dq := dq; pod_dq := dq; children_dq := dq; pvc_dq := dq; orphans_dq := dq |}.
 
-Definition owned_resources γ sts pods pvcs fractions (ready : bool) : iProp Σ :=
+Definition owned_resources γ sts pods pvcs pod_orphans pvc_orphans fractions (ready : bool) : iProp Σ :=
   "Hown_sts_meta_frag" ∷ own_meta_frag γ (StatefulSetV.key sts)
     sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') fractions.(sts_dq) sts.(StatefulSetV.ObjectMeta') ∗
   "Hown_sts_spec_frag" ∷ own_spec_frag γ (StatefulSetV.key sts)
@@ -617,60 +618,60 @@ Definition owned_resources γ sts pods pvcs fractions (ready : bool) : iProp Σ 
       pvc.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∗
   "Hreserved_pvc_frags" ∷ ([∗ list] key ∈ missing_pvc_keys sts pvcs,
     own_available_reserved_frag γ fractions.(pvc_dq) key) ∗
+  (* Releasing a Pod makes it an orphan in the namespace's Pod bucket. *)
+  "Hown_pod_orphans" ∷ own_orphans_frag γ (PodV.kind, sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+    fractions.(orphans_dq) pod_orphans ∗
   (* Creating a PVC makes it an orphan in the namespace's PVC bucket. *)
-  "Hown_pvc_orphans" ∷ own_pvc_orphans γ sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
+  "Hown_pvc_orphans" ∷ own_orphans_frag γ
+    (PersistentVolumeClaimV.kind, sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+    fractions.(orphans_dq) pvc_orphans ∗
   (* Fractional pod fragments allow duplicate entries to own compatible shares; match_distance cannot detect duplicates.
      Record key uniqueness explicitly because current_state_matches compares the full key list up to permutation. *)
   "%Hpods_nodup" ∷ ⌜ NoDup (PodV.key <$> pods) ⌝.
 
-Definition progress_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
+Definition progress_spec γ l namespace name sts dq pods pvcs pod_orphans pvc_orphans : iProp Σ :=
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "Hresources" ∷ owned_resources γ sts pods pvcs (mutating_fractions dq) true ∗
-      (* Releasing a Pod makes it an orphan in the namespace's Pod bucket. *)
-      "Hown_pod_orphans" ∷ own_pod_orphans γ sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
+      "Hresources" ∷ owned_resources γ sts pods pvcs pod_orphans pvc_orphans (mutating_fractions dq) true ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement sts ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
     @! statefulset.syncStatefulSet #namespace #name
-  {{{ pods' pvcs' (err : interface.t), RET #err;
-      owned_resources γ sts pods' pvcs' (mutating_fractions dq) false ∗
-      own_pod_orphans γ sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
+  {{{ pods' pvcs' pod_orphans' pvc_orphans' (err : interface.t), RET #err;
+      owned_resources γ sts pods' pvcs' pod_orphans' pvc_orphans' (mutating_fractions dq) false ∗
       ⌜ current_state_matches sts pods' pvcs' ∨
         (pods_progress_observed pods pods' ∧ match_distance sts pods' pvcs' < match_distance sts pods pvcs) ⌝
   }}}.
 
-Definition preservation_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
+Definition preservation_spec γ l namespace name sts dq pods pvcs pod_orphans pvc_orphans : iProp Σ :=
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "Hresources" ∷ owned_resources γ sts pods pvcs (mutating_fractions dq) false ∗
-      "Hown_pod_orphans" ∷ own_pod_orphans γ sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
+      "Hresources" ∷ owned_resources γ sts pods pvcs pod_orphans pvc_orphans (mutating_fractions dq) false ∗
       "%Hinput_requirement" ∷ ⌜ input_requirement sts ⌝ ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝
   }}}
     @! statefulset.syncStatefulSet #namespace #name
-  {{{ pods' pvcs' (err : interface.t), RET #err;
-      owned_resources γ sts pods' pvcs' (mutating_fractions dq) false ∗
-      own_pod_orphans γ sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
+  {{{ pods' pvcs' pod_orphans' pvc_orphans' (err : interface.t), RET #err;
+      owned_resources γ sts pods' pvcs' pod_orphans' pvc_orphans' (mutating_fractions dq) false ∗
       ⌜ match_distance sts pods' pvcs' ≤ match_distance sts pods pvcs ⌝
   }}}.
 
-Definition stability_spec γ l namespace name sts dq pods pvcs : iProp Σ :=
+Definition stability_spec γ l namespace name sts dq pods pvcs pod_orphans pvc_orphans : iProp Σ :=
   {{{ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "Hresources" ∷ owned_resources γ sts pods pvcs (stability_fractions dq) true ∗
+      "Hresources" ∷ owned_resources γ sts pods pvcs pod_orphans pvc_orphans (stability_fractions dq) true ∗
       "%Hnamespace_eq" ∷ ⌜ namespace = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') ⌝ ∗
       "%Hname_eq" ∷ ⌜ name = sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Name') ⌝ ∗
       "%Hmatch" ∷ ⌜ current_state_matches sts pods pvcs ⌝
   }}}
     @! statefulset.syncStatefulSet #namespace #name
   {{{ (err : interface.t), RET #err;
-      owned_resources γ sts pods pvcs (stability_fractions dq) true
+      owned_resources γ sts pods pvcs pod_orphans pvc_orphans (stability_fractions dq) true
   }}}.
 
 End specs.
