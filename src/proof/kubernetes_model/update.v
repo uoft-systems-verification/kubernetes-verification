@@ -665,6 +665,10 @@ Proof.
   { symmetry. exact Huid_new_old. }
   { intros Hold_terminating.
     rewrite -Hdeletion_timestamp_old_new. exact Hold_terminating. }
+  iMod (orphan_view.insert_same_vs key old_kobj new_kobj with
+    "Hinv_Hown_orphans") as "Hinv_Hown_orphans".
+  { exact Hlookup_abs. }
+  { apply orphan_view.is_living_orphan_iff; done. }
   iDestruct "Hclose" as "[Hclose_success _]".
   iMod ("Hclose_success" $! i1' new_kobj with
     "[Hdeepown_i1' Hown_meta_frag Hown_spec_frag]") as "HΦ".

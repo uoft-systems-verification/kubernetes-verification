@@ -20,10 +20,11 @@ Lemma wp_State__updateTx_release_au γ l kind namespace i kobj parent_key parent
     is_kubernetes γ l ∗
     "%Hnew_parent" ∷ ⌜ obj_parent_ref kobj = None ⌝ ∗
     "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
-    "Hau" ∷ AU <{ ∃∃ old_meta old_spec children,
+    "Hau" ∷ AU <{ ∃∃ old_meta old_spec children orphans,
       "Hown_meta_frag" ∷ own_meta_frag γ (KObjectV.key kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1 old_meta ∗
       "Hown_spec_frag" ∷ own_spec_frag γ (KObjectV.key kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.UID') dq old_spec ∗
       "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
+      "Hown_orphans_frag" ∷ own_orphans_frag_of γ (KObjectV.key kobj) (DfracOwn 1) orphans ∗
       "%Hvalid_update" ∷ ⌜ KObjectV.valid_update kind namespace old_meta old_spec kobj ⌝ ∗
       "%Hchild" ∷ ⌜ KObjectV.key kobj ∈ children ⌝ ∗
       "%Hspec_eq" ∷ ⌜ KObjectV.spec kobj = old_spec ⌝
@@ -32,7 +33,11 @@ Lemma wp_State__updateTx_release_au γ l kind namespace i kobj parent_key parent
       "%Hupdated" ∷ ⌜ KObjectV.updated old_spec kobj kobj' ⌝ ∗
       "%Hspec_unchanged" ∷ ⌜ KObjectV.spec kobj' = old_spec ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
-      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[KObjectV.key kobj]}),
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[KObjectV.key kobj]}) ∗
+      "Hown_orphans_frag" ∷ own_orphans_frag_of γ (KObjectV.key kobj) (DfracOwn 1) (orphans ∪ {[KObjectV.key kobj]}) ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ (KObjectV.key kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1
+        (KObjectV.objectmeta kobj') ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ (KObjectV.key kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.UID') dq old_spec,
       COMM ▷ Φ (#(interface.ok i'), #interface.nil)%V
     }>
     -∗ WP l @! (go.PointerType apimodel.State) @! "updateTx" #kind #namespace #(interface.ok i) {{ Φ }}.
@@ -48,7 +53,7 @@ Proof.
     as [Hvalid_update_input|Hinvalid_update_input].
   2: {
     iApply fupd_wp.
-    iMod "Hau" as (old_meta old_spec children) "[Hau_pre Hclose]".
+    iMod "Hau" as (old_meta old_spec children orphans) "[Hau_pre Hclose]".
     iNamed "Hau_pre".
     exfalso. apply Hinvalid_update_input.
     revert Hvalid_update.
@@ -76,13 +81,14 @@ Proof.
   set I := (∃ i_orig,
     "Hobj_ptr" ∷ obj_ptr ↦ interface.ok i_orig ∗
     "Hdeepown_i_orig" ∷ KObjectV.deepown_i i_orig kobj 1 ∗
-    "Hau" ∷ AU <{ ∃∃ old_meta old_spec children,
+    "Hau" ∷ AU <{ ∃∃ old_meta old_spec children orphans,
       "Hown_meta_frag" ∷ own_meta_frag γ (KObjectV.key kobj)
         (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1 old_meta ∗
       "Hown_spec_frag" ∷ own_spec_frag γ (KObjectV.key kobj)
         (KObjectV.objectmeta kobj).(ObjectMetaV.UID') dq old_spec ∗
       "Hown_children_frag" ∷
         own_children_frag γ parent_key parent_uid 1 children ∗
+      "Hown_orphans_frag" ∷ own_orphans_frag_of γ (KObjectV.key kobj) (DfracOwn 1) orphans ∗
       "%Hvalid_update" ∷ ⌜ KObjectV.valid_update kind namespace old_meta old_spec kobj ⌝ ∗
       "%Hchild" ∷ ⌜ KObjectV.key kobj ∈ children ⌝ ∗
       "%Hspec_eq" ∷
@@ -94,7 +100,11 @@ Proof.
         ⌜ KObjectV.spec kobj' = old_spec ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
       "Hown_children_frag" ∷
-        own_children_frag γ parent_key parent_uid 1 (children ∖ {[KObjectV.key kobj]}),
+        own_children_frag γ parent_key parent_uid 1 (children ∖ {[KObjectV.key kobj]}) ∗
+      "Hown_orphans_frag" ∷ own_orphans_frag_of γ (KObjectV.key kobj) (DfracOwn 1) (orphans ∪ {[KObjectV.key kobj]}) ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ (KObjectV.key kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1
+        (KObjectV.objectmeta kobj') ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ (KObjectV.key kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.UID') dq old_spec,
       COMM ▷ Φ (#(interface.ok i'), #interface.nil)%V
     }>
   )%I.
@@ -131,7 +141,7 @@ Proof.
     destruct kobj; done. }
   wp_apply (wp_State__get_some_au γ l key).
   iFrame "#".
-  iMod "Hau" as (old_meta old_spec children) "[Hau_pre Hclose]".
+  iMod "Hau" as (old_meta old_spec children orphans) "[Hau_pre Hclose]".
   iNamed "Hau_pre".
   iDestruct "Hclose" as "[Habort _]".
   iModIntro.
@@ -146,11 +156,11 @@ Proof.
     "(%Hvalid_existing & %Hextra_valid_existing & %Hkey_existing & %Hmeta_eq &
       Hdeepown_existing_i & Hown_meta_frag & _ & _)".
   iMod ("Habort" with
-    "[Hown_meta_frag Hown_spec_frag Hown_children_frag]")
+    "[Hown_meta_frag Hown_spec_frag Hown_children_frag Hown_orphans_frag]")
     as "Hau".
   { iFrame. iFrame "%". }
   iModIntro. iNext. wp_auto_keep.
-  clear old_meta old_spec children Hvalid_update Hchild Hspec_eq Hmeta_eq.
+  clear old_meta old_spec children orphans Hvalid_update Hchild Hspec_eq Hmeta_eq.
   iDestruct "Hdeepown_existing_i" as
     (existing_l)
     "[%Hvalid_interface_existing Hdeepown_existing_l]".
@@ -205,12 +215,12 @@ Proof.
   iFrame "#".
   iFrame "Hdeepown_i_copy".
   iSplit; first done.
-  iMod "Hau" as (old_meta old_spec children) "[Hau_pre Hclose]".
+  iMod "Hau" as (old_meta old_spec children orphans) "[Hau_pre Hclose]".
   iNamed "Hau_pre".
   iModIntro.
   iExists (KObjectV.key kobj),
-    (KObjectV.objectmeta kobj).(ObjectMetaV.UID'), old_meta, old_spec, children.
-  iFrame "Hown_meta_frag Hown_spec_frag Hown_children_frag".
+    (KObjectV.objectmeta kobj).(ObjectMetaV.UID'), old_meta, old_spec, children, orphans.
+  iFrame "Hown_meta_frag Hown_spec_frag Hown_children_frag Hown_orphans_frag".
   iSplit.
   { iPureIntro. subst kobj_rv kmeta_rv.
     assert (KObjectV.valid_update_input kind namespace kobj ∧
@@ -306,11 +316,11 @@ Proof.
   - iIntros (err) "Hconflict".
     iDestruct "Hconflict" as
       "(%Hconflict & Hown_meta_frag &
-        Hown_spec_frag & Hown_children_frag)".
+        Hown_spec_frag & Hown_children_frag & Hown_orphans_frag)".
     pose proof (conflict_error_not_nil err Hconflict) as Herr_ne.
     iDestruct "Hclose" as "[Habort _]".
     iMod ("Habort" with
-      "[Hown_meta_frag Hown_spec_frag Hown_children_frag]")
+      "[Hown_meta_frag Hown_spec_frag Hown_children_frag Hown_orphans_frag]")
       as "Hau".
     { iFrame. iFrame "%". }
     iModIntro. iNext.
@@ -325,7 +335,7 @@ Proof.
 Qed.
 
 Lemma wp_State__updateTx_release γ l kind namespace i kobj
-    old_meta old_spec children parent_key parent_uid dq :
+    old_meta old_spec children orphans parent_key parent_uid dq :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hnew_parent" ∷ ⌜ obj_parent_ref kobj = None ⌝ ∗
@@ -335,7 +345,8 @@ Lemma wp_State__updateTx_release γ l kind namespace i kobj
       "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ (KObjectV.key kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1 old_meta ∗
       "Hown_spec_frag" ∷ own_spec_frag γ (KObjectV.key kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.UID') dq old_spec ∗
-      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
+      "Hown_orphans_frag" ∷ own_orphans_frag_of γ (KObjectV.key kobj) (DfracOwn 1) orphans
   }}}
     l @! (go.PointerType apimodel.State) @! "updateTx" #kind #namespace #(interface.ok i)
   {{{ i' kobj', RET (#(interface.ok i'), #interface.nil);
@@ -343,7 +354,11 @@ Lemma wp_State__updateTx_release γ l kind namespace i kobj
       "%Hupdated" ∷ ⌜ KObjectV.updated old_spec kobj kobj' ⌝ ∗
       "%Hspec_unchanged" ∷ ⌜ KObjectV.spec kobj' = old_spec ⌝ ∗
       "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
-      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[KObjectV.key kobj]})
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[KObjectV.key kobj]}) ∗
+      "Hown_orphans_frag" ∷ own_orphans_frag_of γ (KObjectV.key kobj) (DfracOwn 1) (orphans ∪ {[KObjectV.key kobj]}) ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ (KObjectV.key kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.UID') 1
+        (KObjectV.objectmeta kobj') ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ (KObjectV.key kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.UID') dq old_spec
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
@@ -359,12 +374,13 @@ Proof.
       (KObjectV.objectmeta kobj).(ObjectMetaV.UID') dq old_spec ∗
     "Hown_children_frag" ∷
       own_children_frag γ parent_key parent_uid 1 children ∗
+    "Hown_orphans_frag" ∷ own_orphans_frag_of γ (KObjectV.key kobj) (DfracOwn 1) orphans ∗
     "%Hvalid_update" ∷ ⌜ KObjectV.valid_update kind namespace old_meta old_spec kobj ⌝ ∗
     "%Hchild" ∷ ⌜ KObjectV.key kobj ∈ children ⌝ ∗
     "%Hspec_eq" ∷
       ⌜ KObjectV.spec kobj = old_spec ⌝
   )%I) with
-    "[Hown_meta_frag Hown_spec_frag Hown_children_frag]"
+    "[Hown_meta_frag Hown_spec_frag Hown_children_frag Hown_orphans_frag]"
     as "Hpre".
   { iFrame. iFrame "%". }
   iAaccIntro with "Hpre".
@@ -376,7 +392,7 @@ Proof.
 Qed.
 
 Lemma wp_State__PodUpdateTx_release γ l namespace pod_l pod
-    key uid old_meta old_spec children parent_key parent_uid dq :
+    key uid old_meta old_spec children orphans parent_key parent_uid dq :
   {{{ is_pkg_init apimodel ∗
       "#Hisk" ∷ is_kubernetes γ l ∗
       "%Hnew_parent" ∷ ⌜ meta_parent_ref pod.(PodV.ObjectMeta') = None ⌝ ∗
@@ -388,7 +404,8 @@ Lemma wp_State__PodUpdateTx_release γ l namespace pod_l pod
       "Hdeepown_l" ∷ PodV.deepown_l pod_l pod 1 ∗
       "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 old_meta ∗
       "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.PodSpec old_spec) ∗
-      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
+      "Hown_orphans_frag" ∷ own_orphans_frag_of γ key (DfracOwn 1) orphans
   }}}
     l @! (go.PointerType apimodel.State) @! "PodUpdateTx" #namespace #pod_l
   {{{ pod_l' pod', RET (#pod_l', #interface.nil);
@@ -399,7 +416,10 @@ Lemma wp_State__PodUpdateTx_release γ l namespace pod_l pod
       "%Hkey_eq'" ∷ ⌜ PodV.key pod' = key ⌝ ∗
       "%Huid_eq'" ∷ ⌜ pod'.(PodV.ObjectMeta').(ObjectMetaV.UID') = uid ⌝ ∗
       "Hdeepown_l" ∷ PodV.deepown_l pod_l' pod' 1 ∗
-      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]})
+      "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
+      "Hown_orphans_frag" ∷ own_orphans_frag_of γ key (DfracOwn 1) (orphans ∪ {[key]}) ∗
+      "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 pod'.(PodV.ObjectMeta') ∗
+      "Hown_spec_frag" ∷ own_spec_frag γ key uid dq (ObjectSpecV.PodSpec old_spec)
   }}}.
 Proof.
   iIntros (Φ) "(#Hinit & H) HΦ". iNamed "H".
@@ -417,12 +437,13 @@ Proof.
     as Hkobj_uid.
   { simpl. symmetry. exact Huid_eq. }
   iEval (rewrite Hkey_eq Huid_eq) in "Hown_meta_frag Hown_spec_frag".
+  iEval (rewrite Hkey_eq) in "Hown_orphans_frag".
   wp_apply (wp_State__updateTx_release γ l PodV.kind namespace
     (interface.mk (go.PointerType v1.Pod) #pod_l)
-    (KObjectV.Pod pod) old_meta (ObjectSpecV.PodSpec old_spec) children
+    (KObjectV.Pod pod) old_meta (ObjectSpecV.PodSpec old_spec) children orphans
     parent_key parent_uid dq
     with "[$Hinit $Hisk $Hdeepown_i $Hown_meta_frag
-      $Hown_spec_frag $Hown_children_frag]").
+      $Hown_spec_frag $Hown_children_frag $Hown_orphans_frag]").
   { iPureIntro.
     split_and!.
     - exact Hnew_parent.
@@ -473,7 +494,7 @@ Proof.
     rewrite Hname_updated Hnamespace_updated. done. }
   assert (pod'.(PodV.ObjectMeta').(ObjectMetaV.UID') = uid) as Huid_eq'.
   { rewrite Huid_eq. simpl in Huid_updated. exact Huid_updated. }
-  iEval (rewrite Hkobj_key) in "Hrelease_result".
+  iEval (rewrite Hkobj_key Hkobj_uid) in "Hrelease_result".
   iApply "HΦ". iSplit.
   { iPureIntro. simpl in Hvalid'. done. }
   iFrame. iFrame "%".

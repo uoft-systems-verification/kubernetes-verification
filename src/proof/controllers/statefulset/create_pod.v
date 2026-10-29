@@ -55,7 +55,7 @@ Context `{!KObjectV.ObjectInterfaceAssumptions}.
    unreachable. *)
 Lemma wp_createStatefulPod γ model_l set_l pod_l
     (set : StatefulSetV.t) (pod : PodV.t) (ordinal : nat)
-    (children : gset KKey.t) dq_set :
+    (children : gset KKey.t) dq_set pvc_orphans :
   {{{ "#Hpkg" ∷
         is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
@@ -112,7 +112,10 @@ Lemma wp_createStatefulPod γ model_l set_l pod_l
            ⌜ PersistentVolumeClaimV.valid_create PersistentVolumeClaimV.kind
                 set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
                 (new_persistent_volume_claim
-                  set claim_template ordinal) ⌝))
+                  set claim_template ordinal) ⌝)) ∗
+      "Hown_pvc_orphans" ∷ own_orphans_frag γ
+        (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        (DfracOwn 1) pvc_orphans
   }}}
     @! statefulset.createStatefulPod #client_ctx #kube_client #controller_client.claim_lister #set_l #pod_l
   {{{ (pod' : PodV.t) (uid : types.UID.t), RET #interface.nil;
@@ -165,7 +168,10 @@ Lemma wp_createStatefulPod γ model_l set_l pod_l
         own_children_frag γ
           (StatefulSetV.key set)
           set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
-          (children ∪ {[desired_pod_key set ordinal]})
+          (children ∪ {[desired_pod_key set ordinal]}) ∗
+      "Hown_pvc_orphans" ∷ (∃ pvc_orphans', own_orphans_frag γ
+        (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        (DfracOwn 1) pvc_orphans')
   }}}.
 Proof.
   wp_start as "H". iNamed "H". wp_auto_keep.
@@ -180,7 +186,7 @@ Proof.
     pod Hpod_valid_create Hpod_name_nonempty) as Hpod_name_len.
   wp_apply (wp_createPersistentVolumeClaims
     γ model_l set_l pod_l set pod ordinal dq_set 1
-    with "[$Hset $Hpod $Hpvc_states]").
+    with "[$Hset $Hpod $Hpvc_states $Hown_pvc_orphans]").
   { iFrame "# %". }
   iIntros "H". iNamed "H".
   wp_auto_keep.
@@ -293,7 +299,7 @@ Definition stateful_pod_created γ set pod ordinal children : iProp Σ :=
    success; in the latter case the ordinary creation result is returned. *)
 Lemma wp_createStatefulPod_deleting γ model_l set_l pod_l
     (set : StatefulSetV.t) (pod : PodV.t) (ordinal : nat)
-    (children : gset KKey.t) dq_set old_uid :
+    (children : gset KKey.t) dq_set old_uid pvc_orphans :
   {{{ "#Hpkg" ∷ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ model_l ∗
@@ -323,7 +329,10 @@ Lemma wp_createStatefulPod_deleting γ model_l set_l pod_l
             claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∨
         (own_available_reserved_frag γ 1 (desired_pvc_key set claim_template_name ordinal) ∗
          ⌜ PersistentVolumeClaimV.valid_create PersistentVolumeClaimV.kind set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')
-            (new_persistent_volume_claim set claim_template ordinal) ⌝))
+            (new_persistent_volume_claim set claim_template ordinal) ⌝)) ∗
+      "Hown_pvc_orphans" ∷ own_orphans_frag γ
+        (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        (DfracOwn 1) pvc_orphans
   }}}
     @! statefulset.createStatefulPod #client_ctx #kube_client #controller_client.claim_lister #set_l #pod_l
   {{{ RET #interface.nil;
@@ -335,6 +344,9 @@ Lemma wp_createStatefulPod_deleting γ model_l set_l pod_l
             claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID') 1 claim.(PersistentVolumeClaimV.ObjectMeta') ∗
           "Hreserved" ∷ own_occupied_reserved_frag γ 1 (desired_pvc_key set claim_template_name ordinal)
             claim.(PersistentVolumeClaimV.ObjectMeta').(ObjectMetaV.UID')) ∗
+      "Hown_pvc_orphans" ∷ (∃ pvc_orphans', own_orphans_frag γ
+        (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        (DfracOwn 1) pvc_orphans') ∗
       ((∃ pod' uid,
         "%Hpod_valid" ∷ ⌜ PodV.valid pod' ⌝ ∗
         "%Hpod_meta_created" ∷ ⌜ ObjectMetaV.created
@@ -371,7 +383,7 @@ Proof.
     set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') pod Hpod_valid_create
     Hpod_name_nonempty) as Hpod_name_len.
   wp_apply (wp_createPersistentVolumeClaims γ model_l set_l pod_l set pod ordinal dq_set 1
-    with "[$Hset $Hpod $Hpvc_states]").
+    with "[$Hset $Hpod $Hpvc_states $Hown_pvc_orphans]").
   { iFrame "# %". }
   iIntros "H". iNamed "H". wp_auto_keep.
   iPoseProof (StatefulSetV.deepown_l_split with "Hset") as
@@ -434,12 +446,12 @@ Proof.
     { iExists set_meta_c. iFrame. }
     iPoseProof (StatefulSetV.deepown_l_restore _ _ _ Hset_l_not_null
       with "[$Hset_typemeta $Hset_objectmeta_l $Hset_spec_l $Hset_status_l]") as "Hset".
-    iApply "HΦ". iFrame "Hset Hpvc_states". iRight. iFrame.
+    iApply "HΦ". iFrame "Hset Hpvc_states Hown_pvc_orphans". iRight. iFrame.
 Qed.
 
 Lemma wp_createStatefulPod_preservation γ model_l set_l pod_l
     (set : StatefulSetV.t) (pod : PodV.t) (ordinal : nat)
-    (children : gset KKey.t) dq_set :
+    (children : gset KKey.t) dq_set pvc_orphans :
   {{{ "#Hpkg" ∷ is_pkg_init code.controllers.statefulset.pkg_id.statefulset ∗
       "#Hisk" ∷ is_kubernetes γ model_l ∗
       "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ model_l ∗
@@ -459,12 +471,18 @@ Lemma wp_createStatefulPod_preservation γ model_l set_l pod_l
         ∃ old_uid, own_deleting_reserved_frag γ 1 (desired_pod_key set ordinal) old_uid) ∗
       "Hown_children" ∷ own_children_frag γ (StatefulSetV.key set)
         set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1 children ∗
-      "Hpvc_states" ∷ stateful_pod_create_pvc_inputs γ set ordinal
+      "Hpvc_states" ∷ stateful_pod_create_pvc_inputs γ set ordinal ∗
+      "Hown_pvc_orphans" ∷ own_orphans_frag γ
+        (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        (DfracOwn 1) pvc_orphans
   }}}
     @! statefulset.createStatefulPod #client_ctx #kube_client #controller_client.claim_lister #set_l #pod_l
   {{{ RET #interface.nil;
       "Hset" ∷ StatefulSetV.deepown_l set_l set dq_set ∗
       "Hpvc_states" ∷ stateful_pod_create_pvc_outputs γ set ordinal ∗
+      "Hown_pvc_orphans" ∷ (∃ pvc_orphans', own_orphans_frag γ
+        (PersistentVolumeClaimV.kind, set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace'))
+        (DfracOwn 1) pvc_orphans') ∗
       (stateful_pod_created γ set pod ordinal children ∨
        ∃ old_uid,
         own_deleting_reserved_frag γ 1 (desired_pod_key set ordinal) old_uid ∗
@@ -475,18 +493,18 @@ Proof.
   iIntros (Φ) "H HΦ". iNamed "H".
   iDestruct "Hpod_reserved" as "[Havailable|Hdeleting]".
   - wp_apply (wp_createStatefulPod γ model_l set_l pod_l set pod ordinal children dq_set
-      with "[$Hset $Hpod $Havailable $Hown_children $Hpvc_states]").
+      with "[$Hset $Hpod $Havailable $Hown_children $Hpvc_states $Hown_pvc_orphans]").
     { iFrame "# %". }
     iIntros (pod' uid) "H". iNamedPrefix "H" "Hcreate_".
-    iApply "HΦ". iFrame "Hcreate_Hset Hcreate_Hpvc_states". iLeft.
+    iApply "HΦ". iFrame "Hcreate_Hset Hcreate_Hpvc_states Hcreate_Hown_pvc_orphans". iLeft.
     iExists pod', uid. iFrame. iPureIntro. split_and!; done.
   - iDestruct "Hdeleting" as (old_uid) "Hdeleting".
     wp_apply (wp_createStatefulPod_deleting γ model_l set_l pod_l set pod ordinal children dq_set old_uid
-      with "[$Hset $Hpod $Hdeleting $Hown_children $Hpvc_states]").
+      with "[$Hset $Hpod $Hdeleting $Hown_children $Hpvc_states $Hown_pvc_orphans]").
     { iFrame "# %". }
-    iIntros "(Hset & Hpvc_states & [Hcreated|Hdeleting])".
-    + iApply "HΦ". iFrame "Hset Hpvc_states". iLeft. iExact "Hcreated".
-    + iApply "HΦ". iFrame "Hset Hpvc_states". iRight. iExists old_uid. iExact "Hdeleting".
+    iIntros "(Hset & Hpvc_states & Hown_pvc_orphans & [Hcreated|Hdeleting])".
+    + iApply "HΦ". iFrame "Hset Hpvc_states Hown_pvc_orphans". iLeft. iExact "Hcreated".
+    + iApply "HΦ". iFrame "Hset Hpvc_states Hown_pvc_orphans". iRight. iExists old_uid. iExact "Hdeleting".
 Qed.
 
 End proof.

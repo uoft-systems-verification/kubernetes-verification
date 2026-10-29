@@ -50,8 +50,9 @@ Local Set Default Proof Using "All - client_ctx - kube_client".
 
 Context `{!KObjectV.ObjectInterfaceAssumptions}.
 
-Lemma wp_syncStatefulSet_progress γ l namespace name sts dq pods pvcs :
-  ⊢ progress_spec (client_ctx:=client_ctx) (kube_client:=kube_client) γ l namespace name sts dq pods pvcs.
+Lemma wp_syncStatefulSet_progress γ l namespace name sts dq pods pvcs orphan_pods pvc_orphans :
+  ⊢ progress_spec (client_ctx:=client_ctx) (kube_client:=kube_client)
+      γ l namespace name sts dq pods pvcs orphan_pods pvc_orphans.
 Proof.
   unfold progress_spec.
   wp_start as "H". iNamed "H". iNamed "Hresources".
@@ -264,13 +265,19 @@ Proof.
     pose proof (Forall_and Hvalid_parent Hkeys) as Hall.
     eapply Forall_impl; last exact Hall.
     intros pod [[Hvalid Hparent] Hkey]. split_and!; done. }
+  assert (sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace') =
+    set.(StatefulSetV.ObjectMeta').(ObjectMetaV.Namespace')) as Hset_namespace.
+  { exact (f_equal KKey.Namespace' Hset_key). }
+  iEval (rewrite Hset_namespace) in "Hown_pod_orphans".
   wp_apply (wp_releasePodsWithBadNames γ l set_l all_sl
     set all_ptrs all_pods bad_pods
     (list_to_set (PodV.key <$> all_pods)) 1 pod_dq
     with "[$Hset $Hall_sl $Hall_pods $Hbad_meta $Hbad_spec
-      $Hown_children_frag]").
+      $Hown_children_frag $Hown_pod_orphans]").
   { iFrame "#". iPureIntro. split_and!; done. }
-  iIntros "Hrelease". iNamedPrefix "Hrelease" "Hrelease_".
+  iIntros (released_pods) "Hrelease". iNamedPrefix "Hrelease" "Hrelease_".
+  iEval (rewrite -Hset_namespace -Hrelease_Hreleased_keys -list_to_set_app_L -fmap_app)
+    in "Hrelease_Hown_pod_orphans".
   wp_auto_keep.
   iAssert (own_children_frag γ (StatefulSetV.key set)
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
@@ -341,15 +348,19 @@ Proof.
     symmetry. exact Hset_view. }
   iEval (rewrite /= -Hmissing_pods) in "Hreserved_pod_frags".
   iEval (rewrite -Hmissing_pvcs) in "Hreserved_pvc_frags".
+  iEval (rewrite Hset_namespace) in "Hown_pvc_orphans".
   wp_auto_keep.
   wp_apply (wp_reconcileReplicas_progress γ l set_l good_sl set
     good_ptrs good_pods pvcs 1 pod_dq 0%nat
     with "[$Hset $Hgood_sl $Hgood_pods $Hgood_frags
       $Hgood_occupied $Hown_pvc_frags $Hoccupied_pvc_frags $Hgood_children
-      $Hown_terminating_children_frag $Hreserved_pod_frags $Hreserved_pvc_frags]").
+      $Hown_terminating_children_frag $Hreserved_pod_frags $Hreserved_pvc_frags
+      $Hown_pvc_orphans]").
   { iFrame "#". iFrame "%". }
   iIntros (pods' pvcs' deletion) "Hreconcile".
   iNamedPrefix "Hreconcile" "Hreconcile_".
+  iEval (rewrite -Hset_namespace) in "Hreconcile_Hown_pvc_orphans".
+  iDestruct "Hreconcile_Hown_pvc_orphans" as (pvc_orphans') "Hreconcile_Hown_pvc_orphans".
   iEval (rewrite big_sepL_sep) in "Hreconcile_Hown_pods".
   iDestruct "Hreconcile_Hown_pods" as
     "[Hreconcile_Hown_pod_meta Hreconcile_Hown_pod_spec]".
@@ -404,13 +415,14 @@ Proof.
           sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') terminating_bound)%I
         with "[Hreconcile_Hterminating_children_frag]" as "Hreconcile_Hterminating_children_frag".
       { iExists (terminating_bound_after_deletion 0%nat deletion). iFrame. }
-      iApply ("HΦ" $! pods' pvcs' interface.nil).
-      rewrite /owned_resources /=.
+      iApply ("HΦ" $! pods' pvcs' (orphan_pods ++ released_pods) pvc_orphans' interface.nil).
+      rewrite /owned_resources /=. iEval (rewrite big_sepL_app).
       iFrame "Hown_sts_meta_frag Hown_sts_spec_frag
         Hreconcile_Hown_pods Hreconcile_Hown_pvcs
         Hreconcile_Hown_children Hreconcile_Hterminating_children_frag
         Hreconcile_Hoccupied_pods Hreconcile_Hoccupied_pvcs
-        Hreconcile_Hreserved_pods Hreconcile_Hreserved_pvcs".
+        Hreconcile_Hreserved_pods Hreconcile_Hreserved_pvcs
+        Hown_orphan_pod_frags Hrelease_Hreleased_frags Hrelease_Hown_pod_orphans Hreconcile_Hown_pvc_orphans".
       iPureIntro. split; first exact Hpods'_nodup.
       left. exact Hcomplete_sts.
     + assert (pod_storage_view <$> good_pods ≡ₚ
@@ -429,13 +441,14 @@ Proof.
           sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') terminating_bound)%I
         with "[Hreconcile_Hterminating_children_frag]" as "Hreconcile_Hterminating_children_frag".
       { iExists (terminating_bound_after_deletion 0%nat deletion). iFrame. }
-      iApply ("HΦ" $! pods' pvcs' interface.nil).
-      rewrite /owned_resources /=.
+      iApply ("HΦ" $! pods' pvcs' (orphan_pods ++ released_pods) pvc_orphans' interface.nil).
+      rewrite /owned_resources /=. iEval (rewrite big_sepL_app).
       iFrame "Hown_sts_meta_frag Hown_sts_spec_frag
         Hreconcile_Hown_pods Hreconcile_Hown_pvcs
         Hreconcile_Hown_children Hreconcile_Hterminating_children_frag
         Hreconcile_Hoccupied_pods Hreconcile_Hoccupied_pvcs
-        Hreconcile_Hreserved_pods Hreconcile_Hreserved_pvcs".
+        Hreconcile_Hreserved_pods Hreconcile_Hreserved_pvcs
+        Hown_orphan_pod_frags Hrelease_Hreleased_frags Hrelease_Hown_pod_orphans Hreconcile_Hown_pvc_orphans".
       iPureIntro. split; first exact Hpods'_nodup.
       right. split; done.
   - assert (Hbad_distance :
@@ -496,13 +509,14 @@ Proof.
         sts.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') terminating_bound)%I
       with "[Hreconcile_Hterminating_children_frag]" as "Hreconcile_Hterminating_children_frag".
     { iExists (terminating_bound_after_deletion 0%nat deletion). iFrame. }
-    iApply ("HΦ" $! pods' pvcs' interface.nil).
-    rewrite /owned_resources /=.
+    iApply ("HΦ" $! pods' pvcs' (orphan_pods ++ released_pods) pvc_orphans' interface.nil).
+    rewrite /owned_resources /=. iEval (rewrite big_sepL_app).
     iFrame "Hown_sts_meta_frag Hown_sts_spec_frag
       Hreconcile_Hown_pods Hreconcile_Hown_pvcs
       Hreconcile_Hown_children Hreconcile_Hterminating_children_frag
       Hreconcile_Hoccupied_pods Hreconcile_Hoccupied_pvcs
-      Hreconcile_Hreserved_pods Hreconcile_Hreserved_pvcs".
+      Hreconcile_Hreserved_pods Hreconcile_Hreserved_pvcs
+        Hown_orphan_pod_frags Hrelease_Hreleased_frags Hrelease_Hown_pod_orphans Hreconcile_Hown_pvc_orphans".
     iPureIntro. split; first exact Hpods'_nodup.
     right. split; done.
 Qed.

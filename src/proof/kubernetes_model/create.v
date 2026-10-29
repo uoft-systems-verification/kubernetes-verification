@@ -271,6 +271,13 @@ Proof.
     apply not_elem_of_dom in Hnn_fresh. exact Hnn_fresh. }
   { unfold terminating_children.terminating_obj_parent_ref.
     rewrite Hdeletion_timestamp2. done. }
+  (* The new object is a living child, so it is not an orphan. *)
+  assert (<[key := kobj2]> abs_state !! key = Some kobj2) as Hlookup_kobj2.
+  { apply lookup_insert_eq. }
+  assert (key ∈ children ∪ {[key]}) as Hkey_children.
+  { apply elem_of_union_r, elem_of_singleton. done. }
+  iPoseProof (cview.own_auth_frag_lookup key kobj2 Hlookup_kobj2 Hkey_children with
+    "Hinv_Hown_children Hown_children_frag") as "%Hkobj2_parent".
   iMod ("Hclose" $! i2 kobj2 with
     "[$Hdeepown_i2 $Hown_meta $Hown_spec $Hown_status
       $Hown_unreserved_key_frag $Hown_children_frag $Hown_grandchildren]") as "HΦ".
@@ -299,6 +306,11 @@ Proof.
     Hgenerated_uid_fresh Hkobj2_uid with
     "Hinv_Hown_deletion_observations") as
     "Hinv_Hown_deletion_observations".
+  iMod (orphan_view.create_vs key kobj2 with "Hinv_Hown_orphans")
+    as "Hinv_Hown_orphans".
+  { exact Hkey_not_in_abs. }
+  { apply cview.living_obj_parent_ref_eq_some in Hkobj2_parent as [_ Hparent].
+    eapply orphan_view.not_living_orphan_of_parent. exact Hparent. }
   iModIntro.
   iAssert (([∗ map] i; obj ∈ <[key:=interface.ok i1]> phys_state; <[key:=kobj2]> abs_state,
     match i with

@@ -6,13 +6,14 @@ From New.proof Require Import prelude empty_ffi.
 From New.object_specs Require Export prelude.
 From New.proof.big_op Require Export big_sepL big_sepM.
 From New.proof.algebra Require Export
-  kview cview terminating_children deletion_observation.
+  kview cview terminating_children orphan_view deletion_observation.
 
 Class kubernetesModelG Σ := {
   #[global] kubernetes_model_kviewG :: kviewG Σ;
   #[global] kubernetes_model_cviewG :: cviewG Σ;
   #[global] kubernetes_model_terminating_childrenG :: terminatingChildrenG Σ;
   #[global] kubernetes_model_deletion_observationG :: deletionObservationG Σ;
+  #[global] kubernetes_model_orphan_viewG :: orphanViewG Σ;
 }.
 
 Section spec.
@@ -26,6 +27,7 @@ Record KubernetesGname := mk_γk {
   γ_children : gname;
   γ_terminating_children : gname;
   γ_deletion_observation : gname;
+  γ_orphans : gname;
 }.
 
 Definition own_kview_auth γ state used_uid : iProp Σ :=
@@ -73,6 +75,17 @@ Definition own_deletion_observation_auth γ state used_uid : iProp Σ :=
 Definition own_deletion_observed_frag γ key uid : iProp Σ :=
   deletion_observation.own_frag γ.(γ_deletion_observation) key uid.
 
+Definition own_orphans_auth γ state : iProp Σ :=
+  orphan_view.own_auth γ.(γ_orphans) state.
+
+Definition own_orphans_frag γ bk dq ks : iProp Σ :=
+  orphan_view.own_frag γ.(γ_orphans) bk dq ks.
+
+(** A fragment of [key]'s orphan bucket. Making [key] a living orphan requires
+    the whole fragment. *)
+Definition own_orphans_frag_of γ (key : KKey.t) dq (ks : gset KKey.t) : iProp Σ :=
+  own_orphans_frag γ (orphan_view.bucket_of key) dq ks.
+
 Definition kubernetes_inv γ l : iProp Σ :=
   ∃ (phys_state_l: loc) (phys_used_uid_l: loc) (phys_used_rv_l: loc)
     (phys_state: gmap KKey.t interface.t) (phys_used_uid : gmap types.UID.t unit) (phys_used_rv : gmap go_string unit)
@@ -88,6 +101,7 @@ Definition kubernetes_inv γ l : iProp Σ :=
     "Hown_children" ∷ own_children_auth γ abs_state used_reference ∗
     "Hown_terminating_children" ∷ own_terminating_children_auth γ abs_state ∗
     "Hown_deletion_observations" ∷ own_deletion_observation_auth γ abs_state used_uid ∗
+    "Hown_orphans" ∷ own_orphans_auth γ abs_state ∗
     "Hphys_abs_rep" ∷ ([∗ map] i; obj ∈ phys_state; abs_state,
       match i with
       | interface.ok i_ok => KObjectV.deepown_i i_ok obj 1

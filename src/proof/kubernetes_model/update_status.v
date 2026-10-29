@@ -566,6 +566,10 @@ Proof.
   { symmetry. exact Huid_new_old. }
   { intros Hold_terminating.
     rewrite -Hdeletion_timestamp_old_new. exact Hold_terminating. }
+  iMod (orphan_view.insert_same_vs key old_kobj new_kobj with
+    "Hinv_Hown_orphans") as "Hinv_Hown_orphans".
+  { exact Hlookup_abs. }
+  { apply orphan_view.is_living_orphan_iff; done. }
   assert (KObjectV.valid new_kobj) as Hvalid_new_kobj.
   { destruct Hvalid_kuid_new as (_ & _ & Hvalid_new_kobj & _). done. }
   iDestruct "Hclose" as "[Hclose_success _]".

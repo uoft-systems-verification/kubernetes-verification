@@ -308,6 +308,11 @@ Proof.
     { intros obj Hlookup _.
       apply lookup_delete_Some in Hlookup as [Hneq _].
       exfalso. exact (Hneq eq_refl). }
+    iMod (orphan_view.delete_not_orphan_vs key with "Hinv_Hown_orphans")
+      as "Hinv_Hown_orphans".
+    { intros obj Hlookup. rewrite Hlookup_abs in Hlookup. injection Hlookup as <-.
+      apply cview.living_obj_parent_ref_eq_some in Hliving_parent as [_ Hparent].
+      eapply orphan_view.not_living_orphan_of_parent. exact Hparent. }
     iMod (cview.delete_child_vs2 key with "[$Hinv_Hown_children] [$Hown_children_frag]")
       as "(Hinv_Hown_children & Hown_children_frag)". 1: done.
     iMod (terminating_children.delete_vs
@@ -598,6 +603,12 @@ Proof.
   pose proof Hold_living_parent as Hold_living_parent_info.
   apply cview.living_obj_parent_ref_eq_some in Hold_living_parent_info as
     [Hold_deletion_timestamp_none Hold_parent].
+  iMod (orphan_view.insert_same_vs (KObjectV.key kobj) kobj new_kobj with
+    "Hinv_Hown_orphans") as "Hinv_Hown_orphans".
+  { exact Hlookup_abs. }
+  { split; intros Horphan; exfalso; revert Horphan.
+    - eapply orphan_view.not_living_orphan_of_parent. exact Hold_parent.
+    - apply orphan_view.not_living_orphan_of_terminating. exact Hnew_deletion_timestamp. }
   assert (Hold_terminating_parent_none :
       terminating_children.terminating_obj_parent_ref kobj = None).
   { unfold terminating_children.terminating_obj_parent_ref.

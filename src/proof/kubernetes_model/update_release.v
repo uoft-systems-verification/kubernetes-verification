@@ -15,17 +15,21 @@ Local Set Default Proof Using "All".
    The request changes only metadata: its spec is exactly the value currently
    stored. Ordinary update preserves status, so status ownership can remain
    framed around this contract. The parent relation and [own_children_frag]
-   are updated atomically with the object. *)
+   are updated atomically with the object. A released object becomes a living
+   orphan, so the whole fragment of its orphan bucket ([own_orphans_frag_of])
+   gains its key; the released object's metadata and spec fragments are
+   returned. *)
 Lemma wp_State__update_release_au γ l kind namespace i kobj parent_key parent_uid dq :
   ∀ Φ,
   is_pkg_init apimodel ∗
   is_kubernetes γ l ∗
   "%Hnew_parent" ∷ ⌜ obj_parent_ref kobj = None ⌝ ∗
   "Hdeepown_i" ∷ KObjectV.deepown_i i kobj 1 ∗
-  (|={⊤, ∅}=> ∃ key uid old_meta old_spec children,
+  (|={⊤, ∅}=> ∃ key uid old_meta old_spec children orphans,
     "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 old_meta ∗
     "Hown_spec_frag" ∷ own_spec_frag γ key uid dq old_spec ∗
     "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
+    "Hown_orphans_frag" ∷ own_orphans_frag_of γ key (DfracOwn 1) orphans ∗
     "%Hvalid_update" ∷ ⌜ KObjectV.valid_update kind namespace old_meta old_spec kobj ⌝ ∗
     "%Hchild" ∷ ⌜ key ∈ children ⌝ ∗
     "%Hspec_eq" ∷ ⌜ KObjectV.spec kobj = old_spec ⌝ ∗
@@ -35,13 +39,17 @@ Lemma wp_State__update_release_au γ l kind namespace i kobj parent_key parent_u
           "%Hupdated" ∷ ⌜ KObjectV.updated old_spec kobj kobj' ⌝ ∗
           "%Hspec_unchanged" ∷ ⌜ KObjectV.spec kobj' = old_spec ⌝ ∗
           "Hdeepown_i" ∷ KObjectV.deepown_i i' kobj' 1 ∗
-          "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}))
+          "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 (children ∖ {[key]}) ∗
+          "Hown_orphans_frag" ∷ own_orphans_frag_of γ key (DfracOwn 1) (orphans ∪ {[key]}) ∗
+          "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 (KObjectV.objectmeta kobj') ∗
+          "Hown_spec_frag" ∷ own_spec_frag γ key uid dq old_spec)
         ={∅, ⊤}=∗ ▷ Φ (#(interface.ok i'), #interface.nil)%V) ∧
       (∀ err,
         ( "%Hconflict" ∷ ⌜ conflict_error err ⌝ ∗
           "Hown_meta_frag" ∷ own_meta_frag γ key uid 1 old_meta ∗
           "Hown_spec_frag" ∷ own_spec_frag γ key uid dq old_spec ∗
-          "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children)
+          "Hown_children_frag" ∷ own_children_frag γ parent_key parent_uid 1 children ∗
+          "Hown_orphans_frag" ∷ own_orphans_frag_of γ key (DfracOwn 1) orphans)
         ={∅, ⊤}=∗ ▷ Φ (#interface.nil, #err)%V)
     )%I
   ) -∗ WP l @! (go.PointerType apimodel.State) @! "update" #kind #namespace #(interface.ok i) {{ Φ }}.
@@ -221,7 +229,7 @@ Proof.
     { rewrite Hkey_eq. unfold key. destruct kobj. all: done. }
     iDestruct "Hclose" as "[_ Hclose_err]".
     iMod ("Hclose_err" $! err with
-      "[Hown_meta_frag Hown_spec_frag Hown_children_frag]")
+      "[Hown_meta_frag Hown_spec_frag Hown_children_frag Hown_orphans_frag]")
       as "HΦ".
     { iFrame. iPureIntro. exact Herr_conflict. }
     iModIntro.
@@ -654,10 +662,13 @@ Proof.
     exact Huid_updated. }
   { intros Hold_terminating.
     exfalso. apply Hold_terminating. exact Hold_deletion_timestamp_none. }
-  iClear "Hown_meta_frag Hown_spec_frag".
+  iMod (orphan_view.enter_vs key new_kobj with
+    "Hinv_Hown_orphans Hown_orphans_frag")
+    as "[Hinv_Hown_orphans Hown_orphans_frag]".
+  { split; [exact Hnew_deletion_timestamp_none|exact Hnew_parent_none]. }
   iDestruct "Hclose" as "[Hclose_success _]".
   iMod ("Hclose_success" $! i1' new_kobj with
-    "[Hdeepown_i1' Hown_children_frag]") as "HΦ".
+    "[Hdeepown_i1' Hown_children_frag Hown_orphans_frag Hown_meta_frag Hown_spec_frag]") as "HΦ".
   { iSplit.
     { iPureIntro. exact Hvalid_new. }
     iSplit; first (iPureIntro; exact Hupdated_new).
@@ -665,7 +676,7 @@ Proof.
     { iPureIntro. unfold new_kobj.
       rewrite KObjectV.spec_update_objectmeta.
       rewrite Hspec_updated_old Hstored_spec_eq. done. }
-    iFrame "Hdeepown_i1' Hown_children_frag". }
+    iFrame "Hdeepown_i1' Hown_children_frag Hown_orphans_frag Hown_meta_frag Hown_spec_frag". }
   iModIntro.
   iAssert (([∗ map] i; obj ∈
       <[key:=interface.ok i1]> phys_state;
