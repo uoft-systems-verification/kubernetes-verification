@@ -46,8 +46,21 @@ jobs:
           opam pin add --no-action -k path .
           opam install --deps-only .
       - name: Check ${{ matrix.proof-group }} proofs using vos dependencies
-        # Include maximum RSS so future memory regressions are visible in logs.
-        run: /usr/bin/time -v make -j2 vok-${{ matrix.proof-group }}
+        env:
+          PROOF_GROUP: ${{ matrix.proof-group }}
+        run: |
+          proof_jobs=2
+          # These groups contain multi-GiB proofs. Keep their compiler peaks
+          # from overlapping on the standard 16 GB runner.
+          case "$PROOF_GROUP" in
+            controllers-replicaset|controllers-statefulset) proof_jobs=1 ;;
+          esac
+
+          # Attribute peak RSS to each compiler invocation as well as reporting
+          # the overall make statistics. The latter is not aggregate VM memory.
+          /usr/bin/time -v make -j"$proof_jobs" \
+            ROCQC='/usr/bin/time -f "ROCQ_PROFILE peak_rss_kib=%M elapsed_s=%e command=%C" rocq compile' \
+            "vok-$PROOF_GROUP"
 
   check-goose:
     runs-on: ubuntu-latest
