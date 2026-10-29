@@ -404,7 +404,7 @@ Proof.
   { iFrame "#". iPureIntro. split_and!; done. }
   iIntros (released err) "Hrelease". iNamedPrefix "Hrelease" "Hrelease_".
   iEval (rewrite -Hset_namespace) in "Hrelease_Hown_pod_orphans".
-  iDestruct "Hrelease_Hown_pod_orphans" as (pod_orphans') "Hrelease_Hown_pod_orphans".
+  set pod_orphans' := pod_orphans ∪ list_to_set (PodV.key <$> filter BadLiving (take released all_pods)).
   destruct err as [err_ok|].
   { wp_auto_keep.
     set remaining_bad := filter BadLiving (drop released all_pods).

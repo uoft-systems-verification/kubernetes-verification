@@ -272,7 +272,7 @@ Proof.
   { iFrame "#". iPureIntro. split_and!; done. }
   iIntros "Hrelease". iNamedPrefix "Hrelease" "Hrelease_".
   iEval (rewrite -Hset_namespace) in "Hrelease_Hown_pod_orphans".
-  iDestruct "Hrelease_Hown_pod_orphans" as (pod_orphans') "Hrelease_Hown_pod_orphans".
+  set pod_orphans' := pod_orphans ∪ list_to_set (PodV.key <$> bad_pods).
   wp_auto_keep.
   iAssert (own_children_frag γ (StatefulSetV.key set)
       set.(StatefulSetV.ObjectMeta').(ObjectMetaV.UID') 1
