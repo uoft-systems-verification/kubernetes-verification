@@ -8,6 +8,8 @@ From New.proof.controllers.replicaset Require Import top_level.
 Module goreflect := code.reflect.reflect.
 
 
+From New.proof.controllers.replicaset Require Export update_replicaset_status_general.
+
 Local Transparent ObjectMetaV.deepown ObjectMetaView.ObjectMetaV.deepown.
 Section proof.
 Context `{hG: !heapGS Σ} `{!ffi_semantics _ _}.
@@ -114,20 +116,21 @@ Proof.
     rs.(ReplicaSetV.Status').(ReplicaSetStatusV.TerminatingReplicas') DfracDiscarded)%I as "#Hold_term".
   { iDestruct "Hrs" as "(_ & _ & _ & Hst)". iApply (ReplicaSetStatusV.terminating_rep with "Hst"). }
   wp_auto_keep.
-  (* The no-op check evaluates to some boolean. *)
+  (* Close the boolean check opaquely before constructing the loop proof. *)
   wp_bind (if: _ then (let: "$a0" := _ in let: "$a1" := _ in
     FuncResolve goreflect.DeepEqual [] #() "$a0" "$a1") else #false)%E.
   iApply (wp_wand _ _ _ (λ v, ∃ b : bool, ⌜ v = #b ⌝ ∗
       "rs" ∷ rs_ptr ↦ rs_l ∗ "Hrs_l" ∷ rs_l ↦ rs_phy ∗
       "newStatus" ∷ newStatus_ptr ↦ status_c)%I with "[rs Hrs_l newStatus]").
-  { repeat (split_bool; try wp_auto_keep; try (iExists false; iFrame; done)).
-    all: wp_apply (wp_Equal_int32 with "[]");
-      [iSplitR; [iExact "Hold_term"|iExact "Hnew_term"]|].
-    all: iIntros (r) "_".
-    all: destruct r; try wp_auto_keep; try (iExists false; iFrame; done).
-    all: split_bool; try wp_auto_keep; try (iExists false; iFrame; done).
-    all: wp_apply wp_DeepEqual.
-    all: iIntros (r) "_". all: iExists r; iFrame; done. }
+  { abstract (
+      repeat (split_bool; try wp_auto_keep; try (iExists false; iFrame; done));
+      wp_apply (wp_Equal_int32 with "[]");
+        [iSplitR; [iExact "Hold_term"|iExact "Hnew_term"]|];
+      iIntros (r) "_";
+      destruct r; try wp_auto_keep; try (iExists false; iFrame; done);
+      split_bool; try wp_auto_keep; try (iExists false; iFrame; done);
+      wp_apply wp_DeepEqual;
+      iIntros (r) "_"; iExists r; iFrame; done). }
   iIntros (v) "(%b & -> & rs & Hrs_l & newStatus)".
   destruct b.
   { (* already up to date: nothing is written *)
@@ -135,231 +138,34 @@ Proof.
   wp_auto_keep.
   iPoseProof (ReplicaSetStatusV.deepown_set_observed_generation _ _
     rs_phy.(api_apps_v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Generation') with "Hstatus") as "#Hreq".
-  set I := (∃ (i : w64) (cur_l : loc) (cur_phy : api_apps_v1.ReplicaSet.t) (cur : ReplicaSetV.t)
-      (dqc : dfrac) (upd : loc) (uerr gerr : interface.t),
-    "i" ∷ i_ptr ↦ i ∗
-    "current" ∷ current_ptr ↦ cur_l ∗
-    "updatedRS" ∷ updatedRS_ptr ↦ upd ∗
-    "updateErr" ∷ updateErr_ptr ↦ uerr ∗
-    "getErr" ∷ getErr_ptr ↦ gerr ∗
-    "Hcur_l" ∷ cur_l ↦ cur_phy ∗
-    "Hcur" ∷ ReplicaSetV.deepown cur_phy cur dqc ∗
-    "%Hcur_valid" ∷ ⌜ ReplicaSetV.valid cur ⌝ ∗
-    "%Hcur_meta" ∷ ⌜ ObjectMetaV.equiv_except_resource_version
-      cur.(ReplicaSetV.ObjectMeta') rs.(ReplicaSetV.ObjectMeta') ⌝ ∗
-    "%Hcur_spec" ∷ ⌜ cur.(ReplicaSetV.Spec') = rs.(ReplicaSetV.Spec') ⌝ ∗
-    "Hmeta" ∷ own_meta_frag γ (ReplicaSetV.key rs)
-      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq cur.(ReplicaSetV.ObjectMeta') ∗
-    "Hspec" ∷ own_spec_frag γ (ReplicaSetV.key rs)
-      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec')) ∗
-    "Hstatus_frag" ∷ own_status_frag γ (ReplicaSetV.key rs)
-      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectStatusV.ReplicaSetStatus cur.(ReplicaSetV.Status')) ∗
-    "%Hi" ∷ ⌜ i = W64 0 ∨ i = W64 1 ⌝)%I.
-  iAssert I with "[i current updatedRS updateErr getErr Hrs_l Hrs Hmeta Hspec Hstatus_frag]" as "Hloop".
-  { iExists (W64 0), rs_l, rs_phy, rs, DfracDiscarded, null, interface.nil, interface.nil.
-    iFrame. iPureIntro. split_and!; try done; by left. }
-  wp_for "Hloop".
-  iMod (ReplicaSetV.deepown_persist with "Hcur") as "Hcur".
-  iDestruct "Hcur" as "(%Hcur_tm & #Hcur_meta_own & Hcur_spec_own & #Hcur_st)".
+  (* A valid request succeeds on the first iteration, so the concrete initial
+     state itself is the invariant; no retry state needs to be generalized. *)
+  wp_for.
+  iMod (ReplicaSetV.deepown_persist with "Hrs") as "Hrs".
+  iDestruct "Hrs" as "(%Hrs_tm & #Hrs_meta_own & Hrs_spec_own & #Hrs_st)".
   wp_func_call. rewrite /context.TODOⁱᵐᵖˡ. wp_call.
   wp_pures_keep.
   wp_load. wp_pures_keep.
   wp_load. wp_pures_keep.
   wp_load.
-  (* The current object with the requested status, read-only from now on. *)
-  iPersist "Hcur_l".
-  iAssert (ReplicaSetV.deepown cur_phy cur DfracDiscarded)%I
-    with "[Hcur_spec_own]" as "Hcur".
+  iPersist "Hrs_l".
+  iAssert (ReplicaSetV.deepown rs_phy rs DfracDiscarded)%I
+    with "[Hrs_spec_own]" as "Hrs".
   { rewrite /ReplicaSetV.deepown. iFrame "∗ # %". }
-  iAssert (ReplicaSetV.deepown_l cur_l
-    (cur <| ReplicaSetV.Status' := status <| ReplicaSetStatusV.ObservedGeneration' :=
+  iAssert (ReplicaSetV.deepown_l rs_l
+    (rs <| ReplicaSetV.Status' := status <| ReplicaSetStatusV.ObservedGeneration' :=
       rs_phy.(api_apps_v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Generation') |> |>)
-    DfracDiscarded)%I with "[Hcur]" as "Hinput".
-  { iExists _. iFrame "Hcur_l". iApply (ReplicaSetV.deepown_set_status with "Hcur Hreq"). }
-  destruct (ReplicaSetV.meta_equiv_key_uid _ _ Hcur_meta) as (Hkey_meta & Huid_meta & Hns_meta & Hname_meta).
-  assert (ReplicaSetV.key rs = ReplicaSetV.key cur) as Hkey_cur.
-  { rewrite /ReplicaSetV.key Hkey_meta. done. }
-  iEval (rewrite Hkey_cur -Huid_meta) in "Hmeta".
-  iEval (rewrite Hkey_cur -Huid_meta) in "Hstatus_frag".
-  (* The spec fragment is not needed by the status write and stays framed. *)
+    DfracDiscarded)%I with "[Hrs]" as "Hinput".
+  { iExists _. iFrame "Hrs_l". iApply (ReplicaSetV.deepown_set_status with "Hrs Hreq"). }
   wp_apply (wp_ReplicaSetInterface__UpdateStatus γ l c
-    rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') _ _ cur_l cur _ dq DfracDiscarded
+    rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') _ _ rs_l rs _ dq DfracDiscarded
     with "[$Hinput $Hmeta $Hstatus_frag]") --no-auto.
-  { iFrame "#". iPureIntro. split_and!; [by rewrite Hns_meta|done|].
+  { iFrame "#". iPureIntro. split_and!; [done|done|].
     rewrite ReplicaSetStatusV.valid_update_iff Hgen. done. }
   iIntros (result_l rs') "(%Hchanged & _ & Hmeta & Hstatus_frag & _ & _)".
-  iEval (rewrite -Hkey_cur Huid_meta) in "Hmeta".
-  iEval (rewrite -Hkey_cur Huid_meta) in "Hstatus_frag".
-  destruct Hchanged as (Hmeta_changed & Hspec_changed).
   wp_auto_keep. iApply wp_for_post_return. wp_auto_keep.
-  iApply ("HΦ" $! result_l rs'). rewrite Hspec_changed Hcur_spec. iModIntro. iFrame.
-  iPureIntro. split.
-  - rewrite /ObjectMetaV.equiv_except_resource_version in Hmeta_changed Hcur_meta |- *.
-    congruence.
-  - congruence.
-Qed.
-
-(* A variant of [wp_updateReplicaSetStatus] that does not require the requested
-   status to pass validation. A rejected write is retried once after a GET, as
-   upstream does, and the error is then returned. Either way the fragments
-   describe some [rs'] that keeps [rs]'s metadata (up to resource version) and
-   spec. *)
-Lemma wp_updateReplicaSetStatus_general γ l c rs_l rs_phy rs status_c status dq :
-  {{{ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
-      "#Hisk" ∷ is_kubernetes γ l ∗
-      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
-      "#Hmodel_init" ∷ is_pkg_init apimodel ∗
-      "#Hclient" ∷ is_rs_client c rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') ∗
-      "%Hvalid" ∷ ⌜ ReplicaSetV.valid rs ⌝ ∗
-      "Hrs_l" ∷ rs_l ↦ rs_phy ∗
-      "Hrs" ∷ ReplicaSetV.deepown rs_phy rs DfracDiscarded ∗
-      "#Hstatus" ∷ ReplicaSetStatusV.deepown status_c status DfracDiscarded ∗
-      "Hmeta" ∷ own_meta_frag γ (ReplicaSetV.key rs)
-        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq rs.(ReplicaSetV.ObjectMeta') ∗
-      "Hspec" ∷ own_spec_frag γ (ReplicaSetV.key rs)
-        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec')) ∗
-      "Hstatus_frag" ∷ own_status_frag γ (ReplicaSetV.key rs)
-        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectStatusV.ReplicaSetStatus rs.(ReplicaSetV.Status'))
-  }}}
-    @! replicaset.updateReplicaSetStatus #c #rs_l #status_c
-  {{{ (result_l : loc) (err : interface.t) (rs' : ReplicaSetV.t), RET (#result_l, #err);
-      ⌜ ObjectMetaV.equiv_except_resource_version rs'.(ReplicaSetV.ObjectMeta') rs.(ReplicaSetV.ObjectMeta') ∧
-        rs'.(ReplicaSetV.Spec') = rs.(ReplicaSetV.Spec') ⌝ ∗
-      own_meta_frag γ (ReplicaSetV.key rs)
-        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq rs'.(ReplicaSetV.ObjectMeta') ∗
-      own_spec_frag γ (ReplicaSetV.key rs)
-        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.ReplicaSetSpec rs'.(ReplicaSetV.Spec')) ∗
-      own_status_frag γ (ReplicaSetV.key rs)
-        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectStatusV.ReplicaSetStatus rs'.(ReplicaSetV.Status'))
-  }}}.
-Proof.
-  wp_start as "H". iNamed "H".
-  iAssert (⌜ rs_phy.(api_apps_v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Generation') =
-    rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Generation') ⌝)%I as %Hgen.
-  { iNamed "Hrs". iNamed "Hdeepown_objectmeta". done. }
-  iApply wp_fupd.
-  iPoseProof (ReplicaSetStatusV.terminating_rep with "Hstatus") as "#Hnew_term".
-  iAssert (opt_ptr_rep rs_phy.(v1.ReplicaSet.Status').(api_apps_v1.ReplicaSetStatus.TerminatingReplicas')
-    rs.(ReplicaSetV.Status').(ReplicaSetStatusV.TerminatingReplicas') DfracDiscarded)%I as "#Hold_term".
-  { iDestruct "Hrs" as "(_ & _ & _ & Hst)". iApply (ReplicaSetStatusV.terminating_rep with "Hst"). }
-  wp_auto_keep.
-  (* The no-op check evaluates to some boolean. *)
-  wp_bind (if: _ then (let: "$a0" := _ in let: "$a1" := _ in
-    FuncResolve goreflect.DeepEqual [] #() "$a0" "$a1") else #false)%E.
-  iApply (wp_wand _ _ _ (λ v, ∃ b : bool, ⌜ v = #b ⌝ ∗
-      "rs" ∷ rs_ptr ↦ rs_l ∗ "Hrs_l" ∷ rs_l ↦ rs_phy ∗
-      "newStatus" ∷ newStatus_ptr ↦ status_c)%I with "[rs Hrs_l newStatus]").
-  { repeat (split_bool; try wp_auto_keep; try (iExists false; iFrame; done)).
-    all: wp_apply (wp_Equal_int32 with "[]");
-      [iSplitR; [iExact "Hold_term"|iExact "Hnew_term"]|].
-    all: iIntros (r) "_".
-    all: destruct r; try wp_auto_keep; try (iExists false; iFrame; done).
-    all: split_bool; try wp_auto_keep; try (iExists false; iFrame; done).
-    all: wp_apply wp_DeepEqual.
-    all: iIntros (r) "_". all: iExists r; iFrame; done. }
-  iIntros (v) "(%b & -> & rs & Hrs_l & newStatus)".
-  destruct b.
-  { (* already up to date: nothing is written *)
-    wp_auto_keep. iApply ("HΦ" $! rs_l interface.nil rs). iModIntro. iFrame. iPureIntro. done. }
-  wp_auto_keep.
-  iPoseProof (ReplicaSetStatusV.deepown_set_observed_generation _ _
-    rs_phy.(api_apps_v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Generation') with "Hstatus") as "#Hreq".
-  set I := (∃ (i : w64) (cur_l : loc) (cur_phy : api_apps_v1.ReplicaSet.t) (cur : ReplicaSetV.t)
-      (dqc : dfrac) (upd : loc) (uerr gerr : interface.t),
-    "i" ∷ i_ptr ↦ i ∗
-    "current" ∷ current_ptr ↦ cur_l ∗
-    "updatedRS" ∷ updatedRS_ptr ↦ upd ∗
-    "updateErr" ∷ updateErr_ptr ↦ uerr ∗
-    "getErr" ∷ getErr_ptr ↦ gerr ∗
-    "Hcur_l" ∷ cur_l ↦ cur_phy ∗
-    "Hcur" ∷ ReplicaSetV.deepown cur_phy cur dqc ∗
-    "%Hcur_valid" ∷ ⌜ ReplicaSetV.valid cur ⌝ ∗
-    "%Hcur_meta" ∷ ⌜ ObjectMetaV.equiv_except_resource_version
-      cur.(ReplicaSetV.ObjectMeta') rs.(ReplicaSetV.ObjectMeta') ⌝ ∗
-    "%Hcur_spec" ∷ ⌜ cur.(ReplicaSetV.Spec') = rs.(ReplicaSetV.Spec') ⌝ ∗
-    "Hmeta" ∷ own_meta_frag γ (ReplicaSetV.key rs)
-      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq cur.(ReplicaSetV.ObjectMeta') ∗
-    "Hspec" ∷ own_spec_frag γ (ReplicaSetV.key rs)
-      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq (ObjectSpecV.ReplicaSetSpec rs.(ReplicaSetV.Spec')) ∗
-    "Hstatus_frag" ∷ own_status_frag γ (ReplicaSetV.key rs)
-      rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (ObjectStatusV.ReplicaSetStatus cur.(ReplicaSetV.Status')) ∗
-    "%Hi" ∷ ⌜ i = W64 0 ∨ i = W64 1 ⌝)%I.
-  iAssert I with "[i current updatedRS updateErr getErr Hrs_l Hrs Hmeta Hspec Hstatus_frag]" as "Hloop".
-  { iExists (W64 0), rs_l, rs_phy, rs, DfracDiscarded, null, interface.nil, interface.nil.
-    iFrame. iPureIntro. split_and!; try done; by left. }
-  wp_for "Hloop".
-  iMod (ReplicaSetV.deepown_persist with "Hcur") as "Hcur".
-  iDestruct "Hcur" as "(%Hcur_tm & #Hcur_meta_own & Hcur_spec_own & #Hcur_st)".
-  wp_func_call. rewrite /context.TODOⁱᵐᵖˡ. wp_call.
-  wp_pures_keep.
-  wp_load. wp_pures_keep.
-  wp_load. wp_pures_keep.
-  wp_load.
-  (* The current object with the requested status, read-only from now on. *)
-  iPersist "Hcur_l".
-  iAssert (ReplicaSetV.deepown cur_phy cur DfracDiscarded)%I
-    with "[Hcur_spec_own]" as "Hcur".
-  { rewrite /ReplicaSetV.deepown. iFrame "∗ # %". }
-  iAssert (ReplicaSetV.deepown_l cur_l
-    (cur <| ReplicaSetV.Status' := status <| ReplicaSetStatusV.ObservedGeneration' :=
-      rs_phy.(api_apps_v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Generation') |> |>)
-    DfracDiscarded)%I with "[Hcur]" as "Hinput".
-  { iExists _. iFrame "Hcur_l". iApply (ReplicaSetV.deepown_set_status with "Hcur Hreq"). }
-  destruct (ReplicaSetV.meta_equiv_key_uid _ _ Hcur_meta) as (Hkey_meta & Huid_meta & Hns_meta & Hname_meta).
-  assert (ReplicaSetV.key rs = ReplicaSetV.key cur) as Hkey_cur.
-  { rewrite /ReplicaSetV.key Hkey_meta. done. }
-  iEval (rewrite Hkey_cur -Huid_meta) in "Hmeta".
-  iEval (rewrite Hkey_cur -Huid_meta) in "Hstatus_frag".
-  (* The spec fragment is not needed by the status write and stays framed. *)
-  wp_apply (wp_ReplicaSetInterface__UpdateStatus_general γ l c
-    rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') _ _ cur_l cur _ dq DfracDiscarded
-    with "[$Hinput $Hmeta $Hstatus_frag]") --no-auto.
-  { iFrame "#". iPureIntro. done. }
-  iIntros (result_l werr rs') "(%Hchanged & _ & Hmeta & Hstatus_frag & %Hvalid_rs')".
-  iEval (rewrite -Hkey_cur Huid_meta) in "Hmeta".
-  iEval (rewrite -Hkey_cur Huid_meta) in "Hstatus_frag".
-  destruct Hchanged as (Hmeta_changed & Hspec_changed).
-  assert (ObjectMetaV.equiv_except_resource_version
-    rs'.(ReplicaSetV.ObjectMeta') rs.(ReplicaSetV.ObjectMeta')) as Hmeta_rs'.
-  { rewrite /ObjectMetaV.equiv_except_resource_version in Hmeta_changed Hcur_meta |- *.
-    congruence. }
-  assert (rs'.(ReplicaSetV.Spec') = rs.(ReplicaSetV.Spec')) as Hspec_rs'.
-  { congruence. }
-  destruct werr as [werr_ok|].
-  2: {
-    (* The write succeeded. *)
-    wp_auto_keep. iApply wp_for_post_return. wp_auto_keep.
-    iApply ("HΦ" $! result_l interface.nil rs'). rewrite Hspec_rs'. iModIntro. iFrame. done. }
-  destruct Hi as [-> | ->].
-  2: {
-    (* The retry was rejected too: its error is returned. *)
-    wp_auto_keep. wp_for_post.
-    iApply ("HΦ" $! null (interface.ok werr_ok) rs'). rewrite Hspec_rs'. iModIntro. iFrame. done. }
-  (* The first write was rejected: re-read the ReplicaSet and retry. *)
-  iAssert (⌜ cur_phy.(api_apps_v1.ReplicaSet.ObjectMeta').(v1.ObjectMeta.Name') =
-    cur.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') ⌝)%I as %Hcur_name.
-  { iNamed "Hcur_meta_own". iNamed "Hdeepown_objectmeta". done. }
-  wp_auto_keep.
-  wp_func_call. rewrite /context.TODOⁱᵐᵖˡ. wp_call.
-  wp_pures_keep. wp_load. wp_pures_keep. wp_load. wp_pures_keep. wp_load. wp_pures_keep. wp_load.
-  wp_apply (wp_ReplicaSetInterface__Get γ l c (ReplicaSetV.key rs)
-    rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') _ _ _
-    rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') dq 1 rs'.(ReplicaSetV.ObjectMeta')
-    rs.(ReplicaSetV.Spec') rs'.(ReplicaSetV.Status')
-    with "[$Hmeta $Hspec $Hstatus_frag]") --no-auto.
-  { iFrame "#". iPureIntro. rewrite Hcur_name Hname_meta. done. }
-  iIntros (new_l new) "Hget". iNamed "Hget".
-  iDestruct "Hdeepown_l" as (new_phy) "[Hnew_l Hnew]".
-  iPoseProof (kview.own_meta_frag_equiv_except_resource_version Hmeta_eq with "Hown_meta_frag")
-    as "Hown_meta_frag".
-  iEval (rewrite Hstatus_eq) in "Hown_status_frag".
-  wp_auto_keep. wp_for_post.
-  iFrame "HΦ c rs newStatus updateOptions getOptions". rewrite /named.
-  iExists (word.add (W64 0) (W64 1)), new_l, new_phy, new, (DfracOwn 1).
-  iFrame. iPureIntro. split_and!; try done.
-  - rewrite /ObjectMetaV.equiv_except_resource_version in Hmeta_eq Hmeta_rs' |- *.
-    congruence.
-  - by right.
+  iApply ("HΦ" $! result_l rs'). rewrite (proj2 Hchanged). iModIntro. iFrame.
+  iPureIntro. split; [exact (proj1 Hchanged)|done].
 Qed.
 
 (* After [updateReplicaSetStatus], the owned resources describe the stored
