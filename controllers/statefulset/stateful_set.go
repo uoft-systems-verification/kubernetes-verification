@@ -11,7 +11,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	clientset "k8s.io/client-go/kubernetes"
 	appslisters "k8s.io/client-go/listers/apps/v1"
 	corelisters "k8s.io/client-go/listers/core/v1"
@@ -77,15 +76,24 @@ func filterPodsForStatefulSet(set *apps.StatefulSet, pods []*v1.Pod) []*v1.Pod {
 	return result
 }
 
-// releasePod uses the same UID-guarded strategic-merge patch as upstream's
-// PodControllerRefManager.ReleasePod, preserving unrelated owner references.
+// releasePod removes this StatefulSet's owner references from a copy of the Pod.
 func releasePod(ctx context.Context, kubeClient *clientset.Clientset, set *apps.StatefulSet, pod *v1.Pod) error {
-	patch, err := controller.GenerateDeleteOwnerRefStrategicMergeBytes(pod.UID, []types.UID{set.UID})
-	if err != nil {
-		return err
+	updatedPod := pod.DeepCopy()
+	ownerReferences := []metav1.OwnerReference{}
+	released := false
+	for _, ownerReference := range updatedPod.OwnerReferences {
+		if ownerReference.UID == set.UID {
+			released = true
+			continue
+		}
+		ownerReferences = append(ownerReferences, ownerReference)
 	}
-	_, err = kubeClient.CoreV1().Pods(pod.Namespace).Patch(ctx, pod.Name, types.StrategicMergePatchType, patch, metav1.PatchOptions{})
-	if apierrors.IsNotFound(err) || apierrors.IsInvalid(err) {
+	if !released {
+		return nil
+	}
+	updatedPod.OwnerReferences = ownerReferences
+	_, err := kubeClient.CoreV1().Pods(updatedPod.Namespace).Update(ctx, updatedPod, metav1.UpdateOptions{})
+	if apierrors.IsNotFound(err) {
 		return nil
 	}
 	return err
