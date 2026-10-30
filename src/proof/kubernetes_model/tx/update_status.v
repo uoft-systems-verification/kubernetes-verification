@@ -54,7 +54,7 @@ Proof.
     destruct old_status, kobj; rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
       rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
         ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
-        ?/DeploymentV.valid_status_update
+        ?/DeploymentV.valid_status_update ?/DaemonSetV.valid_status_update
         /ObjectMetaV.valid_update in Hvalid_status_update;
       try contradiction; tauto.
   }
@@ -176,7 +176,7 @@ Proof.
         rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
         rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
           ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
-          ?/DeploymentV.valid_status_update
+          ?/DeploymentV.valid_status_update ?/DaemonSetV.valid_status_update
           in Hvalid_status_update;
         try contradiction; tauto. }
     assert (ObjectMetaV.valid_update old_meta
@@ -197,7 +197,7 @@ Proof.
       rewrite /KObjectV.valid_status_update /= in Hvalid_status_update |- *;
       rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
         ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
-        ?/DeploymentV.valid_status_update
+        ?/DeploymentV.valid_status_update ?/DaemonSetV.valid_status_update
         /ObjectMetaV.valid_update in Hvalid_status_update |- *;
       simpl in Hmeta_rv |- *; try contradiction; tauto. }
   iSplit.

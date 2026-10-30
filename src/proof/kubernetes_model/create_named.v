@@ -60,7 +60,7 @@ Proof.
   { destruct kobj; rewrite /KObjectV.valid_create /= in Hvalid;
       rewrite ?/PodV.valid_create ?/ReplicaSetV.valid_create
         ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
-        ?/DeploymentV.valid_create ?/ControllerRevisionV.valid_create in Hvalid;
+        ?/DeploymentV.valid_create ?/ControllerRevisionV.valid_create ?/DaemonSetV.valid_create in Hvalid;
       tauto. }
   assert (key = {|
       KKey.Kind' := kind;
@@ -263,17 +263,12 @@ Proof.
         (KObjectV.objectmeta kobj).(ObjectMetaV.OwnerReferences') ∧
       (KObjectV.objectmeta kobj2).(ObjectMetaV.DeletionTimestamp') = None)
     as (Hnamespace2 & Howner_references2 & Hdeletion_timestamp2).
-  { destruct kobj, kobj2; rewrite /KObjectV.created /= in Hcreated2; try contradiction;
-      rewrite ?/PodV.created ?/ReplicaSetV.created ?/PersistentVolumeClaimV.created
-        ?/StatefulSetV.created ?/DeploymentV.created ?/ControllerRevisionV.created
-        /ObjectMetaV.created in Hcreated2;
-      simpl; tauto. }
+  { exact (KObjectV.created_metadata _ _ _ Hcreated2). }
   assert (KObjectV.extra_valid kobj2) as Hextra_valid2.
   { rewrite /KObjectV.extra_valid.
     eapply ObjectSpecV.extra_valid_created.
     - exact Hextra_valid.
-    - destruct kobj, kobj2; simpl in Hcreated2 |- *; try done;
-        destruct Hcreated2 as (_ & _ & _ & Hspec_created & _); exact Hspec_created. }
+    - exact (KObjectV.created_spec _ _ _ Hcreated2). }
   iPoseProof (kview.own_auth_valid_forall with "[$Hinv_Hown_abs]")
     as "%Habs_state_valid".
   assert (generated_uid ∉ used_uid) as Hgenerated_uid_fresh.
@@ -605,7 +600,7 @@ Proof.
   { iPureIntro.
     split_and!; done. }
   iIntros (i' kobj' uid) "Hpost". iNamed "Hpost".
-  destruct kobj' as [pod'|rs'|pvc'|sts'|d'|revision']; try done.
+  destruct kobj' as [pod'|rs'|pvc'|sts'|d'|revision'|ds']; try done.
   iDestruct "Hdeepown_i" as (pod_l') "[%Hi' Hdeepown_l]".
   wp_auto_keep.
   unfold KObjectV.valid_interface in Hi'. destruct Hi' as [Hi' _]. rewrite Hi'.
@@ -685,7 +680,7 @@ Proof.
         Hdeepown_i & Hown_meta_frag & Hown_spec_frag &
         Hown_status_frag & Hown_reserved_frag & Hown_children_frag &
         Hown_grandchildren_frag)".
-    destruct kobj' as [pod'|rs'|pvc'|sts'|d'|revision']; try done.
+    destruct kobj' as [pod'|rs'|pvc'|sts'|d'|revision'|ds']; try done.
     iDestruct "Hdeepown_i" as (pod_l') "[%Hi' Hdeepown_l]".
     wp_auto_keep.
     unfold KObjectV.valid_interface in Hi'. destruct Hi' as [Hi' _]. rewrite Hi'.
@@ -780,7 +775,7 @@ Proof.
   { iPureIntro.
     split_and!; done. }
   iIntros (i' kobj' uid) "Hpost". iNamed "Hpost".
-  destruct kobj' as [pod'|rs'|pvc'|sts'|d'|revision']; try done.
+  destruct kobj' as [pod'|rs'|pvc'|sts'|d'|revision'|ds']; try done.
   (* [KObjectV.created] on two ReplicaSets *is* [ReplicaSetV.created]. *)
   simpl in Hcreated.
   iDestruct "Hdeepown_i" as (rs_l') "[%Hi' Hdeepown_l]".

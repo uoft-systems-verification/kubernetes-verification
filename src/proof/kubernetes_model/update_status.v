@@ -48,7 +48,14 @@ Proof.
       valid_annotations (KObjectV.objectmeta kobj).(ObjectMetaV.Annotations') ∧
       valid_owner_references (KObjectV.objectmeta kobj).(ObjectMetaV.OwnerReferences') ∧
       valid_finalizers (KObjectV.objectmeta kobj).(ObjectMetaV.Finalizers') ∧
-      valid_managed_fields (KObjectV.objectmeta kobj).(ObjectMetaV.ManagedFields')))
+      valid_managed_fields (KObjectV.objectmeta kobj).(ObjectMetaV.ManagedFields') ∧
+      (* Retain DaemonSet's namespace and conversion checks until the helper call. *)
+      match kobj with
+      | KObjectV.DaemonSet ds =>
+          namespace ≠ ""%go ∧ valid_namespace namespace ∧
+          DaemonSetV.template_generation_annotation_valid ds.(DaemonSetV.ObjectMeta')
+      | _ => True
+      end))
     as [Hvalid_status_update_input|Hinvalid_status_update_input].
   2: {
     iApply fupd_wp.
@@ -57,14 +64,14 @@ Proof.
     destruct kstatus, kobj; rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
       rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
         ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
-        ?/DeploymentV.valid_status_update
+        ?/DeploymentV.valid_status_update ?/DaemonSetV.valid_status_update
         /ObjectMetaV.valid_update in Hvalid_status_update;
       try contradiction; tauto.
   }
   destruct Hvalid_status_update_input as
     (Hkind_matches & Hname_nonempty & Huid_nonempty & Hns_matches & Hrv_valid &
       Hvalid_typemeta & Hlabels & Hannotations & Howners &
-      Hfinalizers & Hmanaged_fields).
+      Hfinalizers & Hmanaged_fields & Hresource_input).
   wp_method_call. rewrite /apimodel.State__updateStatusⁱᵐᵖˡ. wp_call.
   wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto_keep.
   wp_apply wp_Mutex__Lock; [done|]. iIntros "[Hown_Mutex H]". iNamedPrefix "H" "Hinv_". wp_auto_keep.
@@ -226,7 +233,7 @@ Proof.
     { destruct kstatus, kobj; rewrite /KObjectV.valid_status_update /= in Hvalid_status_update;
         rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
           ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
-          ?/DeploymentV.valid_status_update
+          ?/DeploymentV.valid_status_update ?/DaemonSetV.valid_status_update
           in Hvalid_status_update;
         try contradiction; tauto. }
     assert (key0 = key) as ->.
@@ -278,9 +285,9 @@ Proof.
   { destruct old_kobj, kobj; rewrite /KObjectV.valid_status_update /=;
       rewrite ?/PodV.valid_status_update ?/ReplicaSetV.valid_status_update
         ?/PersistentVolumeClaimV.valid_status_update ?/StatefulSetV.valid_status_update
-        ?/DeploymentV.valid_status_update
+        ?/DeploymentV.valid_status_update ?/DaemonSetV.valid_status_update
         /ObjectMetaV.valid_update;
-      simpl in Hvalid_meta_update_actual, Hvalid_status_old;
+      simpl in Hvalid_meta_update_actual, Hvalid_status_old, Hresource_input;
       try contradiction; tauto. }
   assert (update_prepared_for_helper
       (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') old_kobj kobj kobj) as Hprepared.
@@ -291,7 +298,7 @@ Proof.
     - rewrite <-e0.
       destruct kobj as [[tm meta spec status]|[tm meta spec status]|
         [tm meta spec status]|[tm meta spec status]|
-        [tm meta spec status]|[tm meta spec status]]; destruct meta; done. }
+        [tm meta spec status]|[tm meta spec status]|[tm meta spec status]]; destruct meta; done. }
   wp_apply (wp_applyValidationAndDefaultingOnStatusUpdate_ok _ _ _ _ _ _ _
     (KObjectV.kind kobj) (KObjectV.objectmeta kobj).(ObjectMetaV.Namespace') kobj
     with "[$Hdeepown_l $Hdeepown_old_l]").
@@ -323,14 +330,8 @@ Proof.
         (KObjectV.objectmeta kobj).(ObjectMetaV.DeletionTimestamp'))
     as (Hsame_kind & Hupdated_status & Hname_updated & Hnamespace_updated &
       Huid_updated & Hdeletion_timestamp_updated).
-  { destruct kobj, updated_kobj;
-      rewrite /KObjectV.status_updated /PodV.status_updated /ReplicaSetV.status_updated
-        /PersistentVolumeClaimV.status_updated /StatefulSetV.status_updated
-        /DeploymentV.status_updated /=
-        in Hstatus_updated_kobj |- *; try contradiction.
-    all: split_and!; try done.
-    all: try (f_equal; tauto).
-    all: rewrite /ObjectMetaV.updated in Hstatus_updated_kobj; tauto. }
+  { pose proof (KObjectV.status_updated_components _ _ Hstatus_updated_kobj) as Hcomponents.
+    rewrite /ObjectMetaV.updated /= in Hcomponents. tauto. }
   assert ((KObjectV.objectmeta kobj).(ObjectMetaV.UID') =
       (KObjectV.objectmeta old_kobj).(ObjectMetaV.UID') ∧
       (KObjectV.objectmeta kobj).(ObjectMetaV.DeletionTimestamp') =
@@ -490,12 +491,8 @@ Proof.
         (KObjectV.objectmeta kobj).(ObjectMetaV.DeletionTimestamp'))
     as (Hsame_kind_new & Hname_new & Hnamespace_stored_new & Huid_new &
       Hdeletion_timestamp_new).
-  { destruct kobj, new_kobj;
-      rewrite /KObjectV.status_updated /PodV.status_updated /ReplicaSetV.status_updated
-        /PersistentVolumeClaimV.status_updated /StatefulSetV.status_updated
-        /DeploymentV.status_updated /=
-        in Hstatus_updated_new |- *;
-      try contradiction; rewrite /ObjectMetaV.updated in Hstatus_updated_new |- *; tauto. }
+  { pose proof (KObjectV.status_updated_components _ _ Hstatus_updated_new) as Hcomponents.
+    rewrite /ObjectMetaV.updated /= in Hcomponents. tauto. }
   assert ((KObjectV.objectmeta new_kobj).(ObjectMetaV.UID') =
       (KObjectV.objectmeta old_kobj).(ObjectMetaV.UID')) as Huid_new_old.
   { rewrite Huid_new. exact Hinput_uid_old. }

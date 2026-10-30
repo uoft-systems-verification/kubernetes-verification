@@ -44,7 +44,7 @@ Proof.
   { destruct kobj; rewrite /KObjectV.valid_create /= in Hvalid;
       rewrite ?/PodV.valid_create ?/ReplicaSetV.valid_create
         ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
-        ?/DeploymentV.valid_create ?/ControllerRevisionV.valid_create in Hvalid;
+        ?/DeploymentV.valid_create ?/ControllerRevisionV.valid_create ?/DaemonSetV.valid_create in Hvalid;
       tauto. }
   wp_method_call. rewrite /apimodel.State__createⁱᵐᵖˡ. wp_call.
   wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto_keep.
@@ -167,17 +167,12 @@ Proof.
         (KObjectV.objectmeta kobj).(ObjectMetaV.OwnerReferences') ∧
       (KObjectV.objectmeta kobj2).(ObjectMetaV.DeletionTimestamp') = None)
     as (Hnamespace2 & Howner_references2 & Hdeletion_timestamp2).
-  { destruct kobj, kobj2; rewrite /KObjectV.created /= in Hcreated2; try contradiction;
-      rewrite ?/PodV.created ?/ReplicaSetV.created ?/PersistentVolumeClaimV.created
-        ?/StatefulSetV.created ?/DeploymentV.created ?/ControllerRevisionV.created
-        /ObjectMetaV.created in Hcreated2;
-      simpl; tauto. }
+  { exact (KObjectV.created_metadata _ _ _ Hcreated2). }
   assert (KObjectV.extra_valid kobj2) as Hextra_valid2.
   { rewrite /KObjectV.extra_valid.
     eapply ObjectSpecV.extra_valid_created.
     - exact Hextra_valid.
-    - destruct kobj, kobj2; simpl in Hcreated2 |- *; try done;
-        destruct Hcreated2 as (_ & _ & _ & Hspec_created & _); exact Hspec_created. }
+    - exact (KObjectV.created_spec _ _ _ Hcreated2). }
   iAssert (⌜ dom phys_state = dom abs_state ⌝%I) as "%Hdom_eq".
   { iDestruct (big_sepM2_dom with "Hinv_Hphys_abs_rep") as %Hdom_eq. iPureIntro. done. }
   assert (¬ reserved_key_pred key) as Hkey_not_reserved.
@@ -420,7 +415,7 @@ Proof.
     with "[$Hinit $Hisk $Hdeepown_i $Hown_children_frag]").
   { iPureIntro. split_and!; done. }
   iIntros (i' kobj' key uid) "Hpost". iNamed "Hpost".
-  destruct kobj' as [pod'|rs'|pvc'|sts'|d'|revision']; try done.
+  destruct kobj' as [pod'|rs'|pvc'|sts'|d'|revision'|ds']; try done.
   iDestruct "Hdeepown_i" as (pod_l') "[%Hi' Hdeepown_l]". wp_auto_keep.
   unfold KObjectV.valid_interface in Hi'. destruct Hi' as [Hi' _]. rewrite Hi'.
   change (go.PointerType api_core_v1.Pod) with (go.PointerType v1.Pod).

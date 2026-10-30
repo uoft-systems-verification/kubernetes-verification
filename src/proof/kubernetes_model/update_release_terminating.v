@@ -52,9 +52,10 @@ Proof.
       rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
         ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
         ?/DeploymentV.valid_update ?/ControllerRevisionV.valid_update
+        ?/DaemonSetV.valid_update ?/DaemonSetV.valid_update_input
         ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
         ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
-        ?/DeploymentV.valid_create ?/ControllerRevisionV.valid_create
+        ?/DeploymentV.valid_create ?/ControllerRevisionV.valid_create ?/DaemonSetV.valid_update_input
         /KObjectV.valid_update_input /=;
       try contradiction; tauto.
   }
@@ -65,7 +66,7 @@ Proof.
   { destruct kobj; rewrite /KObjectV.valid_update_input /= in Hvalid;
       rewrite ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
         ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
-        ?/DeploymentV.valid_create ?/ControllerRevisionV.valid_create in Hvalid;
+        ?/DeploymentV.valid_create ?/ControllerRevisionV.valid_create ?/DaemonSetV.valid_update_input in Hvalid;
       tauto. }
   wp_method_call. rewrite /apimodel.State__updateⁱᵐᵖˡ. wp_call.
   wp_apply wp_with_defer as "%defer Hdefer". simpl subst. wp_auto_keep.
@@ -247,7 +248,7 @@ Proof.
     - rewrite <-e0.
       destruct kobj as [[tm meta spec status]|[tm meta spec status]|
         [tm meta spec status]|[tm meta spec status]|
-        [tm meta spec status]|[tm meta spec status]]; destruct meta; done. }
+        [tm meta spec status]|[tm meta spec status]|[tm meta spec status]]; destruct meta; done. }
   destruct ((KObjectV.objectmeta old_kobj).(ObjectMetaV.DeletionTimestamp'))
     as [old_deletion_timestamp|] eqn:Hold_deletion_timestamp.
   2: {
@@ -408,11 +409,8 @@ Proof.
         (KObjectV.objectmeta kobj).(ObjectMetaV.DeletionTimestamp'))
     as (Hsame_kind_new & Hname_new & Hnamespace_stored_new & Huid_new &
       Hdeletion_timestamp_new).
-  { destruct old_kobj, kobj, new_kobj;
-      rewrite /KObjectV.updated /PodV.updated /ReplicaSetV.updated
-        /PersistentVolumeClaimV.updated /StatefulSetV.updated
-        /DeploymentV.updated /ControllerRevisionV.updated /= in Hupdated_new |- *;
-      try contradiction; rewrite /ObjectMetaV.updated in Hupdated_new |- *; tauto. }
+  { pose proof (KObjectV.updated_components _ _ _ Hupdated_new) as Hcomponents.
+    rewrite /ObjectMetaV.updated /= in Hcomponents. tauto. }
   assert (KObjectV.valid new_kobj) as Hvalid_new.
   { unfold new_kobj, new_kmeta.
     eapply KObjectV.valid_update_resource_version;
@@ -484,11 +482,15 @@ Proof.
 Unshelve. all: try tc_solve. all: try apply _. all: try exact sem. all: try done.
 Qed.
 
+(* Stored validity alone does not imply that every resource's update validator
+   accepts an unchanged spec: DaemonSet's update validator is still abstract.
+   Require that fact from the caller rather than adding a reflexivity axiom. *)
 Lemma wp_State__update_release_terminating γ l kind namespace i kobj :
   {{{ "#Hpkg" ∷ is_pkg_init apimodel ∗
       "#Hkinv" ∷ is_kubernetes γ l ∗
       "%Hvalid" ∷ ⌜ KObjectV.valid_update_input kind namespace kobj ⌝ ∗
       "%Hvalid_body" ∷ ⌜ KObjectV.valid kobj ⌝ ∗
+      "%Hvalid_spec_update" ∷ ⌜ ObjectSpecV.valid_update (KObjectV.spec kobj) (KObjectV.spec kobj) ⌝ ∗
       "%Hname_nonempty" ∷ ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.Name') ≠ ""%go ⌝ ∗
       "%Hvalid_typemeta" ∷ ⌜ valid_typemeta (KObjectV.kind kobj) (KObjectV.typemeta kobj) ⌝ ∗
       "%Huid_nonempty" ∷ ⌜ (KObjectV.objectmeta kobj).(ObjectMetaV.UID') ≠ ""%go ⌝ ∗
@@ -514,32 +516,14 @@ Proof.
       (KObjectV.objectmeta kobj) (KObjectV.objectmeta kobj)) as Hvalid_meta_update.
   { rewrite /ObjectMetaV.valid_update. split.
     - left. rewrite /ObjectMetaV.valid_simple_update. done.
-    - destruct kobj as [pod|rs|pvc|sts|d|revision]; simpl in Hvalid, Hname_nonempty |- *;
-        rewrite ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
-          ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
-          ?/DeploymentV.valid_create ?/ControllerRevisionV.valid_create in Hvalid;
-        destruct Hvalid as (_ & _ & _ & _ & Hvalid_meta & _);
-        rewrite /ObjectMetaV.valid_create in Hvalid_meta;
-        tauto. }
-  assert (ObjectSpecV.valid_update
-      (KObjectV.spec kobj) (KObjectV.spec kobj)) as Hvalid_spec_update.
-  { destruct kobj as [pod|rs|pvc|sts|d|revision]; simpl in Hvalid |- *;
-      rewrite ?/PodV.valid_update_input ?/ReplicaSetV.valid_create
-        ?/PersistentVolumeClaimV.valid_create ?/StatefulSetV.valid_create
-        ?/DeploymentV.valid_create ?/ControllerRevisionV.valid_create in Hvalid;
-      destruct Hvalid as (_ & _ & _ & _ & _ & Hvalid_spec).
-    - apply PodSpecV.valid_update_refl. destruct Hvalid_body as (_ & _ & _ & Hbody & _). exact (proj1 Hbody).
-    - apply ReplicaSetSpecV.valid_update_refl. exact Hvalid_spec.
-    - apply PersistentVolumeClaimSpecV.valid_update_refl. exact Hvalid_spec.
-    - apply StatefulSetSpecV.valid_update_refl. exact Hvalid_spec.
-    - apply DeploymentSpecV.valid_update_refl. exact Hvalid_spec.
-    - apply ControllerRevisionSpecV.valid_update_refl. exact Hvalid_spec. }
+    - pose proof (KObjectV.valid_components _ Hvalid_body) as (_ & _ & Hmeta & _).
+      rewrite /ObjectMetaV.valid in Hmeta. tauto. }
   assert (KObjectV.valid_update kind namespace
       (KObjectV.objectmeta kobj) (KObjectV.spec kobj) kobj) as Hvalid_update.
-  { destruct kobj as [pod|rs|pvc|sts|d|revision]; simpl in *;
+  { destruct kobj as [pod|rs|pvc|sts|d|revision|ds]; simpl in *;
       rewrite ?/PodV.valid_update ?/ReplicaSetV.valid_update
         ?/PersistentVolumeClaimV.valid_update ?/StatefulSetV.valid_update
-        ?/DeploymentV.valid_update ?/ControllerRevisionV.valid_update;
+        ?/DeploymentV.valid_update ?/ControllerRevisionV.valid_update ?/DaemonSetV.valid_update;
       split_and!; try assumption.
     destruct Hvalid_body as (_ & _ & _ & [Hspec Hannotations] & _).
     pose proof Hspec as (_ & _ & Hfixed & _).

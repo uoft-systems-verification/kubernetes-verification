@@ -32,7 +32,11 @@ Lemma create_stored_from_helper_result_created namespace input helper_result sto
 Proof.
   intros Hcreated Hstored.
   destruct input; destruct helper_result; simpl in Hcreated; try contradiction.
+  all: try (unfold DaemonSetV.created in Hcreated;
+    destruct (DaemonSetV.prepare_create_metadata ds.(DaemonSetV.ObjectMeta'))
+      as [prepared|] eqn:Hprepare; simpl in Hcreated; try contradiction).
   all: destruct stored; simpl in Hstored |- *; try contradiction.
+  all: try (unfold DaemonSetV.created; rewrite Hprepare).
   all: destruct Hcreated as (Htypemeta & Hmeta & Hgeneration & Hspec & Hstatus).
   all: destruct Hstored as (Hsame & Htypemeta_eq & Hmeta_eq & Hspec_eq & Hstatus_eq & _);
     try contradiction.

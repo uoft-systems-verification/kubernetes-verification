@@ -1,0 +1,5 @@
+# Match the other API strategies: their behavior is specified by the API-model
+# helper contracts; translating the strategy implementations is separate work.
+translate = ["!*"]
+
+imports = ["!*"]

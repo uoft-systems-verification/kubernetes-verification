@@ -43,7 +43,7 @@ Proof.
     with "[$Hinit $Hisk $Hown_meta_frag $Hown_spec_frag]").
   iIntros (i kobj) "Hpost". iNamed "Hpost".
   iDestruct "Hpost" as "((Hown_spec_frag & %Hspec_eq) & _)".
-  destruct kobj as [pod|rs|pvc|unused_sts|d|revision];
+  destruct kobj as [pod|rs|pvc|unused_sts|d|revision|ds];
     try solve [simpl in Hspec_eq; done].
   simpl in Hvalid', Hkey_eq, Hmeta_eq, Hspec_eq.
   assert (Hspec_eq' : kspec = (ControllerRevisionV.spec revision)) by congruence.
