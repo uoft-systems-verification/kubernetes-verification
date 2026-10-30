@@ -901,4 +901,76 @@ Proof.
   iFrame "%".
 Qed.
 
+(* [FilterPodsByOwner] with [includeOrphanedPods]: the owner's pods, as in
+   [wp_FilterPodsByOwner_uniform_combined], then the orphan Pods of the owner's
+   namespace. The namespace's Pod bucket pins the living orphans to exactly
+   [orphan_pods]; the listing may also return terminating orphans. *)
+Lemma wp_FilterPodsByOwner_orphans γ l owner owner_kind meta dq1 dq2 dq_o
+    living_pods children_keys terminating_bound orphan_pods :
+  {{{ is_pkg_init code.controllers.common.pkg_id.common ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "Hdeepown_l_meta" ∷ ObjectMetaV.deepown_l owner meta dq1 ∗
+      "Hown_pod_meta_frags" ∷ ([∗ list] pod ∈ living_pods,
+        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq2 pod.(PodV.ObjectMeta')) ∗
+      "Hown_pod_spec_frags" ∷ ([∗ list] pod ∈ living_pods,
+        own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq2
+          (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
+      "Hown_children_frag" ∷ own_children_frag γ (owner_ref_key owner_kind meta)
+        meta.(ObjectMetaV.UID') dq2 children_keys ∗
+      "Hown_terminating_children_frag" ∷
+        own_terminating_children_frag γ (owner_ref_key owner_kind meta)
+          meta.(ObjectMetaV.UID') terminating_bound ∗
+      "Hown_orphan_pod_frags" ∷ ([∗ list] pod ∈ orphan_pods,
+        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq_o pod.(PodV.ObjectMeta') ∗
+        own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq_o
+          (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
+      "Hown_pod_orphans" ∷ own_orphans_frag γ (PodV.kind, meta.(ObjectMetaV.Namespace')) dq_o
+        (list_to_set (PodV.key <$> orphan_pods)) ∗
+      "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> living_pods) ⌝ ∗
+      "%Horphans_nodup" ∷ ⌜ NoDup (PodV.key <$> orphan_pods) ⌝ ∗
+      "%Hdom_eq" ∷ ⌜ list_to_set (PodV.key <$> living_pods) =
+        filter (λ key, key.(KKey.Kind') = "Pod"%go) children_keys ⌝ ∗
+      "%Hslash_free" ∷ ⌜ slash_free owner_kind ∧
+        slash_free meta.(ObjectMetaV.Namespace') ∧
+        slash_free meta.(ObjectMetaV.Name') ∧
+        slash_free meta.(ObjectMetaV.UID') ⌝
+  }}}
+    @! common.FilterPodsByOwner #owner #owner_kind #true
+  {{{ sl ptrs owned_pods orphan_list dq', RET (#sl, #interface.nil);
+      sl ↦* ptrs ∗
+      ([∗ list] ptr;pod ∈ ptrs;owned_pods ++ orphan_list, PodV.deepown_l ptr pod dq') ∗
+      ⌜ ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> filter is_pod_alive owned_pods) ≡ₚ
+        ObjectMetaV.without_resource_version <$> (PodV.ObjectMeta' <$> living_pods) ⌝ ∗
+      ⌜ pod_storage_view <$> filter is_pod_alive owned_pods ≡ₚ pod_storage_view <$> living_pods ⌝ ∗
+      ⌜ (length owned_pods ≤ length living_pods + terminating_bound)%nat ⌝ ∗
+      ⌜ Forall (λ pod, meta_parent_ref pod.(PodV.ObjectMeta') =
+          Some (owner_ref_key owner_kind meta, meta.(ObjectMetaV.UID'))) owned_pods ⌝ ∗
+      ⌜ pod_storage_view <$> filter is_pod_alive orphan_list ≡ₚ pod_storage_view <$> orphan_pods ⌝ ∗
+      ⌜ Forall (λ pod, meta_parent_ref pod.(PodV.ObjectMeta') = None ∧
+          pod.(PodV.ObjectMeta').(ObjectMetaV.Namespace') = meta.(ObjectMetaV.Namespace')) orphan_list ⌝ ∗
+      ⌜ Forall PodV.valid (owned_pods ++ orphan_list) ⌝ ∗
+      ⌜ NoDup (PodV.key <$> (owned_pods ++ orphan_list)) ⌝ ∗
+      ObjectMetaV.deepown_l owner meta dq1 ∗
+      ([∗ list] pod ∈ terminating_pods owned_pods,
+        own_deletion_observed_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID')) ∗
+      ([∗ list] pod ∈ filter is_pod_alive owned_pods,
+        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq2 pod.(PodV.ObjectMeta')) ∗
+      ([∗ list] pod ∈ filter is_pod_alive owned_pods,
+        own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq2
+          (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
+      own_children_frag γ (owner_ref_key owner_kind meta) meta.(ObjectMetaV.UID') dq2 children_keys ∗
+      own_terminating_children_frag γ (owner_ref_key owner_kind meta)
+        meta.(ObjectMetaV.UID') terminating_bound ∗
+      ([∗ list] pod ∈ orphan_pods,
+        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq_o pod.(PodV.ObjectMeta') ∗
+        own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') dq_o
+          (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
+      own_orphans_frag γ (PodV.kind, meta.(ObjectMetaV.Namespace')) dq_o
+        (list_to_set (PodV.key <$> orphan_pods))
+  }}}.
+Proof.
+  (* TODO: prove; needs a ByIndex spec for the orphan key. *)
+Admitted.
+
 End proof.

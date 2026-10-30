@@ -440,7 +440,7 @@ func syncStatefulSet(namespace, name string) error {
 		return err
 	}
 
-	allPods, err := common.FilterPodsByOwner(&set.ObjectMeta, "StatefulSet")
+	allPods, err := common.FilterPodsByOwner(&set.ObjectMeta, "StatefulSet", false)
 	if err != nil {
 		return err
 	}

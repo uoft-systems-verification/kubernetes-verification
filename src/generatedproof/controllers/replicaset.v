@@ -2,12 +2,15 @@
 Require Export New.proof.proof_prelude.
 Require Export New.generatedproof.context.
 Require Export New.generatedproof.controllers.common.
+Require Export New.generatedproof.errors.
 Require Export New.generatedproof.k8s_io.api.apps.v1.
 Require Export New.generatedproof.k8s_io.api.core.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.api.errors.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.labels.
+Require Export New.generatedproof.k8s_io.apimachinery.pkg.runtime.schema.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.types.
+Require Export New.generatedproof.k8s_io.apimachinery.pkg.util.errors.
 Require Export New.generatedproof.k8s_io.apiserver.pkg.util.feature.
 Require Export New.generatedproof.k8s_io.client_go.kubernetes.
 Require Export New.generatedproof.k8s_io.client_go.kubernetes.typed.apps.v1.
@@ -29,4 +32,59 @@ Require Export New.code.controllers.replicaset.
 Set Default Proof Using "Type".
 
 Module replicaset.
+Module PodControllerRefManager.
+Section def.
+
+Context `{hG: heapGS Σ, !ffi_semantics _ _}.
+Context {sem : go.Semantics}.
+Context {package_sem' : replicaset.Assumptions}.
+
+Local Set Default Proof Using "All".
+
+#[global]Program Instance PodControllerRefManager_typed_pointsto  :
+  TypedPointsto (Σ:=Σ) (replicaset.PodControllerRefManager.t) :=
+  {|
+    typed_pointsto_def l v dq :=
+      (
+      "BaseControllerRefManager" ∷ l.[(replicaset.PodControllerRefManager.t), "BaseControllerRefManager"] ↦{dq} v.(replicaset.PodControllerRefManager.BaseControllerRefManager') ∗
+      "controllerKind" ∷ l.[(replicaset.PodControllerRefManager.t), "controllerKind"] ↦{dq} v.(replicaset.PodControllerRefManager.controllerKind') ∗
+      "_" ∷ True
+      )%I
+  |}.
+Final Obligation. solve_typed_pointsto_agree. Qed.
+
+#[global] Instance PodControllerRefManager_into_val_typed
+   :
+  IntoValTypedUnderlying (replicaset.PodControllerRefManager.t) (replicaset.PodControllerRefManagerⁱᵐᵖˡ).
+Proof. solve_into_val_typed_struct. Qed.
+#[global] Instance PodControllerRefManager_access_load_BaseControllerRefManager l (v : (replicaset.PodControllerRefManager.t)) dq :
+  AccessStrict
+    (l.[(replicaset.PodControllerRefManager.t), "BaseControllerRefManager"] ↦{dq} (v.(replicaset.PodControllerRefManager.BaseControllerRefManager')))
+    (l.[(replicaset.PodControllerRefManager.t), "BaseControllerRefManager"] ↦{dq} (v.(replicaset.PodControllerRefManager.BaseControllerRefManager')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodControllerRefManager_access_store_BaseControllerRefManager l (v : (replicaset.PodControllerRefManager.t)) BaseControllerRefManager' :
+  AccessStrict
+    (l.[(replicaset.PodControllerRefManager.t), "BaseControllerRefManager"] ↦ (v.(replicaset.PodControllerRefManager.BaseControllerRefManager')))
+    (l.[(replicaset.PodControllerRefManager.t), "BaseControllerRefManager"] ↦ BaseControllerRefManager')
+    (l ↦ v) (l ↦ (v <|(replicaset.PodControllerRefManager.BaseControllerRefManager') := BaseControllerRefManager'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+#[global] Instance PodControllerRefManager_access_load_controllerKind l (v : (replicaset.PodControllerRefManager.t)) dq :
+  AccessStrict
+    (l.[(replicaset.PodControllerRefManager.t), "controllerKind"] ↦{dq} (v.(replicaset.PodControllerRefManager.controllerKind')))
+    (l.[(replicaset.PodControllerRefManager.t), "controllerKind"] ↦{dq} (v.(replicaset.PodControllerRefManager.controllerKind')))
+    (l ↦{dq} v) (l ↦{dq} v)%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+#[global] Instance PodControllerRefManager_access_store_controllerKind l (v : (replicaset.PodControllerRefManager.t)) controllerKind' :
+  AccessStrict
+    (l.[(replicaset.PodControllerRefManager.t), "controllerKind"] ↦ (v.(replicaset.PodControllerRefManager.controllerKind')))
+    (l.[(replicaset.PodControllerRefManager.t), "controllerKind"] ↦ controllerKind')
+    (l ↦ v) (l ↦ (v <|(replicaset.PodControllerRefManager.controllerKind') := controllerKind'|>))%I.
+Proof. solve_pointsto_access_struct. Qed.
+
+End def.
+End PodControllerRefManager.
+
 End replicaset.

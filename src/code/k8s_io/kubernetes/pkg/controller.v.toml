@@ -4,16 +4,23 @@ translate = [
     "IsPodActive",
     "IsPodTerminating",
     "FilterTerminatingPods",
+    "FilterClaimedPods",
     "ActivePodsWithRanks",
     "getPodsLabelSet",
     "getPodsFinalizers",
     "getPodsAnnotationSet",
     "PodControllerIndexKey",
     "GetPodFromTemplate",
+    "BaseControllerRefManager",
+    "BaseControllerRefManager.CanAdopt",
+    "BaseControllerRefManager.ClaimObject",
 ]
 
 imports = [
+    "context",
     "fmt",
+    "sync",
+    "k8s.io/apimachinery/pkg/api/errors",
     "k8s.io/api/core/v1",
     "k8s.io/kubernetes/pkg/api/v1/pod",
     "k8s.io/apimachinery/pkg/labels",

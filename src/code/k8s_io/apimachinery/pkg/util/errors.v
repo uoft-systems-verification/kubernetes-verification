@@ -25,8 +25,6 @@ Definition Matcher {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := g
 
 Axiom MessageCountMapⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
-Axiom aggregateⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
-
 Axiom Matcherⁱᵐᵖˡ : ∀ {ext : ffi_syntax} {go_gctx : GoGlobalContext}, go.type.
 
 Definition ErrPreconditionViolated {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/apimachinery/pkg/util/errors.ErrPreconditionViolated"%go.
@@ -48,6 +46,40 @@ Definition CreateAggregateFromMessageCountMap {ext : ffi_syntax} {go_gctx : GoGl
 Definition Reduce {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/apimachinery/pkg/util/errors.Reduce"%go.
 
 Definition AggregateGoroutines {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/apimachinery/pkg/util/errors.AggregateGoroutines"%go.
+
+(* NewAggregate converts a slice of errors into an Aggregate interface, which
+   is itself an implementation of the error interface.  If the slice is empty,
+   this returns nil.
+   It will check if any of the element of input error list is nil, to avoid
+   nil pointer panic when call Error().
+
+   go: errors.go:47:6 *)
+Definition NewAggregateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "errlist",
+    exception_do (let: "errlist" := (GoAlloc (go.SliceType go.error) "errlist") in
+    (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![go.SliceType go.error] "errlist") in
+    (FuncResolve go.len [go.SliceType go.error] #()) "$a0") =⟨go.int⟩ #(W64 0))
+    then return: (Convert go.untyped_nil Aggregate UntypedNil)
+    else do:  #());;;
+    let: "errs" := (GoAlloc (go.SliceType go.error) (GoZeroVal (go.SliceType go.error) #())) in
+    let: "$range" := (![go.SliceType go.error] "errlist") in
+    (let: "e" := (GoAlloc go.error (GoZeroVal go.error #())) in
+    slice.for_range go.error "$range" (λ: "$key" "$value",
+      do:  ("e" <-[go.error] "$value");;;
+      do:  "$key";;;
+      (if: Convert go.untyped_bool go.bool ((![go.error] "e") ≠⟨go.error⟩ (Convert go.untyped_nil go.error UntypedNil))
+      then
+        let: "$r0" := (let: "$a0" := (![go.SliceType go.error] "errs") in
+        let: "$a1" := ((let: "$sl0" := (![go.error] "e") in
+        CompositeLiteral (go.SliceType go.error) (LiteralValue [KeyedElement None (ElementExpression go.error "$sl0")]))) in
+        (FuncResolve go.append [go.SliceType go.error] #()) "$a0" "$a1") in
+        do:  ("errs" <-[go.SliceType go.error] "$r0")
+      else do:  #())));;;
+    (if: Convert go.untyped_bool go.bool ((let: "$a0" := (![go.SliceType go.error] "errs") in
+    (FuncResolve go.len [go.SliceType go.error] #()) "$a0") =⟨go.int⟩ #(W64 0))
+    then return: (Convert go.untyped_nil Aggregate UntypedNil)
+    else do:  #());;;
+    return: (Convert aggregate Aggregate (![go.SliceType go.error] "errs"))).
 
 #[global] Instance info' : PkgInfo pkg_id.errors :=
 {|
@@ -96,17 +128,16 @@ Class Aggregate_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalCon
 Module aggregate.
 Section def.
 Context {ext : ffi_syntax} {go_gctx : GoGlobalContext}.
-Axiom t : Type.
-Axiom zero_val : ZeroVal t.
-#[global] Existing Instance zero_val.
+Definition t : Type := slice.t.
+#[global] Arguments t : clear implicits.
 End def.
 End aggregate.
 
+Definition aggregateⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go.type := go.SliceType go.error.
+
 Class aggregate_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!GoSemanticsFunctions} : Prop :=
 {
-  #[global] aggregate_type_repr  :: go.TypeReprUnderlying aggregateⁱᵐᵖˡ aggregate.t;
   #[global] aggregate_underlying :: (aggregate) <u (aggregateⁱᵐᵖˡ);
-  #[global] aggregateⁱᵐᵖˡ_underlying :: (aggregateⁱᵐᵖˡ) ↓u (aggregateⁱᵐᵖˡ);
 }.
 
 Module Matcher.
@@ -131,5 +162,6 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] Aggregate_instance :: Aggregate_Assumptions;
   #[global] aggregate_instance :: aggregate_Assumptions;
   #[global] Matcher_instance :: Matcher_Assumptions;
+  #[global] NewAggregate_unfold :: FuncUnfold NewAggregate [] (NewAggregateⁱᵐᵖˡ);
 }.
 End errors.

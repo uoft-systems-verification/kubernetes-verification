@@ -362,13 +362,16 @@ Qed.
 (* After [updateReplicaSetStatus], the owned resources describe the stored
    ReplicaSet: [rs'] (from the status write) with [rs]'s TypeMeta, which no
    fragment tracks. [rs_get] is the ReplicaSet the sync read; the ReplicaSet's
-   own fragments are keyed by it, the children fragments by [rs]. *)
-Lemma owned_resources_after_status_update γ rs rs_get rs' pods fractions (ready : bool) :
+   own fragments are keyed by it, the children and orphan fragments by [rs].
+   The status write keeps the spec, so the selector is unchanged. *)
+Lemma owned_resources_after_status_update γ rs rs_get rs' pods orphan_pods fractions (ready : bool) :
   ReplicaSetV.key rs = ReplicaSetV.key rs_get →
   rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') = rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') →
   ObjectMetaV.equiv_except_resource_version rs'.(ReplicaSetV.ObjectMeta') rs_get.(ReplicaSetV.ObjectMeta') →
+  rs'.(ReplicaSetV.Spec') = rs.(ReplicaSetV.Spec') →
   NoDup (PodV.key <$> pods) →
-  Z.of_nat (length pods) < 2 ^ 31 →
+  Z.of_nat (length pods + length (filter (rs_selects rs) orphan_pods)) < 2 ^ 31 →
+  NoDup (PodV.key <$> orphan_pods) →
   own_meta_frag γ (ReplicaSetV.key rs_get) rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID')
     fractions.(rs_dq) rs'.(ReplicaSetV.ObjectMeta') -∗
   own_spec_frag γ (ReplicaSetV.key rs_get) rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID')
@@ -377,6 +380,8 @@ Lemma owned_resources_after_status_update γ rs rs_get rs' pods fractions (ready
     fractions.(rs_status_dq) (ObjectStatusV.ReplicaSetStatus rs'.(ReplicaSetV.Status')) -∗
   ([∗ list] pod ∈ pods, own_meta_frag γ (PodV.key pod)
     pod.(PodV.ObjectMeta').(ObjectMetaV.UID') fractions.(pod_dq) pod.(PodV.ObjectMeta')) -∗
+  ([∗ list] pod ∈ pods, own_spec_frag γ (PodV.key pod)
+    pod.(PodV.ObjectMeta').(ObjectMetaV.UID') fractions.(pod_dq) (ObjectSpecV.PodSpec pod.(PodV.Spec'))) -∗
   ([∗ list] pod ∈ pods, own_unreserved_key_frag γ (PodV.key pod)) -∗
   own_children_frag γ (ReplicaSetV.key rs) rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID')
     fractions.(children_dq) (list_to_set (PodV.key <$> pods)) -∗
@@ -386,17 +391,36 @@ Lemma owned_resources_after_status_update γ rs rs_get rs' pods fractions (ready
    else
      ∃ terminating_bound, own_terminating_children_frag γ (ReplicaSetV.key rs)
        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') terminating_bound) -∗
-  owned_resources γ (rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>) pods fractions ready.
+  ([∗ list] pod ∈ orphan_pods,
+    own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') fractions.(orphans_dq)
+      pod.(PodV.ObjectMeta') ∗
+    own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') fractions.(orphans_dq)
+      (ObjectSpecV.PodSpec pod.(PodV.Spec'))) -∗
+  ([∗ list] pod ∈ filter (rs_selects rs) orphan_pods, own_unreserved_key_frag γ (PodV.key pod)) -∗
+  own_orphans_frag γ (PodV.kind, rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace')) fractions.(orphans_dq)
+    (list_to_set (PodV.key <$> orphan_pods)) -∗
+  owned_resources γ (rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>) pods orphan_pods
+    fractions ready.
 Proof.
-  intros Hrs_key_eq Hrs_uid_eq Hmeta_changed Hnodup Hbound.
-  iIntros "Hmeta Hspec Hstatus Hpods #Hunreserved Hchildren Hterminating".
+  intros Hrs_key_eq Hrs_uid_eq Hmeta_changed Hspec_eq Hnodup Hbound Horphans_nodup.
+  iIntros "Hmeta Hspec Hstatus Hpods Hpod_specs #Hunreserved Hchildren Hterminating
+    Horphan_frags #Horphan_unreserved Horphans".
   destruct (ReplicaSetV.meta_equiv_key_uid _ _ Hmeta_changed) as (Hkey' & Huid' & _ & _).
   assert (ReplicaSetV.key (rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>) =
     ReplicaSetV.key rs_get) as Hkey''.
   { rewrite /ReplicaSetV.key /=. exact Hkey'. }
+  assert (∀ pod, rs_selects (rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>) pod ↔
+    rs_selects rs pod) as Hselects.
+  { intros pod. rewrite /rs_selects /rs_selects_meta /= Hspec_eq. done. }
+  assert (rs'.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') =
+    rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace')) as Hns.
+  { pose proof (f_equal KKey.Namespace' Hkey') as Hns'.
+    pose proof (f_equal KKey.Namespace' Hrs_key_eq) as Hns_rs.
+    rewrite /ReplicaSetV.key /ReplicaSetV.meta_key /= in Hns' Hns_rs. congruence. }
   iEval (rewrite Hrs_key_eq Hrs_uid_eq) in "Hchildren Hterminating".
-  rewrite /owned_resources /= Hkey'' Huid'.
-  iFrame "∗ #". iPureIntro. split; [exact Hnodup|exact Hbound].
+  rewrite /owned_resources /= Hkey'' Huid' Hns.
+  rewrite (list_filter_iff _ (rs_selects rs) orphan_pods Hselects).
+  iFrame "∗ #". iPureIntro. split_and!; done.
 Qed.
 
 End proof.

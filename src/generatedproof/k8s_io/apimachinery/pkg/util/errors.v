@@ -26,26 +26,6 @@ Proof. Admitted.
 End def.
 End MessageCountMap.
 
-Module aggregate.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : errors.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance aggregate_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (errors.aggregate.t). Admitted.
-
-#[global] Instance aggregate_into_val_typed
-   :
-  IntoValTypedUnderlying (errors.aggregate.t) (errors.aggregateⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End aggregate.
-
 Module Matcher.
 Section def.
 

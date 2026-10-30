@@ -975,7 +975,8 @@ Definition syncStatefulSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
     let: "allPods" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)) (GoZeroVal (go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)) #())) in
     let: ("$ret0", "$ret1") := (let: "$a0" := (StructFieldRef code.k8s_io.api.apps.v1.v1.StatefulSet "ObjectMeta"%go (![go.PointerType code.k8s_io.api.apps.v1.v1.StatefulSet] "set")) in
     let: "$a1" := #"StatefulSet"%go in
-    (FuncResolve code.controllers.common.common.FilterPodsByOwner [] #()) "$a0" "$a1") in
+    let: "$a2" := #false in
+    (FuncResolve code.controllers.common.common.FilterPodsByOwner [] #()) "$a0" "$a1" "$a2") in
     let: "$r0" := "$ret0" in
     let: "$r1" := "$ret1" in
     do:  ("allPods" <-[go.SliceType (go.PointerType code.k8s_io.api.core.v1.v1.Pod)] "$r0");;;

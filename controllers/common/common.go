@@ -25,19 +25,26 @@ func FilterActivePods(pods []*v1.Pod) []*v1.Pod {
 	return result
 }
 
-func FilterPodsByOwner(owner *metav1.ObjectMeta, ownerKind string) ([]*v1.Pod, error) {
+func FilterPodsByOwner(owner *metav1.ObjectMeta, ownerKind string, includeOrphanedPods bool) ([]*v1.Pod, error) {
 	result := []*v1.Pod{}
-	key := controller.PodControllerIndexKey(owner.Namespace, &metav1.OwnerReference{Name: owner.Name, Kind: ownerKind, UID: owner.UID})
-	pods, err := apimodel.ModelState.ByIndex("Pod", controller.PodControllerIndex, key)
-	if err != nil {
-		return nil, err
+	// Always include the owner key, which identifies Pods that are controlled by the owner
+	keys := []string{controller.PodControllerIndexKey(owner.Namespace, &metav1.OwnerReference{Name: owner.Name, Kind: ownerKind, UID: owner.UID})}
+	if includeOrphanedPods {
+		// Optionally include the unowned key, which identifies orphaned Pods in the owner's namespace and might be adopted by the owner later
+		keys = append(keys, controller.PodControllerIndexKey(owner.Namespace, nil))
 	}
-	for _, obj := range pods {
-		pod, ok := obj.(*v1.Pod)
-		if !ok {
-			continue
+	for _, key := range keys {
+		pods, err := apimodel.ModelState.ByIndex("Pod", controller.PodControllerIndex, key)
+		if err != nil {
+			return nil, err
 		}
-		result = append(result, pod)
+		for _, obj := range pods {
+			pod, ok := obj.(*v1.Pod)
+			if !ok {
+				continue
+			}
+			result = append(result, pod)
+		}
 	}
 	return result, nil
 }

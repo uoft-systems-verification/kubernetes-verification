@@ -3,6 +3,7 @@ package replicaset
 import (
 	"context"
 	"controllers/common"
+	"errors"
 	"kubernetes_model/apimodel"
 	"sort"
 	"sync"
@@ -11,7 +12,10 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	clientset "k8s.io/client-go/kubernetes"
 	appslisters "k8s.io/client-go/listers/apps/v1"
@@ -23,7 +27,6 @@ import (
 )
 
 // A simplified replicaset controller. The following features are not included:
-// * adoption and release
 // * expectations, informers and the work queue
 // * scheduling the next availability check
 
@@ -232,17 +235,30 @@ func syncReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rsList
 		return err
 	}
 
-	allRSPods, err := common.FilterPodsByOwner(&rs.ObjectMeta, "ReplicaSet")
+	selector, err := metav1.LabelSelectorAsSelector(rs.Spec.Selector)
+	if err != nil {
+		// Upstream also reports the error with utilruntime.HandleError.
+		return nil
+	}
+
+	// List all pods indexed to RS UID and Orphan pods
+	allRSPods, err := common.FilterPodsByOwner(&rs.ObjectMeta, "ReplicaSet", true)
 	if err != nil {
 		return err
 	}
 
-	activePods := common.FilterActivePods(allRSPods)
+	// NOTE: activePods and terminatingPods are pointing to objects from cache - if you need to
+	// modify them, you need to copy it first.
+	allActivePods := common.FilterActivePods(allRSPods)
+	activePods, err := claimPods(ctx, kubeClient, rs, selector, allActivePods)
+	if err != nil {
+		return err
+	}
+
 	var terminatingPods []*v1.Pod
 	if utilfeature.DefaultFeatureGate.Enabled(features.DeploymentReplicaSetTerminatingReplicas) && controllerFeatures.EnableStatusTerminatingReplicas {
-		// As with activePods, ownership was already checked by FilterPodsByOwner.
-		// Selector-based claiming remains outside this simplified controller.
-		terminatingPods = controller.FilterTerminatingPods(allRSPods)
+		allTerminatingPods := controller.FilterTerminatingPods(allRSPods)
+		terminatingPods = controller.FilterClaimedPods(rs, selector, allTerminatingPods)
 	}
 
 	var manageReplicasErr error
@@ -262,4 +278,190 @@ func syncReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rsList
 	}
 
 	return manageReplicasErr
+}
+
+// claimPods is upstream's ReplicaSetController.claimPods. Its getObject
+// function reports a different UID with errors.New instead of fmt.Errorf, and
+// the manager takes no podControl (see PodControllerRefManager).
+func claimPods(ctx context.Context, kubeClient *clientset.Clientset, rs *apps.ReplicaSet, selector labels.Selector, filteredPods []*v1.Pod) ([]*v1.Pod, error) {
+	// If any adoptions are attempted, we should first recheck for deletion with
+	// an uncached quorum read sometime after listing Pods (see #42639).
+	canAdoptFunc := RecheckDeletionTimestamp(func(ctx context.Context) (metav1.Object, error) {
+		fresh, err := kubeClient.AppsV1().ReplicaSets(rs.Namespace).Get(ctx, rs.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		if fresh.UID != rs.UID {
+			return nil, errors.New("original ReplicaSet is gone")
+		}
+		return fresh, nil
+	})
+	cm := NewPodControllerRefManager(rs, selector, apps.SchemeGroupVersion.WithKind("ReplicaSet"), canAdoptFunc)
+	return cm.ClaimPods(ctx, filteredPods)
+}
+
+// RecheckDeletionTimestamp returns a CanAdopt() function to recheck deletion.
+//
+// The CanAdopt() function calls getObject() to fetch the latest value,
+// and denies adoption attempts if that object has a non-nil DeletionTimestamp.
+//
+// This is upstream's controller.RecheckDeletionTimestamp with errors.New in
+// place of fmt.Errorf, whose Perennial specification is admitted. Like
+// upstream's "%v", errors.New keeps a NotFound error from getObject from
+// reaching ClaimObject, which would ignore it as a NotFound Pod.
+func RecheckDeletionTimestamp(getObject func(context.Context) (metav1.Object, error)) func(context.Context) error {
+	return func(ctx context.Context) error {
+		obj, err := getObject(ctx)
+		if err != nil {
+			return errors.New("can't recheck DeletionTimestamp")
+		}
+		if obj.GetDeletionTimestamp() != nil {
+			return errors.New("object has just been deleted")
+		}
+		return nil
+	}
+}
+
+// PodControllerRefManager is upstream's controller.PodControllerRefManager,
+// built on upstream's BaseControllerRefManager. It has no podControl, because
+// AdoptPod and ReleasePod update a copy of the Pod with PodUpdateTx instead of
+// sending upstream's strategic-merge patch with podControl.PatchPod.
+// PodUpdateTx has a Rocq specification, while the model's PodPatch has none
+// and takes JSON bytes. Unlike the patch, the update overwrites changes made
+// to the Pod since it was listed, including another controller's adoption, and
+// it retries forever if the Pod was deleted and recreated under the same name.
+// It also has no finalizers, which the ReplicaSet controller does not use.
+type PodControllerRefManager struct {
+	controller.BaseControllerRefManager
+	controllerKind schema.GroupVersionKind
+}
+
+// NewPodControllerRefManager returns a PodControllerRefManager that exposes
+// methods to manage the controllerRef of pods.
+//
+// The CanAdopt() function can be used to perform a potentially expensive check
+// (such as a live GET from the API server) prior to the first adoption.
+// It will only be called (at most once) if an adoption is actually attempted.
+// If CanAdopt() returns a non-nil error, all adoptions will fail.
+//
+// NOTE: Once CanAdopt() is called, it will not be called again by the same
+// PodControllerRefManager instance. Create a new instance if it makes
+// sense to check CanAdopt() again (e.g. in a different sync pass).
+func NewPodControllerRefManager(
+	controllerObject metav1.Object,
+	selector labels.Selector,
+	controllerKind schema.GroupVersionKind,
+	canAdopt func(ctx context.Context) error,
+) *PodControllerRefManager {
+	return &PodControllerRefManager{
+		BaseControllerRefManager: controller.BaseControllerRefManager{
+			Controller:   controllerObject,
+			Selector:     selector,
+			CanAdoptFunc: canAdopt,
+		},
+		controllerKind: controllerKind,
+	}
+}
+
+// ClaimPods tries to take ownership of a list of Pods.
+//
+// It will reconcile the following:
+//   - Adopt orphans if the selector matches.
+//   - Release owned objects if the selector no longer matches.
+//
+// Optional: If one or more filters are specified, a Pod will only be claimed if
+// all filters return true.
+//
+// A non-nil error is returned if some form of reconciliation was attempted and
+// failed. Usually, controllers should try again later in case reconciliation
+// is still needed.
+//
+// If the error is nil, either the reconciliation succeeded, or no
+// reconciliation was necessary. The list of Pods that you now own is returned.
+func (m *PodControllerRefManager) ClaimPods(ctx context.Context, pods []*v1.Pod, filters ...func(*v1.Pod) bool) ([]*v1.Pod, error) {
+	var claimed []*v1.Pod
+	var errlist []error
+
+	match := func(obj metav1.Object) bool {
+		pod := obj.(*v1.Pod)
+		// Check selector first so filters only run on potentially matching Pods.
+		if !m.Selector.Matches(labels.Set(pod.Labels)) {
+			return false
+		}
+		for _, filter := range filters {
+			if !filter(pod) {
+				return false
+			}
+		}
+		return true
+	}
+	adopt := func(ctx context.Context, obj metav1.Object) error {
+		return m.AdoptPod(ctx, obj.(*v1.Pod))
+	}
+	release := func(ctx context.Context, obj metav1.Object) error {
+		return m.ReleasePod(ctx, obj.(*v1.Pod))
+	}
+
+	for _, pod := range pods {
+		ok, err := m.ClaimObject(ctx, pod, match, adopt, release)
+		if err != nil {
+			errlist = append(errlist, err)
+			continue
+		}
+		if ok {
+			claimed = append(claimed, pod)
+		}
+	}
+	return claimed, utilerrors.NewAggregate(errlist)
+}
+
+// AdoptPod updates the pod to take control of it. It returns the error if the
+// update fails. Upstream's patch merges the controller reference into the owner
+// references by UID; here any reference with the controller's UID is removed
+// and the controller reference is appended, so only its position can differ.
+// Upstream wraps the CanAdopt error with fmt.Errorf; errors.New likewise
+// returns an error that is never NotFound.
+func (m *PodControllerRefManager) AdoptPod(ctx context.Context, pod *v1.Pod) error {
+	if err := m.CanAdopt(ctx); err != nil {
+		return errors.New("can't adopt Pod")
+	}
+	updatedPod := pod.DeepCopy()
+	updatedPod.OwnerReferences = append(withoutOwnerReferences(updatedPod.OwnerReferences, m.Controller.GetUID()),
+		*metav1.NewControllerRef(m.Controller, m.controllerKind))
+	_, err := apimodel.ModelState.PodUpdateTx(updatedPod.Namespace, updatedPod)
+	return err
+}
+
+// ReleasePod updates the pod to free it from the control of the controller.
+// It returns the error if the update fails. 404 and 422 errors are ignored.
+func (m *PodControllerRefManager) ReleasePod(ctx context.Context, pod *v1.Pod) error {
+	// Logging never affects the verified behavior, so the logger is omitted.
+	updatedPod := pod.DeepCopy()
+	updatedPod.OwnerReferences = withoutOwnerReferences(updatedPod.OwnerReferences, m.Controller.GetUID())
+	_, err := apimodel.ModelState.PodUpdateTx(updatedPod.Namespace, updatedPod)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			// If the pod no longer exists, ignore it.
+			return nil
+		}
+		if apierrors.IsInvalid(err) {
+			// Upstream's patch fails with Invalid when the pod has no owner
+			// reference or was deleted and recreated. PodUpdateTx fails with
+			// Invalid only when validation rejects the copy; the pod stays
+			// owned, and the next sync tries to release it again.
+			return nil
+		}
+	}
+	return err
+}
+
+// withoutOwnerReferences returns ownerReferences without the references to uid.
+func withoutOwnerReferences(ownerReferences []metav1.OwnerReference, uid types.UID) []metav1.OwnerReference {
+	result := []metav1.OwnerReference{}
+	for _, ownerReference := range ownerReferences {
+		if ownerReference.UID != uid {
+			result = append(result, ownerReference)
+		}
+	}
+	return result
 }

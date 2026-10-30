@@ -886,4 +886,64 @@ Proof.
         "[$Hdeepown_t_l_rs $Hdeepown_m_l_rs $Hdeepown_s_l_rs $Hdeepown_st_l_rs]").
 Qed.
 
+(* [manageReplicas] on the pods [claimPods] returns. Their in-memory copies may
+   lag the fragments: an adopted pod's copy lacks the new controller reference
+   and resource version. Only keys and UIDs relate a copy to its fragment. The
+   spec fragments of created pods are kept, so released pods can be written
+   back later. *)
+Lemma wp_manageReplicas_claimed γ l (ctx : context.Context.t) (kube_client : loc) (burst : w64)
+    sl rs_l ptrs active_copies active_pods inactive_pods rs n terminating_bound :
+  {{{ "#Hpkg" ∷ is_pkg_init code.controllers.replicaset.pkg_id.replicaset ∗
+      "#Hisk" ∷ is_kubernetes γ l ∗
+      "#Hglobal_l" ∷ (global_addr apimodel.ModelState) ↦□ l ∗
+      "Hsl" ∷ sl ↦* ptrs ∗
+      "#Hdeepown_l_active_copies" ∷
+        ([∗ list] ptr;pod ∈ ptrs;active_copies, PodV.deepown_l ptr pod DfracDiscarded) ∗
+      "Hdeepown_l_rs" ∷ ReplicaSetV.deepown_l rs_l rs DfracDiscarded ∗
+      "%Hcopies" ∷ ⌜ Forall2 (λ copy pod, PodV.key copy = PodV.key pod ∧
+        copy.(PodV.ObjectMeta').(ObjectMetaV.UID') = pod.(PodV.ObjectMeta').(ObjectMetaV.UID'))
+        active_copies active_pods ⌝ ∗
+      "Hown_active_pod_frags" ∷ ([∗ list] pod ∈ active_pods,
+        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta') ∗
+        own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
+          (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
+      "#Hown_active_pod_unreserved_key_frags" ∷
+        ([∗ list] pod ∈ active_pods, own_unreserved_key_frag γ (PodV.key pod)) ∗
+      "Hown_children_frag" ∷ own_children_frag γ (ReplicaSetV.key rs)
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (list_to_set (PodV.key <$> (active_pods ++ inactive_pods))) ∗
+      "Hown_terminating_children_frag" ∷ own_terminating_children_frag γ (ReplicaSetV.key rs)
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') terminating_bound ∗
+      "%Hrs_meta_valid" ∷ ⌜ ObjectMetaV.valid ReplicaSetV.kind rs.(ReplicaSetV.ObjectMeta') ⌝ ∗
+      "%Hrs_spec_valid" ∷ ⌜ ReplicaSetSpecV.valid rs.(ReplicaSetV.Spec') ⌝ ∗
+      "%Hactive_pods" ∷ ⌜ ∀ pod, pod ∈ active_pods → is_pod_alive pod ⌝ ∗
+      "%Hrs_name_short" ∷ ⌜ length rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name') < 58 ⌝ ∗
+      "%Hrs_template_finalizers_valid" ∷ ⌜ valid_finalizers
+        rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers') ⌝ ∗
+      "%Hreplicas_eq" ∷ ⌜ rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some n ⌝ ∗
+      "%Hburst" ∷ ⌜ 0 < sint.Z burst < 2^31 ⌝ ∗
+      "%Hnodup" ∷ ⌜ NoDup (PodV.key <$> (active_pods ++ inactive_pods)) ⌝
+  }}}
+    @! replicaset.manageReplicas #ctx #kube_client #burst #sl #rs_l
+  {{{ pods', RET #interface.nil;
+      ⌜ length pods' = capped_replica_count (length active_pods) (sint.nat n) (sint.nat burst) ⌝ ∗
+      ⌜ ∀ pod, pod ∈ pods' → is_pod_alive pod ⌝ ∗
+      (∃ terminating_bound', own_terminating_children_frag γ (ReplicaSetV.key rs)
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') terminating_bound') ∗
+      ([∗ list] pod ∈ pods',
+        own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta') ∗
+        own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
+          (ObjectSpecV.PodSpec pod.(PodV.Spec'))) ∗
+      ([∗ list] pod ∈ pods', own_unreserved_key_frag γ (PodV.key pod)) ∗
+      own_children_frag γ (ReplicaSetV.key rs)
+        rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1 (list_to_set (PodV.key <$> (pods' ++ inactive_pods))) ∗
+      (∃ ptrs' active_copies', sl ↦* ptrs' ∗
+        ([∗ list] ptr;pod ∈ ptrs';active_copies', PodV.deepown_l ptr pod DfracDiscarded) ∗
+        ⌜ active_copies ≡ₚ active_copies' ⌝) ∗
+      ReplicaSetV.deepown_l rs_l rs DfracDiscarded
+  }}}.
+Proof.
+  (* TODO: prove from wp_manageReplicas's proof, relating copies to fragments
+     by key and UID. *)
+Admitted.
+
 End proof.

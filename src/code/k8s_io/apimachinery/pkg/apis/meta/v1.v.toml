@@ -58,6 +58,7 @@ translate = [
     "ObjectMeta.SetManagedFields",
     "GetControllerOf",
     "GetControllerOfNoCopy",
+    "IsControlledBy",
     "LabelSelectorAsSelector",
     "NewControllerRef",
     "NamespaceDefault",

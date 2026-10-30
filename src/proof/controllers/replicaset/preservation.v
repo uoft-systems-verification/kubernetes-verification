@@ -62,13 +62,14 @@ Context `{!KObjectV.ObjectInterfaceAssumptions}.
 
 Lemma wp_syncReplicaSet_preservation γ l (ctx : context.Context.t) (kube_client : loc) (burst : w64)
     (rsc_clock : interface.t) (controller_features : upstreamrs.ReplicaSetControllerFeatures.t) namespace name rs
-    dq pods :
-  ⊢ preservation_spec γ l ctx kube_client burst rsc_clock controller_features namespace name rs dq pods.
+    dq pods orphan_pods :
+  ⊢ preservation_spec γ l ctx kube_client burst rsc_clock controller_features namespace name rs dq pods orphan_pods.
 Proof.
   unfold preservation_spec.
   wp_start as "H". iNamed "H". iNamed "Hresources".
   iEval (simpl) in "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag Hown_pod_meta_frags
-    Hown_children_frag Hown_terminating_children_frag".
+    Hown_pod_spec_frags Hown_children_frag Hown_terminating_children_frag Hown_orphan_pod_frags
+    Hown_pod_orphans".
   iDestruct "Hown_terminating_children_frag" as (terminating_bound) "Hown_terminating_children_frag".
   unfold input_requirement in Hinput_requirement.
   destruct Hinput_requirement as (Hrs_name_short & Hrs_template_finalizers_valid & Hlabels_bound & Hgeneration_nonneg).
@@ -109,6 +110,28 @@ Proof.
     "(%Hrs_l_not_null & Hdeepown_t_l_rs & Hdeepown_m_l_rs & Hdeepown_s_l_rs & Hdeepown_st_l_rs)".
   iPoseProof (kview.own_meta_valid with "Hown_rs_meta_frag") as "%Hrs_meta_frag_valid".
   destruct Hrs_meta_frag_valid as (_ & _ & _ & Hrs_meta_valid & Hdeletion_timestamp_eq).
+  (* selector, err := metav1.LabelSelectorAsSelector(rs.Spec.Selector): a valid
+     ReplicaSet has a valid selector, so the conversion succeeds. *)
+  pose proof Hrs_get_spec_valid as Hrs_get_selector.
+  destruct Hrs_get_selector as [(_ & _ & (sel & Hsel_eq & Hsel_valid & _ & Hsel_template) & _) _].
+  iDestruct "Hdeepown_s_l_rs" as (rs_spec_c) "[Hrs_spec_l Hrs_spec]".
+  iNamedPrefix "Hrs_spec" "Hrs_spec_".
+  iEval (rewrite Hsel_eq) in "Hrs_spec_Hdeepown_selector_some".
+  wp_auto_keep.
+  wp_apply_keep (wp_LabelSelectorAsSelector with "[$Hrs_spec_Hdeepown_selector_some]").
+  { iSplit; iPureIntro; [exact Hsel_valid|]. apply Hget_Hextra_valid. exact Hsel_eq. }
+  iIntros (selector) "(Hrs_spec_Hdeepown_selector_some & #Hselector)".
+  iAssert (ReplicaSetSpecV.deepown rs_spec_c rs_get.(ReplicaSetV.Spec') 1)
+    with "[Hrs_spec_Hdeepown_replicas_some Hrs_spec_Hdeepown_selector_some Hrs_spec_Hdeepown_template]"
+    as "Hrs_spec".
+  { rewrite /ReplicaSetSpecV.deepown /named Hsel_eq.
+    iFrame. iFrame "%". iPureIntro.
+    rewrite Hsel_eq in Hrs_spec_Hdeepown_selector_none.
+    exact Hrs_spec_Hdeepown_selector_none. }
+  iAssert (ReplicaSetSpecV.deepown_l (ReplicaSetV.spec_ptr rs_l) rs_get.(ReplicaSetV.Spec') 1)
+    with "[Hrs_spec_l Hrs_spec]" as "Hdeepown_s_l_rs".
+  { iExists rs_spec_c. iFrame. }
+  wp_auto_keep.
   assert (ObjectMetaV.valid ReplicaSetV.kind rs_get.(ReplicaSetV.ObjectMeta')) as Hrs_get_meta_valid.
   { destruct Hget_Hvalid' as (_ & _ & Hvalid_meta & _). exact Hvalid_meta. }
   pose proof Hget_Hmeta_eq as Hget_Hmeta_fields.
@@ -150,25 +173,83 @@ Proof.
   { symmetry. exact Hget_Huid_eq. }
   iEval (rewrite Hrs_key_eq Hrs_uid_eq) in "Hown_children_frag".
   iEval (rewrite Hrs_key_eq Hrs_uid_eq) in "Hown_terminating_children_frag".
-  wp_apply (common.wp_FilterPodsByOwner_uniform_combined with
-    "[$Hdeepown_m_l_rs $Hown_pod_meta_frags $Hown_children_frag
-      $Hown_terminating_children_frag]").
+  assert (rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace') =
+      rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace')) as Hrs_ns_eq.
+  { pose proof (f_equal KKey.Namespace' Hrs_key_eq) as Hns.
+    rewrite /ReplicaSetV.key /ReplicaSetV.meta_key /= in Hns. exact Hns. }
+  iEval (rewrite Hrs_ns_eq) in "Hown_pod_orphans".
+  (* allRSPods: the ReplicaSet's pods [all_pods], terminating ones included,
+     then the orphans of its namespace [orphan_list]. *)
+  wp_apply (common.wp_FilterPodsByOwner_orphans with
+    "[$Hdeepown_m_l_rs $Hown_pod_meta_frags $Hown_pod_spec_frags $Hown_children_frag
+      $Hown_terminating_children_frag $Hown_orphan_pod_frags $Hown_pod_orphans]").
   { iFrame "#".
     iPureIntro. split_and!; done. }
-  iIntros (all_sl all_ptrs all_pods dq')
-    "(Hall_sl & Hall_deepown_pods & %Hall_living_meta_perm & %Hall_valid & %Hall_nodup & %Hall_pods_len &
-      Hdeepown_m_l_rs & Hall_deletion_observed_frags & Hactive_meta_frags &
-      Hown_children_frag & Hown_terminating_children_frag)".
+  iIntros (all_sl all_ptrs all_pods orphan_list dq') "(Hall_sl & Hall_deepown_pods & %Hall_living_meta_perm &
+    %_ & %Hall_pods_len & %Hall_controlled & %Horphans_perm & %Horphan_list & %Hall_valid & %Hall_orphans_nodup &
+    Hdeepown_m_l_rs & Hall_deletion_observed_frags & Hactive_meta_frags & Hactive_spec_frags &
+    Hown_children_frag & Hown_terminating_children_frag & Hown_orphan_pod_frags & Hown_pod_orphans)".
+  assert (NoDup (PodV.key <$> all_pods)) as Hall_nodup.
+  { pose proof Hall_orphans_nodup as Hnodup'. rewrite fmap_app in Hnodup'.
+    apply list.NoDup_app in Hnodup' as (Hnodup' & _ & _). exact Hnodup'. }
   wp_auto_keep.
-  (* The pods are only read: share them between the two filters, management
-     and the status calculation. *)
+  (* The pods are only read: share them between the filters, the claim,
+     management and the status calculation. *)
   iMod (big_sepL2_persist PodV.deepown_l with "Hall_deepown_pods") as "#Hall_deepown_pods".
   { intros. apply PodV.deepown_l_persist. }
   wp_apply (common.wp_FilterActivePods with "[$Hall_sl $Hall_deepown_pods]").
   iIntros (active_sl active_ptrs) "(Hactive_sl & #Hactive_deepown_pods & Hall_sl)".
+  iEval (rewrite list.filter_app) in "Hactive_deepown_pods".
   wp_auto_keep.
-  (* Terminating pods are collected only when the feature is enabled; either way
-     only the length of the result matters. *)
+  (* The claim only reads the ReplicaSet. *)
+  iPoseProof (ReplicaSetV.deepown_l_restore _ _ _ Hrs_l_not_null with
+    "[$Hdeepown_t_l_rs $Hdeepown_m_l_rs $Hdeepown_s_l_rs $Hdeepown_st_l_rs]") as "Hdeepown_l_rs".
+  iMod (ReplicaSetV.deepown_l_persist with "Hdeepown_l_rs") as "#Hdeepown_l_rs".
+  iEval (rewrite Hrs_key_eq Hrs_uid_eq) in "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag".
+  iPoseProof (kview.own_meta_frag_equiv_except_resource_version Hget_Hmeta_eq with "Hown_rs_meta_frag")
+    as "Hown_rs_meta_frag".
+  iEval (rewrite Hget_Hspec_eq) in "Hown_rs_spec_frag".
+  iEval (rewrite Hget_Hstatus_eq) in "Hown_rs_status_frag".
+  assert (∀ pod, rs_selects rs pod ↔ rs_selects rs_get pod) as Hselects.
+  { intros pod. rewrite /rs_selects /rs_selects_meta Hget_Hspec_eq. done. }
+  iAssert ([∗ list] pod ∈ filter (rs_selects rs_get) orphan_pods, own_unreserved_key_frag γ (PodV.key pod))%I
+    as "#Hown_orphan_unreserved_key_frags_get".
+  { rewrite (list_filter_iff (rs_selects rs_get) (rs_selects rs) orphan_pods);
+      [|iExact "Hown_orphan_unreserved_key_frags"].
+    intros pod. symmetry. apply Hselects. }
+  iAssert ([∗ list] pod ∈ filter is_pod_alive all_pods,
+      own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta') ∗
+      own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
+        (ObjectSpecV.PodSpec pod.(PodV.Spec')))%I
+    with "[Hactive_meta_frags Hactive_spec_frags]" as "Hactive_frags".
+  { rewrite big_sepL_sep. iFrame. }
+  assert (PodV.key <$> filter is_pod_alive all_pods ≡ₚ PodV.key <$> pods) as Hactive_key_perm.
+  { apply pod_key_meta_perm. exact Hall_living_meta_perm. }
+  iAssert (own_children_frag γ (ReplicaSetV.key rs_get) rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
+      (list_to_set (C:=gset KKey.t) (PodV.key <$> filter is_pod_alive all_pods)))%I
+    with "[Hown_children_frag]" as "Hown_children_frag".
+  { rewrite Hactive_key_perm. iExact "Hown_children_frag". }
+  (* activePods, err := claimPods(ctx, kubeClient, rs, selector, allActivePods) *)
+  wp_apply (wp_claimPods γ l ctx kube_client rs_l rs_get sel selector active_sl active_ptrs
+    (filter is_pod_alive all_pods) (filter is_pod_alive orphan_list) orphan_pods dq 1 with
+    "[$Hactive_sl $Hown_rs_meta_frag $Hown_rs_spec_frag $Hown_rs_status_frag $Hactive_frags
+      $Hown_orphan_pod_frags $Hown_pod_orphans $Hown_children_frag]").
+  { iFrame "#". iPureIntro. split_and!.
+    - exact Hsel_eq.
+    - apply list.Forall_forall. intros pod Hpod.
+      apply list_elem_of_filter in Hpod as [Halive Hpod]. split; [|exact Halive].
+      rewrite list.Forall_forall in Hall_controlled. by apply Hall_controlled.
+    - apply Forall_forall. intros pod Hpod.
+      apply list_elem_of_In, list_elem_of_filter in Hpod as [Halive Hpod].
+      apply list_elem_of_In in Hpod.
+      rewrite Forall_forall in Horphan_list.
+      destruct (Horphan_list pod Hpod) as [Hparent Hns]. done.
+    - exact Horphans_perm. }
+  iIntros (claimed_sl claimed_ptrs released adopted) "Hclaim". iNamed "Hclaim".
+  iRename "Hsl" into "Hactive_sl".
+  wp_auto_keep.
+  (* Terminating pods are collected only when the feature is enabled; their
+     count only feeds the status, whose write may be rejected here. *)
   iAssert (is_pkg_init controller) as "#Hcontroller_init".
   { iPkgInit. }
   wp_bind (if: _ then _ else do: #())%E.
@@ -176,11 +257,12 @@ Proof.
       ∃ (term_sl : slice.t) (term_ptrs : list loc),
         "terminatingPods" ∷ terminatingPods_ptr ↦ term_sl ∗
         "Hterm_sl" ∷ term_sl ↦* term_ptrs ∗
-        "%Hterm_len" ∷ ⌜ length term_ptrs ≤ length all_ptrs ⌝ ∗
         "Hall_sl" ∷ all_sl ↦* all_ptrs ∗
         "allRSPods" ∷ allRSPods_ptr ↦ all_sl ∗
+        "rs" ∷ rs_ptr ↦ rs_l ∗
+        "selector" ∷ selector_ptr ↦ selector ∗
         "controllerFeatures" ∷ controllerFeatures_ptr ↦ controller_features)%I
-    with "[terminatingPods Hall_sl allRSPods controllerFeatures]").
+    with "[terminatingPods Hall_sl allRSPods rs selector controllerFeatures]").
   { wp_bind (MethodResolve featuregate.FeatureGate "Enabled"%go
       (![featuregate.FeatureGate] #(global_addr utilfeature.DefaultFeatureGate)) _)%E.
     iApply wp_DefaultFeatureGate_Enabled; first iPkgInit.
@@ -188,17 +270,20 @@ Proof.
     destruct gate; wp_auto_keep;
       [destruct (upstreamrs.ReplicaSetControllerFeatures.EnableStatusTerminatingReplicas'
         controller_features); wp_auto_keep|].
-    - wp_apply (wp_FilterTerminatingPods with "[$Hall_sl $Hall_deepown_pods]").
-      iIntros (term_sl term_ptrs) "(Hterm_sl & %Hterm_len & Hall_sl & _)". wp_auto_keep.
-      iSplit; first done. iExists term_sl, term_ptrs. iFrame. done.
-    - iSplit; first done. iExists slice.nil, []. iFrame.
-      iSplitR; first iApply own_slice_nil. iPureIntro. simpl. lia.
-    - iSplit; first done. iExists slice.nil, []. iFrame.
-      iSplitR; first iApply own_slice_nil. iPureIntro. simpl. lia. }
+    - wp_apply (wp_FilterTerminatingPods_kept with "[$Hall_sl $Hall_deepown_pods]").
+      iIntros (kept_sl kept_ptrs kept_pods) "(Hkept_sl & #Hkept_deepown_pods & _ & Hall_sl)".
+      wp_auto_keep.
+      wp_apply (wp_FilterClaimedPods_rs rs_l rs_get selector (LabelSelectorV.matches sel) with
+        "[$Hkept_sl $Hdeepown_l_rs $Hselector $Hkept_deepown_pods]").
+      iIntros (term_sl term_ptrs term_pods) "(Hterm_sl & _ & _ & _ & Hkept_sl)".
+      wp_auto_keep.
+      iSplit; first done. iExists term_sl, term_ptrs. iFrame.
+    - iSplit; first done. iExists slice.nil, []. iFrame. iApply own_slice_nil.
+    - iSplit; first done. iExists slice.nil, []. iFrame. iApply own_slice_nil. }
   iIntros (v) "(-> & H)". iNamed "H".
   wp_auto_keep.
-  assert (PodV.key <$> filter is_pod_alive all_pods ≡ₚ PodV.key <$> pods) as Hactive_key_perm.
-  { apply pod_key_meta_perm. exact Hall_living_meta_perm. }
+  (* The claimed pods as stored: the live pods the selector matches, then the
+     adopted ones. *)
   iAssert (([∗ list] pod ∈ filter is_pod_alive all_pods,
       own_unreserved_key_frag γ (PodV.key pod)))%I
     with "[Hown_pod_unreserved_key_frags]" as "#Hall_unreserved_key_frags".
@@ -208,44 +293,29 @@ Proof.
     iEval (rewrite (own_unreserved_key_frag_list_as_keys γ pods))
       in "Hown_pod_unreserved_key_frags".
     iExact "Hown_pod_unreserved_key_frags". }
-  assert (list_to_set (C:=gset KKey.t) (PodV.key <$> filter is_pod_alive all_pods) =
-      list_to_set (C:=gset KKey.t) (PodV.key <$> pods)) as Hchildren_keys_eq.
-  { rewrite Hactive_key_perm. done. }
+  iDestruct (big_sepL_filter_partition (rs_selects rs_get)
+    (λ pod, own_unreserved_key_frag γ (PodV.key pod)) (filter is_pod_alive all_pods)
+    with "Hall_unreserved_key_frags") as "[#Hkept_unreserved_key_frags _]".
+  iAssert ([∗ list] pod ∈ filter (rs_selects rs_get) (filter is_pod_alive all_pods) ++ adopted,
+      own_unreserved_key_frag γ (PodV.key pod))%I as "#Hactive_unreserved_key_frags".
+  { rewrite big_sepL_app. iFrame "#". }
   iAssert (own_children_frag γ (ReplicaSetV.key rs_get)
       rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.UID') 1
-      (list_to_set (C:=gset KKey.t) (PodV.key <$> (filter is_pod_alive all_pods ++ []))))%I
+      (list_to_set (C:=gset KKey.t) (PodV.key <$> ((filter (rs_selects rs_get) (filter is_pod_alive all_pods) ++ adopted) ++ []))))%I
     with "[Hown_children_frag]" as "Hown_children_frag".
-  { rewrite app_nil_r Hchildren_keys_eq.
-    iExact "Hown_children_frag". }
+  { rewrite app_nil_r. iExact "Hown_children_frag". }
+  (* if rs.DeletionTimestamp == nil: holding its meta fragment, the ReplicaSet
+     is not being deleted. *)
+  iPoseProof (ReplicaSetV.deepown_l_split with "Hdeepown_l_rs") as "(_ & _ & Hdeepown_m_l_rs & _ & _)".
   iDestruct "Hdeepown_m_l_rs" as (rs_meta_c) "[Hrs_meta_l Hdeepown_m_rs]".
   iNamedPrefix "Hdeepown_m_rs" "Hrs_meta_".
   assert (rs_meta_c.(v1.ObjectMeta.DeletionTimestamp') = null) as Hrs_deletion_timestamp_null.
   { apply Hrs_meta_Hdeepown_deletiontimestamp_none.
     rewrite Hget_Hdeletion_timestamp_eq.
     exact Hdeletion_timestamp_eq. }
-  assert (rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.DeletionTimestamp') = None)
-    as Hdeletion_timestamp_eq_get.
-  { rewrite Hget_Hdeletion_timestamp_eq.
-    exact Hdeletion_timestamp_eq. }
   wp_auto_keep.
   rewrite Hrs_deletion_timestamp_null.
   wp_auto_keep.
-  iEval (rewrite Hdeletion_timestamp_eq_get) in "Hrs_meta_Hdeepown_deletiontimestamp_some".
-  iAssert (ObjectMetaV.deepown rs_meta_c rs_get.(ReplicaSetV.ObjectMeta') 1)
-    with "[Hrs_meta_Hdeepown_creationtimestamp
-      Hrs_meta_Hdeepown_deletiongraceperiodseconds_some
-      Hrs_meta_Hdeepown_labels_some Hrs_meta_Hdeepown_annotations_some
-      Hrs_meta_Hdeepown_ownerreferences Hrs_meta_Hdeepown_finalizers_some
-      Hrs_meta_Hdeepown_managedfields
-      Hrs_meta_Hdeepown_finalizers_cap]" as "Hdeepown_m_rs".
-  { rewrite /ObjectMetaV.deepown Hdeletion_timestamp_eq_get.
-    iFrame "%". iFrame. done. }
-  iAssert (ObjectMetaV.deepown_l (ReplicaSetV.objectmeta_ptr rs_l) rs_get.(ReplicaSetV.ObjectMeta') 1)
-    with "[Hrs_meta_l Hdeepown_m_rs]" as "Hdeepown_m_l_rs".
-  { iExists rs_meta_c. iFrame. }
-  iPoseProof (ReplicaSetV.deepown_l_restore _ _ _ Hrs_l_not_null with
-    "[$Hdeepown_t_l_rs $Hdeepown_m_l_rs $Hdeepown_s_l_rs $Hdeepown_st_l_rs]") as
-    "Hdeepown_l_rs".
   pose proof (ReplicaSetSpecV.valid_replicas _ Hrs_spec_valid) as (n & Hreplicas_eq & _).
   assert (rs_get.(ReplicaSetV.Spec').(ReplicaSetSpecV.Replicas') = Some n) as Hreplicas_eq_get.
   { rewrite <-Hget_Hspec_eq. exact Hreplicas_eq. }
@@ -256,21 +326,34 @@ Proof.
       rs_get.(ReplicaSetV.Spec').(ReplicaSetSpecV.Template').(PodTemplateSpecV.ObjectMeta').(ObjectMetaV.Finalizers'))
     as Hrs_get_template_finalizers_valid.
   { rewrite <-Hget_Hspec_eq. exact Hrs_template_finalizers_valid. }
-  assert (NoDup (PodV.key <$> filter is_pod_alive all_pods)) as Hactive_nodup.
-  { eapply sublist_NoDup; first exact Hall_nodup.
-    apply fmap_sublist, sublist_filter. }
-  (* manageReplicas only reads the ReplicaSet and returns it. *)
-  iMod (ReplicaSetV.deepown_l_persist with "Hdeepown_l_rs") as "Hdeepown_l_rs".
-  wp_apply (wp_manageReplicas γ l ctx kube_client burst active_sl rs_l active_ptrs
-    (filter is_pod_alive all_pods) []
-    rs_get n terminating_bound with
-    "[$Hactive_sl $Hactive_deepown_pods $Hdeepown_l_rs $Hactive_meta_frags $Hown_children_frag
-      $Hown_terminating_children_frag]").
+  iDestruct (big_sepL_sep with "Hown_claimed_frags") as "[Hclaimed_meta_frags Hclaimed_spec_frags]".
+  iPoseProof (kview.own_meta_list_no_dup PodV.key PodV.ObjectMeta' with "Hclaimed_meta_frags")
+    as "%Hactive_nodup".
+  iAssert ([∗ list] pod ∈ filter (rs_selects rs_get) (filter is_pod_alive all_pods) ++ adopted,
+      own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta') ∗
+      own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
+        (ObjectSpecV.PodSpec pod.(PodV.Spec')))%I
+    with "[Hclaimed_meta_frags Hclaimed_spec_frags]" as "Hown_claimed_frags".
+  { rewrite big_sepL_sep. iFrame. }
+  assert (Forall is_pod_alive adopted) as Hadopted_alive.
+  { eapply Forall2_Forall_r; [exact Hadopted|].
+    apply list.Forall_forall. intros copy _ pod (_ & _ & _ & _ & Halive & _). exact Halive. }
+  wp_apply (wp_manageReplicas_claimed γ l ctx kube_client burst claimed_sl rs_l claimed_ptrs
+    (filter (rs_selects rs_get) (filter is_pod_alive all_pods) ++ filter (rs_selects rs_get) (filter is_pod_alive orphan_list))
+    (filter (rs_selects rs_get) (filter is_pod_alive all_pods) ++ adopted) [] rs_get n terminating_bound with
+    "[$Hclaimed_sl $Hdeepown_l_rs $Hown_claimed_frags $Hown_children_frag $Hown_terminating_children_frag]").
   { iFrame "#".
     iPureIntro. split_and!.
+    - apply Forall2_app.
+      + apply Forall_Forall2_diag, list.Forall_forall. intros pod _. done.
+      + eapply Forall2_impl; [|exact Hadopted]. intros copy pod (Hkey & Huid & _).
+        split; symmetry; assumption.
     - done.
     - done.
-    - intros pod Hpod. apply list_elem_of_filter in Hpod as [Halive _]. exact Halive.
+    - intros pod Hpod. apply elem_of_app in Hpod as [Hpod|Hpod].
+      + apply list_elem_of_filter in Hpod as [_ Hpod].
+        apply list_elem_of_filter in Hpod as [Halive _]. exact Halive.
+      + rewrite list.Forall_forall in Hadopted_alive. by apply Hadopted_alive.
     - done.
     - done.
     - done.
@@ -278,16 +361,14 @@ Proof.
     - lia.
     - rewrite app_nil_r. exact Hactive_nodup. }
   iIntros (pods_managed) "(%Hmanaged_len & %Hmanaged_alive & Hhas_terminating_children &
-    Hmanaged_meta_frags & #Hmanaged_unreserved_key_frags &
-    Hown_children_frag & (%active_ptrs' & %active_pods' & Hactive_sl & #Hactive_deepown_pods' &
-      %Hactive_perm) & Hdeepown_l_rs)".
+    Hmanaged_frags & #Hmanaged_unreserved_key_frags &
+    Hown_children_frag & (%active_ptrs' & %active_copies' & Hclaimed_sl & #Hactive_deepown_pods' &
+      %Hactive_perm) & _)".
   iDestruct "Hhas_terminating_children" as (terminating_bound') "Hown_terminating_children_frag".
+  iDestruct (big_sepL_sep with "Hmanaged_frags") as "[Hmanaged_meta_frags Hmanaged_spec_frags]".
   wp_auto_keep.
-  iEval (rewrite app_nil_r) in "Hown_children_frag".
-  iEval (rewrite -Hrs_key_eq -Hrs_uid_eq) in "Hown_children_frag".
+  iEval (rewrite app_nil_r -Hrs_key_eq -Hrs_uid_eq) in "Hown_children_frag".
   iEval (rewrite -Hrs_key_eq -Hrs_uid_eq) in "Hown_terminating_children_frag".
-  iPoseProof (kview.own_meta_list_no_dup PodV.key PodV.ObjectMeta'
-    with "Hmanaged_meta_frags") as "%Hpods'_nodup".
   (* rs = rs.DeepCopy() *)
   iDestruct "Hdeepown_l_rs" as (rs_phy) "[Hrs_l Hrs]".
   wp_apply (wp_ReplicaSet__DeepCopy with "[$Hrs_l $Hrs]").
@@ -298,10 +379,10 @@ Proof.
   rewrite Hclock. iApply (wp_RealClock__Now with "[//]"). iNext. iIntros (now) "_". wp_auto_keep.
   iDestruct "Hcopy" as (copy_phy) "[Hcopy_l Hcopy]".
   wp_apply (wp_calculateStatus_no_manage_error with
-    "[$Hcopy_l $Hcopy $Hactive_sl $Hactive_deepown_pods' $Hterm_sl]").
+    "[$Hcopy_l $Hcopy $Hclaimed_sl $Hactive_deepown_pods' $Hterm_sl]").
   { iPureIntro. split; first exact Hrs_get_valid.
     rewrite -Hget_Hspec_eq. exact Hlabels_bound. }
-  iIntros (status_c status) "(Hcopy_l & Hcopy & #Hstatus & Hactive_sl & _ & Hterm_sl &
+  iIntros (status_c status) "(Hcopy_l & Hcopy & #Hstatus & Hclaimed_sl & _ & Hterm_sl &
     %Hstatus_replicas & %Hstatus_og & %Hstatus_valid)".
   wp_auto_keep.
   (* updateReplicaSetStatus(kubeClient.AppsV1().ReplicaSets(rs.Namespace), rs, newStatus) *)
@@ -314,52 +395,144 @@ Proof.
   iPoseProof (wp_AppsV1_ReplicaSets kube_client
     rs_get.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Namespace')) as "Hrs_client".
   iApply ("Hrs_client" with "[//]"). iNext. iIntros (c) "#Hclient". wp_auto_keep.
-  iEval (rewrite Hrs_key_eq Hrs_uid_eq) in "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag".
-  iPoseProof (kview.own_meta_frag_equiv_except_resource_version Hget_Hmeta_eq with "Hown_rs_meta_frag") as "Hown_rs_meta_frag".
-  iEval (rewrite Hget_Hspec_eq) in "Hown_rs_spec_frag".
-  iEval (rewrite Hget_Hstatus_eq) in "Hown_rs_status_frag".
   (* The computed status may be invalid (a pod count may overflow int32), so the
      write may be rejected; the ReplicaSet's fragments come back either way. *)
   wp_apply (wp_updateReplicaSetStatus_general γ l c copy_l copy_phy rs_get status_c status dq
     with "[$Hcopy_l $Hcopy $Hown_rs_meta_frag $Hown_rs_spec_frag $Hown_rs_status_frag]").
   { iFrame "#". iPureIntro. done. }
   iIntros (result_l err rs') "(%Hchanged & Hown_rs_meta_frag & Hown_rs_spec_frag & Hown_rs_status_frag)".
-  destruct Hchanged as (Hmeta_changed & _).
+  destruct Hchanged as (Hmeta_changed & Hspec_changed).
   (* The ReplicaSet after the sync: the stored one, [rs'] with [rs]'s TypeMeta. *)
   set rs'' := rs' <| ReplicaSetV.TypeMeta' := rs.(ReplicaSetV.TypeMeta') |>.
+  assert (rs'.(ReplicaSetV.Spec') = rs.(ReplicaSetV.Spec')) as Hspec_changed'.
+  { rewrite Hspec_changed Hget_Hspec_eq. done. }
   assert (length (filter is_pod_alive (filter is_pod_alive all_pods)) = length (filter is_pod_alive pods))
     as Hliving_active_len.
   { apply active_pod_count_erased_meta_perm. exact Hall_living_meta_perm. }
   assert (length (filter is_pod_alive pods) = length (filter is_pod_alive all_pods)) as Hpods_active_len.
   { rewrite -Hliving_active_len. f_equal. apply filter_all.
     intros pod Hpod. apply list_elem_of_filter in Hpod as [Halive _]. exact Halive. }
-  (* The managed pods are at most as many as the larger of the live pods and
-     the int32 desired count. *)
-  assert (Z.of_nat (length pods_managed) < 2 ^ 31) as Hpods'_bound.
-  { rewrite Hmanaged_len -Hpods_active_len.
-    pose proof (capped_replica_count_le_max (length (filter is_pod_alive pods)) (sint.nat n) (sint.nat burst))
-      as Hle.
-    pose proof (length_filter is_pod_alive pods) as Hfilter_len.
+  assert (length adopted = length (filter (rs_selects rs) orphan_pods)) as Hadopted_len'.
+  { rewrite Hadopted_len. f_equal. apply list_filter_iff. intros pod. symmetry. apply Hselects. }
+  (* The new orphans: those the selector does not match, and the released pods,
+     whose labels the selector does not match either. *)
+  assert (∀ pod, ¬ rs_selects rs_get pod ↔ ¬ rs_selects rs pod) as Hnot_selects.
+  { intros pod. rewrite (Hselects pod). done. }
+  iEval (rewrite (list_filter_iff _ (λ pod, ¬ rs_selects rs pod)%type orphan_pods Hnot_selects))
+    in "Hown_orphan_pod_frags Hown_pod_orphans".
+  iEval (rewrite -Hrs_ns_eq) in "Hown_pod_orphans".
+  assert (Forall (λ pod, meta_parent_ref pod.(PodV.ObjectMeta') = None ∧ ¬ rs_selects rs pod) released)
+    as Hreleased_orphans.
+  { eapply Forall2_Forall_r; [exact Hreleased|].
+    apply list.Forall_forall. intros copy Hcopy pod (_ & _ & Hlabels & _ & _ & Hparent).
+    apply list_elem_of_filter in Hcopy as [Hcopy_unselected _].
+    split; [exact Hparent|]. intros Hselected. apply Hcopy_unselected. apply Hselects.
+    rewrite /rs_selects /rs_selects_meta -Hlabels. exact Hselected. }
+  assert (filter (rs_selects rs) (filter (λ pod, ¬ rs_selects rs pod) orphan_pods ++ released) = [])
+    as Hno_selected.
+  { apply filter_none. intros pod Hpod Hselected.
+    apply elem_of_app in Hpod as [Hpod|Hpod].
+    - apply list_elem_of_filter in Hpod as [Hnot_selected _]. done.
+    - rewrite list.Forall_forall in Hreleased_orphans. by destruct (Hreleased_orphans pod Hpod). }
+  iAssert ([∗ list] pod ∈ filter (rs_selects rs) (filter (λ pod, ¬ rs_selects rs pod)%type orphan_pods ++ released),
+      own_unreserved_key_frag γ (PodV.key pod))%I as "Hno_unreserved_key_frags".
+  { rewrite Hno_selected. done. }
+  (* The managed pods and the new orphans hold full meta fragments, so no key is
+     both. *)
+  iDestruct (big_sepL_sep with "Hown_orphan_pod_frags") as "[Horphan_meta_frags Horphan_spec_frags]".
+  iAssert ([∗ list] pod ∈ pods_managed ++ (filter (λ pod, ¬ rs_selects rs pod)%type orphan_pods ++ released),
+      own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta'))%I
+    with "[Hmanaged_meta_frags Horphan_meta_frags]" as "Hall_meta_frags'".
+  { rewrite big_sepL_app. iFrame. }
+  iPoseProof (kview.own_meta_list_no_dup PodV.key PodV.ObjectMeta' with "Hall_meta_frags'")
+    as "%Hall'_nodup".
+  iDestruct (big_sepL_app with "Hall_meta_frags'") as "[Hmanaged_meta_frags Horphan_meta_frags]".
+  iAssert ([∗ list] pod ∈ filter (λ pod, ¬ rs_selects rs pod)%type orphan_pods ++ released,
+      own_meta_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1 pod.(PodV.ObjectMeta') ∗
+      own_spec_frag γ (PodV.key pod) pod.(PodV.ObjectMeta').(ObjectMetaV.UID') 1
+        (ObjectSpecV.PodSpec pod.(PodV.Spec')))%I
+    with "[Horphan_meta_frags Horphan_spec_frags]" as "Hown_orphan_pod_frags".
+  { rewrite big_sepL_sep. iFrame. }
+  rewrite fmap_app in Hall'_nodup.
+  apply list.NoDup_app in Hall'_nodup as (Hpods'_nodup & _ & Horphans'_nodup).
+  (* The live pods are [pods], up to resource versions. *)
+  assert (length (filter is_pod_alive all_pods) = length pods) as Hactive_pods_len.
+  { pose proof (Permutation_length Hall_living_meta_perm) as Hlen. rewrite !length_fmap in Hlen. exact Hlen. }
+  (* The managed pods are at most as many as the larger of the claimed count
+     and the int32 desired count. *)
+  rewrite length_app in Hmanaged_len.
+  assert (Z.of_nat (length pods_managed +
+      length (filter (rs_selects rs) (filter (λ pod, ¬ rs_selects rs pod) orphan_pods ++ released))) < 2 ^ 31)
+    as Hpods'_bound.
+  { rewrite Hno_selected /= Nat.add_0_r Hmanaged_len.
+    pose proof (capped_replica_count_le_max
+      (length (filter (rs_selects rs_get) (filter is_pod_alive all_pods)) + length adopted)
+      (sint.nat n) (sint.nat burst)) as Hle.
+    pose proof (length_filter (rs_selects rs_get) (filter is_pod_alive all_pods)) as Hkept_len.
     word. }
-  iDestruct (owned_resources_after_status_update γ rs rs_get rs'
-      pods_managed (mutating_fractions dq) false
-      Hrs_key_eq Hrs_uid_eq Hmeta_changed Hpods'_nodup Hpods'_bound
-    with "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag Hmanaged_meta_frags Hmanaged_unreserved_key_frags
-      Hown_children_frag [$Hown_terminating_children_frag]")
+  iDestruct (owned_resources_after_status_update γ rs rs_get rs' pods_managed
+      (filter (λ pod, ¬ rs_selects rs pod) orphan_pods ++ released) (mutating_fractions dq) false
+      Hrs_key_eq Hrs_uid_eq Hmeta_changed Hspec_changed' Hpods'_nodup Hpods'_bound Horphans'_nodup
+    with "Hown_rs_meta_frag Hown_rs_spec_frag Hown_rs_status_frag Hmanaged_meta_frags Hmanaged_spec_frags
+      Hmanaged_unreserved_key_frags Hown_children_frag [$Hown_terminating_children_frag]
+      Hown_orphan_pod_frags Hno_unreserved_key_frags Hown_pod_orphans")
     as "Hresources".
-  assert (match_distance rs pods_managed ≤ match_distance rs pods) as Hdistance.
-  {
-  (* one sync moves the live count toward the desired count by at most [burst] *)
-    pose proof (capped_replica_count_distance (length (filter is_pod_alive all_pods)) (sint.nat n) (sint.nat burst))
-      as Hcap.
+  (* The released pods, by key, are the pods the selector does not match. *)
+  assert (∀ m, rs_selects_meta rs (ObjectMetaV.without_resource_version m) ↔ rs_selects_meta rs m)
+    as Hselects_erased.
+  { intros m. rewrite /rs_selects_meta /ObjectMetaV.without_resource_version /=. done. }
+  assert (∀ pod, ¬ rs_selects rs_get pod ↔ ¬ rs_selects_meta rs pod.(PodV.ObjectMeta')) as Hnot_selects_get.
+  { intros pod. rewrite -(Hselects pod). done. }
+  assert (∀ pod, ¬ rs_selects rs pod ↔ ¬ rs_selects_meta rs pod.(PodV.ObjectMeta')) as Hnot_selects_meta.
+  { intros pod. done. }
+  assert (PodV.key <$> released = PodV.key <$> filter (λ pod, ¬ rs_selects rs_get pod) (filter is_pod_alive all_pods))
+    as Hreleased_keys.
+  { apply list_eq_Forall2. rewrite Forall2_fmap. apply Forall2_flip.
+    eapply Forall2_impl; [|exact Hreleased]. intros pod pod' (Hkey & _). exact Hkey. }
+  assert (PodV.key <$> released ≡ₚ PodV.key <$> filter (λ pod, ¬ rs_selects rs pod) pods) as Hreleased_perm.
+  { rewrite Hreleased_keys (list_filter_iff _ _ (filter is_pod_alive all_pods) Hnot_selects_get)
+      (list_filter_iff _ _ pods Hnot_selects_meta).
+    assert (∀ m, ¬ rs_selects_meta rs (ObjectMetaV.without_resource_version m) ↔ ¬ rs_selects_meta rs m)
+      as Hnot_selects_erased.
+    { intros m. rewrite Hselects_erased. done. }
+    pose proof (filter_erased_meta_perm (λ m, ¬ rs_selects_meta rs m) (filter is_pod_alive all_pods) pods
+      Hnot_selects_erased Hall_living_meta_perm) as Hperm.
+    apply pod_key_meta_perm. exact Hperm. }
+  (* The claim keeps the live pods the selector matches, as many as the pods
+     the selector matches. *)
+  assert (length (filter (rs_selects rs) (filter is_pod_alive pods)) =
+      length (filter (rs_selects rs_get) (filter is_pod_alive all_pods))) as Hkept_count.
+  { assert (∀ pod, pod ∈ pods → is_pod_alive pod) as Hpods_alive.
+    { apply (filter_length_eq_all is_pod_alive).
+      pose proof (active_pod_count_erased_meta_perm _ _ Hall_living_meta_perm) as Hlen.
+      rewrite (filter_all is_pod_alive (filter is_pod_alive all_pods)) in Hlen;
+        [intros pod Hpod; by apply list_elem_of_filter in Hpod as [? _]|lia]. }
+    rewrite (filter_all is_pod_alive pods Hpods_alive).
+    assert (∀ pod, rs_selects rs_get pod ↔ rs_selects_meta rs pod.(PodV.ObjectMeta')) as Hselects_get.
+    { intros pod. rewrite -(Hselects pod). done. }
+    assert (∀ pod, rs_selects rs pod ↔ rs_selects_meta rs pod.(PodV.ObjectMeta')) as Hselects_meta.
+    { intros pod. done. }
+    rewrite (list_filter_iff _ _ (filter is_pod_alive all_pods) Hselects_get)
+      (list_filter_iff _ _ pods Hselects_meta).
+    pose proof (filter_erased_meta_perm (rs_selects_meta rs) _ _ Hselects_erased Hall_living_meta_perm)
+      as Hperm.
+    apply Permutation_length in Hperm. rewrite !length_fmap in Hperm. symmetry. exact Hperm. }
+  assert (match_distance rs pods_managed ≤ claim_distance rs pods orphan_pods) as Hdistance.
+  { (* the claim keeps the pods the selector matches and adopts the selected
+       orphans; one sync then moves the live count toward the desired count by
+       at most [burst] *)
+    pose proof (capped_replica_count_distance
+      (length (filter (rs_selects rs_get) (filter is_pod_alive all_pods)) + length adopted)
+      (sint.nat n) (sint.nat burst)) as Hcap.
     rewrite -Hmanaged_len in Hcap.
     rewrite !(match_distance_replica_distance _ _ n Hreplicas_eq).
-    rewrite (filter_all is_pod_alive pods_managed Hmanaged_alive) Hpods_active_len.
-    lia.
-  }
+    rewrite /claim_distance Hreplicas_eq /=.
+    rewrite (filter_all is_pod_alive pods_managed Hmanaged_alive) Hkept_count -Hadopted_len'.
+    unfold replica_distance in Hcap |- *. lia. }
   (* if err != nil { return err }; return manageReplicasErr *)
   destruct err as [err_ok|]; wp_auto;
-    iApply ("HΦ" $! rs'' pods_managed with "[$Hresources //]").
+    iApply ("HΦ" $! rs'' pods_managed released with "[$Hresources]");
+    iPureIntro; split_and!; done.
 Qed.
 
 End proof.

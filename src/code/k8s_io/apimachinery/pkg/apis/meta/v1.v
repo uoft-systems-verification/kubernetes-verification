@@ -1004,6 +1004,22 @@ Definition Convert_url_Values_To_v1_UpdateOptions {ext : ffi_syntax} {go_gctx : 
 
 Definition RegisterDefaults {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "k8s.io/apimachinery/pkg/apis/meta/v1.RegisterDefaults"%go.
 
+(* IsControlledBy checks if the  object has a controllerRef set to the given owner
+
+   go: controller_ref.go:25:6 *)
+Definition IsControlledByⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "obj" "owner",
+    exception_do (let: "owner" := (GoAlloc Object "owner") in
+    let: "obj" := (GoAlloc Object "obj") in
+    let: "ref" := (GoAlloc (go.PointerType OwnerReference) (GoZeroVal (go.PointerType OwnerReference) #())) in
+    let: "$r0" := (let: "$a0" := (![Object] "obj") in
+    (FuncResolve GetControllerOfNoCopy [] #()) "$a0") in
+    do:  ("ref" <-[go.PointerType OwnerReference] "$r0");;;
+    (if: Convert go.untyped_bool go.bool ((![go.PointerType OwnerReference] "ref") =⟨go.PointerType OwnerReference⟩ (Convert go.untyped_nil (go.PointerType OwnerReference) UntypedNil))
+    then return: (#false)
+    else do:  #());;;
+    return: ((![code.k8s_io.apimachinery.pkg.types.types.UID] (StructFieldRef OwnerReference "UID"%go (![go.PointerType OwnerReference] "ref"))) =⟨code.k8s_io.apimachinery.pkg.types.types.UID⟩ ((MethodResolve Object "GetUID"%go (![Object] "owner")) #()))).
+
 (* GetControllerOf returns a pointer to a copy of the controllerRef if controllee has a controller
 
    go: controller_ref.go:34:6 *)
@@ -3063,6 +3079,7 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
   #[global] Condition_instance :: Condition_Assumptions;
   #[global] WatchEvent_instance :: WatchEvent_Assumptions;
   #[global] InternalEvent_instance :: InternalEvent_Assumptions;
+  #[global] IsControlledBy_unfold :: FuncUnfold IsControlledBy [] (IsControlledByⁱᵐᵖˡ);
   #[global] GetControllerOf_unfold :: FuncUnfold GetControllerOf [] (GetControllerOfⁱᵐᵖˡ);
   #[global] GetControllerOfNoCopy_unfold :: FuncUnfold GetControllerOfNoCopy [] (GetControllerOfNoCopyⁱᵐᵖˡ);
   #[global] NewControllerRef_unfold :: FuncUnfold NewControllerRef [] (NewControllerRefⁱᵐᵖˡ);
