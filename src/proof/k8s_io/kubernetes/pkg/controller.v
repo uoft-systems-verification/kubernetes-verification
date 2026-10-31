@@ -273,8 +273,6 @@ Proof.
   rewrite length_fmap in Hlen. split; [symmetry|]; done.
 Qed.
 
-(* Less reads the creation timestamps, whose views are pure. *)
-Local Transparent MetaTimeView.TimeV.deepown.
 Lemma wp_ReplicaSetsByCreationTimestamp__Less dq sl entries (i j : w64) x y :
   0 ≤ sint.Z i → 0 ≤ sint.Z j → entries !! sint.nat i = Some x → entries !! sint.nat j = Some y →
   {{{ rs_by_creation_contents dq sl entries }}}
@@ -306,7 +304,8 @@ Proof.
       with "Hf_ObjectMeta") as "[Hom %Hom_nn]".
     iNamedPrefix "Hom" "Hom_".
     iNamed "Hc". iNamedPrefix "Hdeepown_objectmeta" "Hm_".
-    iEval (rewrite /MetaTimeView.TimeV.deepown) in "Hm_Hdeepown_creationtimestamp".
+    with_strategy transparent [MetaTimeView.TimeV.deepown]
+      iEval (rewrite /MetaTimeView.TimeV.deepown) in "Hm_Hdeepown_creationtimestamp".
     iDestruct "Hm_Hdeepown_creationtimestamp" as %Hct.
     iEval (rewrite Hm_Hdeepown_name) in "Hom_Name".
     iExists _. iFrame "Hom_CreationTimestamp Hom_Name".
@@ -331,12 +330,12 @@ Proof.
   assert (entries.*1 !! sint.nat j = Some y.1) as Hpy by (rewrite list_lookup_fmap Hy //).
   pose proof (lookup_lt_Some _ _ _ Hx) as Hi_lt.
   pose proof (lookup_lt_Some _ _ _ Hy) as Hj_lt.
-  wp_auto.
+  wp_auto_keep.
   (* Every [rsList[k]] in Less reloads the slice element. *)
   Local Ltac load_entry k Hp :=
     rewrite -> decide_True by word;
     iDestruct (own_slice_elem_acc (sint.Z k) with "Hsl") as "[Hptr Hrestore]"; [word|exact Hp|];
-    wp_auto;
+    wp_auto_keep;
     iDestruct ("Hrestore" with "Hptr") as "Hsl";
     iEval (rewrite (list_insert_id _ _ _ Hp)) in "Hsl".
   load_entry j Hpy. load_entry i Hpx.
@@ -356,14 +355,14 @@ Proof.
         change (DfracBoth (q/2) ⋅ DfracBoth (q/2)) with (DfracBoth (q/2 + q/2)).
         rewrite Qp.div_2 //. }
     iEval (rewrite Hdh) in "Hctx". iDestruct "Hctx" as "[Hctx1 Hctx2]".
-    wp_apply (New.proof.k8s_io.apimachinery.pkg.apis.meta.v1.wp_Time__Equal
+    wp_apply_keep (New.proof.k8s_io.apimachinery.pkg.apis.meta.v1.wp_Time__Equal
       (package_sem:=controller_meta_v1_sem) with "[$Hmeta $Hctx1 $Hctx2]").
     iIntros "[Hctx1 Hctx2]".
     iCombine "Hctx1 Hctx2" as "Hctx". iEval (rewrite -Hdh) in "Hctx".
     assert (time_equal (TimeV.Time' (TimeV.of_go ctx)) (TimeV.Time' (TimeV.of_go ctx)))
       as Hrefl by (rewrite /time_equal; case_decide; done).
     rewrite (bool_decide_eq_true_2 _ Hrefl).
-    wp_auto. load_entry i Hpx. load_entry j Hpy.
+    wp_auto_keep. load_entry i Hpx. load_entry j Hpy.
     iDestruct ("Hclose_x" with "Hctx Hnx") as "Hex".
     iSpecialize ("Hrest" with "Hex").
     iSpecialize ("HΦ" with "[$Hinit $Hsl $Hrest]").
@@ -375,11 +374,11 @@ Proof.
     rewrite decide_False; [congruence|].
     iDestruct ("Hacc" with "Hex") as (ctx) "(Hctx & Hnx & %Hctx & Hclose_x)".
     iDestruct ("Hacc" with "Hey") as (cty) "(Hcty & Hny & %Hcty & Hclose_y)".
-    wp_apply (New.proof.k8s_io.apimachinery.pkg.apis.meta.v1.wp_Time__Equal
+    wp_apply_keep (New.proof.k8s_io.apimachinery.pkg.apis.meta.v1.wp_Time__Equal
       (package_sem:=controller_meta_v1_sem) with "[$Hmeta $Hctx $Hcty]").
     iIntros "[Hctx Hcty]".
     rewrite Hctx Hcty.
-    wp_if_destruct.
+    wp_if_destruct_keep.
     + (* Equal times: compare names. *)
       load_entry i Hpx. load_entry j Hpy.
       iDestruct ("Hclose_x" with "Hctx Hnx") as "Hex".
@@ -393,7 +392,7 @@ Proof.
       rewrite /rs_entry_created_before /rs_created_before decide_True //.
     + (* Different times: Before decides. *)
       load_entry j Hpy. load_entry i Hpx.
-      wp_apply (New.proof.k8s_io.apimachinery.pkg.apis.meta.v1.wp_Time__Before
+      wp_apply_keep (New.proof.k8s_io.apimachinery.pkg.apis.meta.v1.wp_Time__Before
         (package_sem:=controller_meta_v1_sem) with "[$Hmeta $Hctx $Hcty]").
       iIntros "[Hctx Hcty]".
       rewrite Hctx Hcty.
@@ -404,11 +403,9 @@ Proof.
         with "[Hex Hrest]" as "Hentries".
       { iApply big_sepL_delete; [exact Hx|]. iFrame. }
       iSpecialize ("HΦ" with "[$Hinit $Hsl $Hentries]").
-      wp_pures. iExactEq "HΦ". do 2 f_equal. apply bool_decide_ext.
+      wp_pures_keep. iExactEq "HΦ". do 2 f_equal. apply bool_decide_ext.
       rewrite /rs_entry_created_before /rs_created_before decide_False //.
 Qed.
-
-Local Opaque MetaTimeView.TimeV.deepown.
 
 Lemma wp_ReplicaSetsByCreationTimestamp__Swap dq sl entries (i j : w64) :
   0 ≤ sint.Z i < length entries → 0 ≤ sint.Z j < length entries →
@@ -422,14 +419,14 @@ Proof.
   destruct Hi as [Hi_nonnegative Hi_upper].
   destruct Hj as [Hj_nonnegative Hj_upper].
   wp_start as "(#Hinit & Hsl & Hentries)".
-  wp_pures.
+  wp_pures_keep.
   iDestruct (own_slice_len with "Hsl") as %[Hlen Hnonnegative].
   rewrite length_fmap in Hlen.
   assert (sint.Z (slice.len sl) = Z.of_nat (length entries)) as Hlen_Z.
   { replace (sint.Z (slice.len sl)) with
       (Z.of_nat (sint.nat (slice.len sl))) by word.
     rewrite <-Hlen. done. }
-  wp_auto.
+  wp_auto_keep.
   assert (∃ ci, (fst <$> entries) !! sint.nat i = Some ci)
     as [ci Hci_lookup].
   { apply lookup_lt_is_Some_2. rewrite length_fmap.
@@ -442,28 +439,28 @@ Proof.
     replace (Z.of_nat (sint.nat j)) with (sint.Z j) by word. exact Hj_upper. }
   rewrite -> decide_True by
     (split; [exact Hj_nonnegative|rewrite Hlen_Z; exact Hj_upper]).
-  wp_apply (wp_load_slice_index with "[$Hsl]");
+  wp_apply_keep (wp_load_slice_index with "[$Hsl]");
     [exact Hj_nonnegative|iPureIntro; exact Hcj_lookup|].
-  iIntros "Hsl". wp_auto.
+  iIntros "Hsl". wp_auto_keep.
   rewrite -> decide_True by
     (split; [exact Hi_nonnegative|rewrite Hlen_Z; exact Hi_upper]).
-  wp_apply (wp_load_slice_index with "[$Hsl]");
+  wp_apply_keep (wp_load_slice_index with "[$Hsl]");
     [exact Hi_nonnegative|iPureIntro; exact Hci_lookup|].
-  iIntros "Hsl". wp_auto.
+  iIntros "Hsl". wp_auto_keep.
   rewrite -> decide_True by
     (split; [exact Hi_nonnegative|rewrite Hlen_Z; exact Hi_upper]).
-  wp_auto.
-  wp_apply (wp_store_slice_index with "[$Hsl]").
+  wp_auto_keep.
+  wp_apply_keep (wp_store_slice_index with "[$Hsl]").
   { iPureIntro. rewrite length_fmap.
     split; [exact Hi_nonnegative|exact Hi_upper]. }
-  iIntros "Hsl". wp_auto.
+  iIntros "Hsl". wp_auto_keep.
   rewrite -> decide_True by
     (split; [exact Hj_nonnegative|rewrite Hlen_Z; exact Hj_upper]).
-  wp_auto.
-  wp_apply (wp_store_slice_index with "[$Hsl]").
+  wp_auto_keep.
+  wp_apply_keep (wp_store_slice_index with "[$Hsl]").
   { iPureIntro. rewrite length_insert length_fmap.
     split; [exact Hj_nonnegative|exact Hj_upper]. }
-  iIntros "Hsl". wp_auto.
+  iIntros "Hsl". wp_auto_keep.
   iApply "HΦ". rewrite /rs_by_creation_contents list_swap_fmap.
   iFrame "Hinit".
   iSplitL "Hsl".

@@ -200,7 +200,9 @@ Proof.
      trusted boundary. *)
   wp_pures_keep. wp_alloc rsList_ptr as "rsList".
   wp_pures_keep. wp_alloc deployment_ptr as "deployment".
-  wp_pures_keep. wp_load. wp_pures_keep.
+  (* Stop before the conversion to [sort.Interface]: stepping it with
+     [wp_pures_keep] does not terminate. *)
+  wp_pures_keep. wp_load.
   iDestruct (big_sepL2_length with "Hrss") as %Hlen0.
   (* Sort the (pointer, ReplicaSet) entries together. *)
   set entries := zip ptrs rss.
@@ -232,12 +234,14 @@ Proof.
     simplify_eq/=. exact (Hsorted i j ex ey Hij Hex Hey). }
   assert (Forall (λ rs, template_has_labels rs.(ReplicaSetV.Spec').(ReplicaSetSpecV.Template')) rss')
     as Hlabels'.
-  { rewrite /rss' -Hzip. apply Forall_forall. intros r Hr.
-    apply (Forall_forall _ rss) ; [exact (proj2 Hlabels)|].
+  { rewrite /rss' -Hzip. apply Forall_forall. intros r Hr. apply list_elem_of_In in Hr.
+    apply (proj1 (Forall_forall _ rss) (proj2 Hlabels)). apply list_elem_of_In.
     rewrite -Hsnd. apply list_elem_of_fmap in Hr as [e [-> He]].
     apply list_elem_of_fmap_2. rewrite Hperm. rewrite Hzip in He. exact He. }
   clear Hperm Hsorted Hzip Hfst Hsnd Htimes.
-  clear entries. clearbody ptrs' rss'. clear ptrs rss Hlen0.
+  (* HΦ still mentions the unsorted lists, so keep them under other names. *)
+  clearbody ptrs' rss'. unfold entries in *. clear entries Hlen0.
+  rename ptrs into ptrs0, rss into rss0.
   rename ptrs' into ptrs. rename rss' into rss.
   destruct Hlabels as [Hd_labels _]. pose proof (conj Hd_labels Hlabels') as Hlabels.
   clear Hd_labels Hlabels'.
