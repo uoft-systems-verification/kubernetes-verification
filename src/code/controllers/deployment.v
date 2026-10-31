@@ -26,8 +26,6 @@ Definition replicasOf {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string
 
 Definition replicasOfRS {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/deployment.replicasOfRS"%go.
 
-Definition findNewReplicaSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/deployment.findNewReplicaSet"%go.
-
 Definition findOldReplicaSets {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/deployment.findOldReplicaSets"%go.
 
 Definition scaleReplicaSet {ext : ffi_syntax} {go_gctx : GoGlobalContext} : go_string := "controllers/deployment.scaleReplicaSet"%go.
@@ -62,33 +60,6 @@ Definition replicasOfRSⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext
     else do:  #());;;
     return: (![go.int32] (![go.PointerType go.int32] (StructFieldRef code.k8s_io.api.apps.v1.v1.ReplicaSetSpec "Replicas"%go (StructFieldRef code.k8s_io.api.apps.v1.v1.ReplicaSet "Spec"%go (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "rs")))))).
 
-(* findNewReplicaSet returns the new RS this given deployment targets (the one
-   with the same pod template), as upstream's FindNewReplicaSet does.
-
-   TODO: upstream's FindNewReplicaSet first sorts rsList with
-   sort.Sort(controller.ReplicaSetsByCreationTimestamp(rsList)) (oldest first,
-   ties by name) and so deterministically picks the oldest match. Here the first
-   match in list order is taken. Adding the sort needs translations of
-   metav1.Time.Before/Equal, time.Time.Before/Equal, and
-   ReplicaSetsByCreationTimestamp, plus a spec for sort.Sort, none of which
-   exist yet.
-
-   go: deployment.go:58:6 *)
-Definition findNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
-  λ: "deployment" "rsList",
-    exception_do (let: "rsList" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)) "rsList") in
-    let: "deployment" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) "deployment") in
-    let: "$range" := (![go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)] "rsList") in
-    (let: "i" := (GoAlloc go.int (GoZeroVal go.int #())) in
-    slice.for_range (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) "$range" (λ: "$key" "$value",
-      do:  ("i" <-[go.int] "$key");;;
-      (if: let: "$a0" := (StructFieldRef code.k8s_io.api.apps.v1.v1.ReplicaSetSpec "Template"%go (StructFieldRef code.k8s_io.api.apps.v1.v1.ReplicaSet "Spec"%go (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] (IndexRef (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)) (![go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)] "rsList", ![go.int] "i"))))) in
-      let: "$a1" := (StructFieldRef code.k8s_io.api.apps.v1.v1.DeploymentSpec "Template"%go (StructFieldRef code.k8s_io.api.apps.v1.v1.Deployment "Spec"%go (![go.PointerType code.k8s_io.api.apps.v1.v1.Deployment] "deployment"))) in
-      (FuncResolve code.k8s_io.kubernetes.pkg.controller.deployment.util.util.EqualIgnoreHash [] #()) "$a0" "$a1"
-      then return: (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] (IndexRef (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)) (![go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)] "rsList", ![go.int] "i")))
-      else do:  #())));;;
-    return: (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) UntypedNil)).
-
 (* findOldReplicaSets returns the old replica sets targeted by the given
    Deployment, with the given slice of RSes, as upstream's FindOldReplicaSets
    does.
@@ -101,7 +72,7 @@ Definition findNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCo
    the model does not default it, so the spec would need that as a
    precondition.
 
-   go: deployment.go:79:6 *)
+   go: deployment.go:59:6 *)
 Definition findOldReplicaSetsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "deployment" "rsList",
     exception_do (let: "rsList" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)) "rsList") in
@@ -110,7 +81,7 @@ Definition findOldReplicaSetsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalC
     let: "newRS" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) #())) in
     let: "$r0" := (let: "$a0" := (![go.PointerType code.k8s_io.api.apps.v1.v1.Deployment] "deployment") in
     let: "$a1" := (![go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)] "rsList") in
-    (FuncResolve findNewReplicaSet [] #()) "$a0" "$a1") in
+    (FuncResolve code.k8s_io.kubernetes.pkg.controller.deployment.util.util.FindNewReplicaSet [] #()) "$a0" "$a1") in
     do:  ("newRS" <-[go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "$r0");;;
     let: "$range" := (![go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)] "rsList") in
     (let: "rs" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) #())) in
@@ -137,7 +108,7 @@ Definition findOldReplicaSetsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalC
    and writes *rs.Spec.Replicas directly, relying on API defaulting to make it
    non-nil; here replicasOfRS treats nil as 0 and the copy gets a fresh pointer.
 
-   go: deployment.go:101:6 *)
+   go: deployment.go:81:6 *)
 Definition scaleReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "rs" "newScale",
     exception_do (let: "newScale" := (GoAlloc go.int32 "newScale") in
@@ -173,7 +144,7 @@ Definition scaleReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCont
 (* getNewReplicaSet returns the deployment's new ReplicaSet, creating it with a
    deterministic name and the deployment's replica count if it does not exist.
 
-   go: deployment.go:117:6 *)
+   go: deployment.go:97:6 *)
 Definition getNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "rsLister" "d" "rsList",
     exception_do (let: "rsList" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)) "rsList") in
@@ -184,7 +155,7 @@ Definition getNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
     let: "existingNewRS" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) (GoZeroVal (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) #())) in
     let: "$r0" := (let: "$a0" := (![go.PointerType code.k8s_io.api.apps.v1.v1.Deployment] "d") in
     let: "$a1" := (![go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)] "rsList") in
-    (FuncResolve findNewReplicaSet [] #()) "$a0" "$a1") in
+    (FuncResolve code.k8s_io.kubernetes.pkg.controller.deployment.util.util.FindNewReplicaSet [] #()) "$a0" "$a1") in
     do:  ("existingNewRS" <-[go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "$r0");;;
     (if: Convert go.untyped_bool go.bool ((![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "existingNewRS") ≠⟨go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet⟩ (Convert go.untyped_nil (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet) UntypedNil))
     then return: (![go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet] "existingNewRS", Convert go.untyped_nil go.error UntypedNil)
@@ -257,7 +228,7 @@ Definition getNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalCon
 (* reconcileNewReplicaSet scales the new ReplicaSet to the deployment's desired
    replica count.
 
-   go: deployment.go:160:6 *)
+   go: deployment.go:140:6 *)
 Definition reconcileNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "newRS" "d",
     exception_do (let: "d" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) "d") in
@@ -282,7 +253,7 @@ Definition reconcileNewReplicaSetⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlo
 
 (* reconcileOldReplicaSets scales every old ReplicaSet down to zero.
 
-   go: deployment.go:166:6 *)
+   go: deployment.go:146:6 *)
 Definition reconcileOldReplicaSetsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "oldRSs",
     exception_do (let: "oldRSs" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)) "oldRSs") in
@@ -321,7 +292,7 @@ Definition reconcileOldReplicaSetsⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGl
 
 (* rollout performs one reconciliation step of a rollout.
 
-   go: deployment.go:181:6 *)
+   go: deployment.go:161:6 *)
 Definition rolloutⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "rsLister" "d" "rsList",
     exception_do (let: "rsList" := (GoAlloc (go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)) "rsList") in
@@ -374,7 +345,7 @@ Definition rolloutⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : v
 (* filterReplicaSetsByOwner returns the ReplicaSets in the deployment's namespace
    whose controller reference points at the deployment.
 
-   go: deployment.go:199:6 *)
+   go: deployment.go:179:6 *)
 Definition filterReplicaSetsByOwnerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "rsLister" "d",
     exception_do (let: "d" := (GoAlloc (go.PointerType code.k8s_io.api.apps.v1.v1.Deployment) "d") in
@@ -413,7 +384,7 @@ Definition filterReplicaSetsByOwnerⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoG
       else do:  #())));;;
     return: (![go.SliceType (go.PointerType code.k8s_io.api.apps.v1.v1.ReplicaSet)] "result", Convert go.untyped_nil go.error UntypedNil)).
 
-(* go: deployment.go:214:6 *)
+(* go: deployment.go:194:6 *)
 Definition syncDeploymentⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
   λ: "ctx" "kubeClient" "dLister" "rsLister" "namespace" "name",
     exception_do (let: "name" := (GoAlloc go.string "name") in
@@ -483,7 +454,6 @@ Class Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext} `{!G
 {
   #[global] replicasOf_unfold :: FuncUnfold replicasOf [] (replicasOfⁱᵐᵖˡ);
   #[global] replicasOfRS_unfold :: FuncUnfold replicasOfRS [] (replicasOfRSⁱᵐᵖˡ);
-  #[global] findNewReplicaSet_unfold :: FuncUnfold findNewReplicaSet [] (findNewReplicaSetⁱᵐᵖˡ);
   #[global] findOldReplicaSets_unfold :: FuncUnfold findOldReplicaSets [] (findOldReplicaSetsⁱᵐᵖˡ);
   #[global] scaleReplicaSet_unfold :: FuncUnfold scaleReplicaSet [] (scaleReplicaSetⁱᵐᵖˡ);
   #[global] getNewReplicaSet_unfold :: FuncUnfold getNewReplicaSet [] (getNewReplicaSetⁱᵐᵖˡ);

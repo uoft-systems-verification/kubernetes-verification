@@ -45,26 +45,6 @@ func replicasOfRS(rs *apps.ReplicaSet) int32 {
 	return *rs.Spec.Replicas
 }
 
-// findNewReplicaSet returns the new RS this given deployment targets (the one
-// with the same pod template), as upstream's FindNewReplicaSet does.
-//
-// TODO: upstream's FindNewReplicaSet first sorts rsList with
-// sort.Sort(controller.ReplicaSetsByCreationTimestamp(rsList)) (oldest first,
-// ties by name) and so deterministically picks the oldest match. Here the first
-// match in list order is taken. Adding the sort needs translations of
-// metav1.Time.Before/Equal, time.Time.Before/Equal, and
-// ReplicaSetsByCreationTimestamp, plus a spec for sort.Sort, none of which
-// exist yet.
-func findNewReplicaSet(deployment *apps.Deployment, rsList []*apps.ReplicaSet) *apps.ReplicaSet {
-	for i := range rsList {
-		if deploymentutil.EqualIgnoreHash(&rsList[i].Spec.Template, &deployment.Spec.Template) {
-			return rsList[i]
-		}
-	}
-	// new ReplicaSet does not exist.
-	return nil
-}
-
 // findOldReplicaSets returns the old replica sets targeted by the given
 // Deployment, with the given slice of RSes, as upstream's FindOldReplicaSets
 // does.
@@ -78,7 +58,7 @@ func findNewReplicaSet(deployment *apps.Deployment, rsList []*apps.ReplicaSet) *
 // precondition.
 func findOldReplicaSets(deployment *apps.Deployment, rsList []*apps.ReplicaSet) []*apps.ReplicaSet {
 	var allRSs []*apps.ReplicaSet
-	newRS := findNewReplicaSet(deployment, rsList)
+	newRS := deploymentutil.FindNewReplicaSet(deployment, rsList)
 	for _, rs := range rsList {
 		// Filter out new replica set
 		if newRS != nil && rs.UID == newRS.UID {
@@ -115,7 +95,7 @@ func scaleReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rs *a
 // getNewReplicaSet returns the deployment's new ReplicaSet, creating it with a
 // deterministic name and the deployment's replica count if it does not exist.
 func getNewReplicaSet(ctx context.Context, kubeClient *clientset.Clientset, rsLister appslisters.ReplicaSetLister, d *apps.Deployment, rsList []*apps.ReplicaSet) (*apps.ReplicaSet, error) {
-	existingNewRS := findNewReplicaSet(d, rsList)
+	existingNewRS := deploymentutil.FindNewReplicaSet(d, rsList)
 	if existingNewRS != nil {
 		return existingNewRS, nil
 	}

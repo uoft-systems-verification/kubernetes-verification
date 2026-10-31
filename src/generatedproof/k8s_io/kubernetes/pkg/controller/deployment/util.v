@@ -3,6 +3,8 @@ Require Export New.proof.proof_prelude.
 Require Export New.generatedproof.k8s_io.api.apps.v1.
 Require Export New.generatedproof.k8s_io.api.core.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.api.equality.
+Require Export New.generatedproof.k8s_io.kubernetes.pkg.controller.
+Require Export New.generatedproof.sort.
 Require Export New.golang.theory.
 Require Export New.code.k8s_io.kubernetes.pkg.controller.deployment.util.
 

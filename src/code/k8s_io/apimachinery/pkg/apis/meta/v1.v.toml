@@ -16,6 +16,8 @@ translate = [
     "FieldsV1",
     "Time",
     "Time.Add",
+    "Time.Before",
+    "Time.Equal",
     "NewTime",
     "Now",
     "LabelSelector",

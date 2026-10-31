@@ -680,6 +680,40 @@ Definition Time__unixSecⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContex
     exception_do (let: "t" := (GoAlloc (go.PointerType Time) "t") in
     return: (((MethodResolve (go.PointerType Time) "sec"%go (![go.PointerType Time] "t")) #()) +⟨go.int64⟩ internalToUnix)).
 
+(* Before reports whether the time instant t is before u.
+
+   go: time.go:281:15 *)
+Definition Time__Beforeⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "t" "u",
+    exception_do (let: "t" := (GoAlloc Time "t") in
+    let: "u" := (GoAlloc Time "u") in
+    (if: Convert go.untyped_bool go.bool ((((![go.uint64] (StructFieldRef Time "wall"%go "t")) &⟨go.uint64⟩ (![go.uint64] (StructFieldRef Time "wall"%go "u"))) &⟨go.uint64⟩ (Convert go.untyped_int go.uint64 hasMonotonic)) ≠⟨go.uint64⟩ #(W64 0))
+    then return: ((![go.int64] (StructFieldRef Time "ext"%go "t")) <⟨go.int64⟩ (![go.int64] (StructFieldRef Time "ext"%go "u")))
+    else do:  #());;;
+    let: "ts" := (GoAlloc go.int64 (GoZeroVal go.int64 #())) in
+    let: "$r0" := ((MethodResolve (go.PointerType Time) "sec"%go "t") #()) in
+    do:  ("ts" <-[go.int64] "$r0");;;
+    let: "us" := (GoAlloc go.int64 (GoZeroVal go.int64 #())) in
+    let: "$r0" := ((MethodResolve (go.PointerType Time) "sec"%go "u") #()) in
+    do:  ("us" <-[go.int64] "$r0");;;
+    return: (((![go.int64] "ts") <⟨go.int64⟩ (![go.int64] "us")) || (((![go.int64] "ts") =⟨go.int64⟩ (![go.int64] "us")) && (((MethodResolve (go.PointerType Time) "nsec"%go "t") #()) <⟨go.int32⟩ ((MethodResolve (go.PointerType Time) "nsec"%go "u") #()))))).
+
+(* Equal reports whether t and u represent the same time instant.
+   Two times can be equal even if they are in different locations.
+   For example, 6:00 +0200 and 4:00 UTC are Equal.
+   See the documentation on the Time type for the pitfalls of using == with
+   Time values; most code should use Equal instead.
+
+   go: time.go:316:15 *)
+Definition Time__Equalⁱᵐᵖˡ {ext : ffi_syntax} {go_gctx : GoGlobalContext} : val :=
+  λ: "t" "u",
+    exception_do (let: "t" := (GoAlloc Time "t") in
+    let: "u" := (GoAlloc Time "u") in
+    (if: Convert go.untyped_bool go.bool ((((![go.uint64] (StructFieldRef Time "wall"%go "t")) &⟨go.uint64⟩ (![go.uint64] (StructFieldRef Time "wall"%go "u"))) &⟨go.uint64⟩ (Convert go.untyped_int go.uint64 hasMonotonic)) ≠⟨go.uint64⟩ #(W64 0))
+    then return: ((![go.int64] (StructFieldRef Time "ext"%go "t")) =⟨go.int64⟩ (![go.int64] (StructFieldRef Time "ext"%go "u")))
+    else do:  #());;;
+    return: ((((MethodResolve (go.PointerType Time) "sec"%go "t") #()) =⟨go.int64⟩ ((MethodResolve (go.PointerType Time) "sec"%go "u") #())) && (((MethodResolve (go.PointerType Time) "nsec"%go "t") #()) =⟨go.int32⟩ ((MethodResolve (go.PointerType Time) "nsec"%go "u") #())))).
+
 (* UnixNano returns t as a Unix time, the number of nanoseconds elapsed
    since January 1, 1970 UTC. The result is undefined if the Unix time
    in nanoseconds cannot be represented by an int64 (a date before the year
@@ -842,7 +876,11 @@ Class Time_Assumptions {ext : ffi_syntax} `{!GoGlobalContext} `{!GoLocalContext}
   #[global] Time_set_ext (x : Time.t) y :: ⟦StructFieldSet (Timeⁱᵐᵖˡ) "ext", (#x, #y)⟧ ⤳[under] #(x <|Time.ext' := y|>);
   #[global] Time_get_loc (x : Time.t) :: ⟦StructFieldGet (Timeⁱᵐᵖˡ) "loc", #x⟧ ⤳[under] #x.(Time.loc');
   #[global] Time_set_loc (x : Time.t) y :: ⟦StructFieldSet (Timeⁱᵐᵖˡ) "loc", (#x, #y)⟧ ⤳[under] #(x <|Time.loc' := y|>);
+  #[global] Time_Before_unfold :: MethodUnfold (Time) "Before" (Time__Beforeⁱᵐᵖˡ);
+  #[global] Time_Equal_unfold :: MethodUnfold (Time) "Equal" (Time__Equalⁱᵐᵖˡ);
   #[global] Time_UnixNano_unfold :: MethodUnfold (Time) "UnixNano" (Time__UnixNanoⁱᵐᵖˡ);
+  #[global] Time'ptr_Before_unfold :: MethodUnfold (go.PointerType (Time)) "Before" (λ: "$r", MethodResolve (Time) "Before" (![(Time)] "$r"));
+  #[global] Time'ptr_Equal_unfold :: MethodUnfold (go.PointerType (Time)) "Equal" (λ: "$r", MethodResolve (Time) "Equal" (![(Time)] "$r"));
   #[global] Time'ptr_UnixNano_unfold :: MethodUnfold (go.PointerType (Time)) "UnixNano" (λ: "$r", MethodResolve (Time) "UnixNano" (![(Time)] "$r"));
   #[global] Time'ptr_nsec_unfold :: MethodUnfold (go.PointerType (Time)) "nsec" (Time__nsecⁱᵐᵖˡ);
   #[global] Time'ptr_sec_unfold :: MethodUnfold (go.PointerType (Time)) "sec" (Time__secⁱᵐᵖˡ);

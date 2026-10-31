@@ -1,6 +1,8 @@
 From New.proof.k8s_io.api.apps Require Export v1_init.
 From New.proof.k8s_io.api.core Require Export v1_init.
 From New.proof.k8s_io.apimachinery.pkg.api Require Export equality_init.
+From New.proof.k8s_io.kubernetes.pkg Require Export controller_init.
+From New.proof Require Export sort_init.
 Require Export New.generatedproof.k8s_io.kubernetes.pkg.controller.deployment.util.
 From New.proof Require Import proof_prelude.
 

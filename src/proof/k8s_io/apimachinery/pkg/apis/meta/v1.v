@@ -33,6 +33,54 @@ Proof.
   iDestruct "Htime" as %Htime. iPureIntro. by rewrite Htime.
 Qed.
 
+(* Both pointers are non-nil (they are owned), so these are [time.Time]'s
+   Before and Equal on the embedded times. *)
+Lemma wp_Time__Before t_l u_l tc uc dq1 dq2 :
+  {{{ is_pkg_init v1 ∗
+      t_l ↦{dq1} tc ∗
+      u_l ↦{dq2} uc
+  }}}
+    t_l @! (go.PointerType v1.Time) @! "Before" #u_l
+  {{{ RET #(bool_decide (time_before (TimeV.of_go tc).(TimeV.Time') (TimeV.of_go uc).(TimeV.Time')));
+      t_l ↦{dq1} tc ∗
+      u_l ↦{dq2} uc
+  }}}.
+Proof.
+  wp_start as "(Ht & Hu)".
+  iDestruct (typed_pointsto_not_null with "Ht") as %Ht_nn.
+  iDestruct (typed_pointsto_not_null with "Hu") as %Hu_nn.
+  wp_auto.
+  rewrite (bool_decide_eq_false_2 _ Ht_nn). wp_auto.
+  rewrite (bool_decide_eq_false_2 _ Hu_nn). wp_auto.
+  wp_method_call. wp_auto.
+  wp_apply New.proof.time.wp_Time__Before.
+  iApply "HΦ". iFrame.
+Qed.
+
+Lemma wp_Time__Equal t_l u_l tc uc dq1 dq2 :
+  {{{ is_pkg_init v1 ∗
+      t_l ↦{dq1} tc ∗
+      u_l ↦{dq2} uc
+  }}}
+    t_l @! (go.PointerType v1.Time) @! "Equal" #u_l
+  {{{ RET #(bool_decide (time_equal (TimeV.of_go tc).(TimeV.Time') (TimeV.of_go uc).(TimeV.Time')));
+      t_l ↦{dq1} tc ∗
+      u_l ↦{dq2} uc
+  }}}.
+Proof.
+  wp_start as "(Ht & Hu)".
+  iDestruct (typed_pointsto_not_null with "Ht") as %Ht_nn.
+  iDestruct (typed_pointsto_not_null with "Hu") as %Hu_nn.
+  wp_auto.
+  (* The both-nil check fails on [t]; the both-non-nil check then passes. *)
+  rewrite (bool_decide_eq_false_2 _ Ht_nn). wp_auto.
+  rewrite (bool_decide_eq_false_2 _ Ht_nn). wp_auto.
+  rewrite (bool_decide_eq_false_2 _ Hu_nn). wp_auto.
+  wp_method_call. wp_auto.
+  wp_apply New.proof.time.wp_Time__Equal.
+  iApply "HΦ". iFrame.
+Qed.
+
 Lemma wp_GetName l m dq :
   {{{ is_pkg_init v1 ∗
       l ↦{dq} m

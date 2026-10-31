@@ -2,6 +2,7 @@
 Require Export New.proof.proof_prelude.
 Require Export New.generatedproof.encoding.json.
 Require Export New.generatedproof.fmt.
+Require Export New.generatedproof.k8s_io.api.apps.v1.
 Require Export New.generatedproof.k8s_io.api.core.v1.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.api.meta.
 Require Export New.generatedproof.k8s_io.apimachinery.pkg.apis.meta.v1.
@@ -653,26 +654,6 @@ Proof. Admitted.
 
 End def.
 End ControllersByCreationTimestamp.
-
-Module ReplicaSetsByCreationTimestamp.
-Section def.
-
-Context `{hG: heapGS Σ, !ffi_semantics _ _}.
-Context {sem : go.Semantics}.
-Context {package_sem' : controller.Assumptions}.
-
-Local Set Default Proof Using "All".
-
-#[global] Instance ReplicaSetsByCreationTimestamp_typed_pointsto  :
-  TypedPointsto (Σ:=Σ) (controller.ReplicaSetsByCreationTimestamp.t). Admitted.
-
-#[global] Instance ReplicaSetsByCreationTimestamp_into_val_typed
-   :
-  IntoValTypedUnderlying (controller.ReplicaSetsByCreationTimestamp.t) (controller.ReplicaSetsByCreationTimestampⁱᵐᵖˡ).
-Proof. Admitted.
-
-End def.
-End ReplicaSetsByCreationTimestamp.
 
 Module ReplicaSetsBySizeOlder.
 Section def.

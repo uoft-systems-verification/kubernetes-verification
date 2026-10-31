@@ -100,8 +100,8 @@ Definition rs_template (rs : ReplicaSetV.t) : PodTemplateSpecV.t :=
 Definition deployment_template (d : DeploymentV.t) : PodTemplateSpecV.t :=
   d.(DeploymentV.Spec').(DeploymentSpecV.Template').
 
-(* findNewReplicaSet returns the first ReplicaSet whose template matches the
-   deployment's, or nil. *)
+(* FindNewReplicaSet returns the first ReplicaSet of its (sorted) list whose
+   template matches the deployment's, or nil. *)
 Definition find_new_replica_set (d : DeploymentV.t) (rss : list ReplicaSetV.t)
     : option (nat * ReplicaSetV.t) :=
   list_find (λ rs, template_matches (rs_template rs) (deployment_template d)) rss.

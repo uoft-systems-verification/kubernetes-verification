@@ -1,5 +1,5 @@
 From New.proof Require Import wp_keep.
-From New.proof Require Import prelude empty_ffi.
+From New.proof Require Import prelude empty_ffi util.
 From New.proof Require Export sort.
 From New.proof.map Require Import for_range.
 From New.object_specs Require Export prelude.
@@ -127,6 +127,360 @@ Proof.
   - apply wp_active_pods_with_ranks_len.
   - apply wp_active_pods_with_ranks_less.
   - apply wp_active_pods_with_ranks_swap.
+Qed.
+
+(** [ReplicaSetsByCreationTimestamp.Less]: older first, ties broken by name. *)
+Definition rs_creation_time (rs : ReplicaSetV.t) : TimeView.TimeV.t :=
+  rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.CreationTimestamp').(MetaTimeView.TimeV.Time').
+
+Definition rs_name (rs : ReplicaSetV.t) : go_string :=
+  rs.(ReplicaSetV.ObjectMeta').(ObjectMetaV.Name').
+
+Definition rs_created_before (a b : ReplicaSetV.t) : Prop :=
+  if decide (time_equal (rs_creation_time a) (rs_creation_time b)) then
+    go.go_string_lt (rs_name a) (rs_name b)
+  else time_before (rs_creation_time a) (rs_creation_time b).
+
+#[global] Instance rs_created_before_dec : RelDecision rs_created_before.
+Proof. intros a b. rewrite /rs_created_before. case_decide; apply _. Defined.
+
+(** Go compares two times by their monotonic readings when both have one and
+    by wall clock otherwise, so [Before] is a strict weak order only on a set
+    of times that all compare the same way. Times from [time.Now] all carry a
+    monotonic reading; times decoded from the API server carry none. *)
+Definition creation_times_comparable (rss : list ReplicaSetV.t) : Prop :=
+  (∀ a b, a ∈ rss → b ∈ rss → time_both_monotonic (rs_creation_time a) (rs_creation_time b)) ∨
+  (∀ a b, a ∈ rss → b ∈ rss → ¬ time_both_monotonic (rs_creation_time a) (rs_creation_time b)).
+
+(* The sorted elements keep each pointer with its ReplicaSet. *)
+Definition rs_entry_created_before (a b : loc * ReplicaSetV.t) : Prop :=
+  rs_created_before a.2 b.2.
+
+#[global] Instance rs_entry_created_before_dec : RelDecision rs_entry_created_before.
+Proof. intros a b. rewrite /rs_entry_created_before. apply _. Defined.
+
+(* On comparable times, [rs_created_before] is the lexicographic order on a
+   numeric key ([ext] when both times are monotonic, (seconds, nanoseconds)
+   otherwise) followed by the name, so it is a strict weak order. *)
+Lemma rs_created_before_strict_weak_order (entries : list (loc * ReplicaSetV.t)) :
+  creation_times_comparable entries.*2 →
+  strict_weak_order_on rs_entry_created_before entries.
+Proof.
+  intros Hcmp.
+  set key_lt := λ (f : ReplicaSetV.t → Z * Z) (a b : ReplicaSetV.t),
+    (f a).1 < (f b).1 ∨
+    ((f a).1 = (f b).1 ∧ ((f a).2 < (f b).2 ∨
+      ((f a).2 = (f b).2 ∧ go.go_string_lt (rs_name a) (rs_name b)))).
+  assert (∀ f (xs : list ReplicaSetV.t),
+    (∀ a b, a ∈ xs → b ∈ xs → rs_created_before a b ↔ key_lt f a b) →
+    strict_weak_order_on rs_created_before xs) as Hkey_order.
+  { intros f xs Hkey.
+    (* Incomparable elements have the same key and name. *)
+    assert (∀ a b, ¬ key_lt f a b → ¬ key_lt f b a → f a = f b ∧ rs_name a = rs_name b)
+      as Hincomparable.
+    { intros a b. rewrite /key_lt. destruct (f a) as [a1 a2], (f b) as [b1 b2]. simpl.
+      intros Hab Hba.
+      assert (a1 = b1) as <- by lia.
+      assert (a2 = b2) as <- by lia.
+      split; [done|].
+      destruct (trichotomyT (@lexico go_string _) (rs_name a) (rs_name b)) as [[?|?]|?];
+        [|done|].
+      - exfalso. apply Hab. right. split; [done|right; done].
+      - exfalso. apply Hba. right. split; [done|right; done]. }
+    split_and!.
+    - intros x Hx. rewrite Hkey //. rewrite /key_lt.
+      intros [?|[_ [?|[_ Hlt]]]]; [lia|lia|].
+      exact (irreflexivity (@lexico go_string _) _ Hlt).
+    - intros x y z Hx Hy Hz. rewrite !Hkey //. rewrite /key_lt.
+      destruct (f x) as [x1 x2], (f y) as [y1 y2], (f z) as [z1 z2]. simpl.
+      intros [?|[? [?|[? Hxy]]]] [?|[? [?|[? Hyz]]]];
+        try (left; lia); try (right; split; [lia|left; lia]).
+      right. split; [lia|]. right. split; [lia|].
+      exact (transitivity (R:=@lexico go_string _) Hxy Hyz).
+    - intros x y z Hx Hy Hz. rewrite !Hkey //.
+      intros Hxy Hyx Hyz Hzy.
+      destruct (Hincomparable x y Hxy Hyx) as [Hf1 Hn1].
+      destruct (Hincomparable y z Hyz Hzy) as [Hf2 Hn2].
+      rewrite /key_lt. rewrite Hf1 Hf2 Hn1 Hn2.
+      split; intros [?|[_ [?|[_ Hlt]]]]; try lia;
+        exact (irreflexivity (@lexico go_string _) _ Hlt). }
+  assert (strict_weak_order_on rs_created_before entries.*2) as Hrss.
+  { destruct Hcmp as [Hm|Hw].
+    - apply (Hkey_order (λ rs, (sint.Z (rs_creation_time rs).(TimeView.TimeV.ext'), 0))).
+      intros a b Ha Hb. specialize (Hm a b Ha Hb).
+      assert (time_equal (rs_creation_time a) (rs_creation_time b) ↔
+        (rs_creation_time a).(TimeView.TimeV.ext') = (rs_creation_time b).(TimeView.TimeV.ext'))
+        as Hequal by (rewrite /time_equal decide_True //).
+      assert (time_before (rs_creation_time a) (rs_creation_time b) ↔
+        sint.Z (rs_creation_time a).(TimeView.TimeV.ext') <
+        sint.Z (rs_creation_time b).(TimeView.TimeV.ext'))
+        as Hbefore by (rewrite /time_before decide_True //).
+      rewrite /rs_created_before /key_lt /=. case_decide as Heq.
+      + apply Hequal in Heq. rewrite Heq.
+        split; [intros; right; split; [done|right; done]|].
+        intros [?|[_ [?|[_ ?]]]]; [lia|lia|done].
+      + rewrite Hequal in Heq. rewrite Hbefore. split; [intros; left; done|].
+        intros [?|[Hs [?|[_ _]]]]; [done|lia|].
+        exfalso. apply Heq. apply word.signed_inj. exact Hs.
+    - apply (Hkey_order (λ rs, (sint.Z (time_sec (rs_creation_time rs)),
+                                sint.Z (time_nsec (rs_creation_time rs))))).
+      intros a b Ha Hb. specialize (Hw a b Ha Hb).
+      assert (time_equal (rs_creation_time a) (rs_creation_time b) ↔
+        time_sec (rs_creation_time a) = time_sec (rs_creation_time b) ∧
+        time_nsec (rs_creation_time a) = time_nsec (rs_creation_time b))
+        as Hequal by (rewrite /time_equal decide_False //).
+      assert (time_before (rs_creation_time a) (rs_creation_time b) ↔
+        sint.Z (time_sec (rs_creation_time a)) < sint.Z (time_sec (rs_creation_time b)) ∨
+        (time_sec (rs_creation_time a) = time_sec (rs_creation_time b) ∧
+         sint.Z (time_nsec (rs_creation_time a)) < sint.Z (time_nsec (rs_creation_time b))))
+        as Hbefore by (rewrite /time_before decide_False //).
+      rewrite /rs_created_before /key_lt /=. case_decide as Heq.
+      + apply Hequal in Heq. destruct Heq as [Hs Hn]. rewrite Hs Hn.
+        split; [intros; right; split; [done|right; done]|].
+        intros [?|[_ [?|[_ ?]]]]; [lia|lia|done].
+      + rewrite Hequal in Heq. rewrite Hbefore. split.
+        * intros [?|[Hs ?]]; [left; done|]. right. rewrite Hs. split; [done|left; done].
+        * intros [?|[Hs [?|[Hn _]]]]; [left; done|right; split; [|done]|].
+          -- apply word.signed_inj. exact Hs.
+          -- exfalso. apply Heq. split; apply word.signed_inj; done. }
+  destruct Hrss as (Hirr & Htrans & Hinc).
+  assert (∀ e, e ∈ entries → e.2 ∈ entries.*2) as Hin.
+  { intros e He. apply list_elem_of_fmap_2. exact He. }
+  rewrite /rs_entry_created_before. split_and!.
+  - intros x Hx. apply Hirr, Hin, Hx.
+  - intros x y z Hx Hy Hz. apply Htrans; apply Hin; done.
+  - intros x y z Hx Hy Hz. apply Hinc; apply Hin; done.
+Qed.
+
+Definition rs_by_creation_contents dq
+    (sl : controller.ReplicaSetsByCreationTimestamp.t) (entries : list (loc * ReplicaSetV.t)) : iProp Σ :=
+  is_pkg_init controller ∗
+  sl ↦* entries.*1 ∗
+  ([∗ list] e ∈ entries, ReplicaSetV.deepown_l e.1 e.2 dq).
+
+Lemma wp_ReplicaSetsByCreationTimestamp__Len dq sl entries :
+  {{{ rs_by_creation_contents dq sl entries }}}
+    sl @! controller.ReplicaSetsByCreationTimestamp @! "Len" #()
+  {{{ (n : w64), RET #n;
+      rs_by_creation_contents dq sl entries ∗
+      ⌜ sint.nat n = length entries ∧ 0 ≤ sint.Z n ⌝
+  }}}.
+Proof.
+  wp_start as "(#Hinit & Hsl & Hentries)".
+  wp_pures. wp_auto.
+  iDestruct (own_slice_len with "Hsl") as %[Hlen Hnonnegative].
+  iApply "HΦ". iFrame "Hinit Hsl Hentries". iPureIntro.
+  rewrite length_fmap in Hlen. split; [symmetry|]; done.
+Qed.
+
+Lemma wp_ReplicaSetsByCreationTimestamp__Less dq sl entries (i j : w64) x y :
+  0 ≤ sint.Z i → 0 ≤ sint.Z j → entries !! sint.nat i = Some x → entries !! sint.nat j = Some y →
+  {{{ rs_by_creation_contents dq sl entries }}}
+    sl @! controller.ReplicaSetsByCreationTimestamp @! "Less" #i #j
+  {{{ RET #(bool_decide (rs_entry_created_before x y)); rs_by_creation_contents dq sl entries }}}.
+Proof.
+  intros Hi Hj Hx Hy.
+  wp_start as "(#Hinit & Hsl & Hentries)".
+  (* Less reads only the CreationTimestamp and Name fields of the two
+     ReplicaSets, so open an entry down to just those two fields. *)
+  iAssert (□ ∀ p rs, ReplicaSetV.deepown_l p rs dq -∗
+    ∃ ct_c,
+      (p.[code.k8s_io.api.apps.v1.v1.ReplicaSet.t, "ObjectMeta"]).[
+        code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta.t, "CreationTimestamp"] ↦{dq} ct_c ∗
+      (p.[code.k8s_io.api.apps.v1.v1.ReplicaSet.t, "ObjectMeta"]).[
+        code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta.t, "Name"] ↦{dq} rs_name rs ∗
+      ⌜ (TimeV.of_go ct_c).(TimeV.Time') = rs_creation_time rs ⌝ ∗
+      ((p.[code.k8s_io.api.apps.v1.v1.ReplicaSet.t, "ObjectMeta"]).[
+         code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta.t, "CreationTimestamp"] ↦{dq} ct_c -∗
+       (p.[code.k8s_io.api.apps.v1.v1.ReplicaSet.t, "ObjectMeta"]).[
+         code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta.t, "Name"] ↦{dq} rs_name rs -∗
+       ReplicaSetV.deepown_l p rs dq))%I as "#Hacc".
+  { iIntros "!>" (p rs) "H".
+    iDestruct "H" as (c) "[Hl Hc]".
+    iDestruct (struct_fields_split (V:=code.k8s_io.api.apps.v1.v1.ReplicaSet.t) with "Hl")
+      as "[Hf %Hnn]".
+    iNamedPrefix "Hf" "Hf_".
+    iDestruct (struct_fields_split (V:=code.k8s_io.apimachinery.pkg.apis.meta.v1.v1.ObjectMeta.t)
+      with "Hf_ObjectMeta") as "[Hom %Hom_nn]".
+    iNamedPrefix "Hom" "Hom_".
+    iNamed "Hc". iNamedPrefix "Hdeepown_objectmeta" "Hm_".
+    with_strategy transparent [MetaTimeView.TimeV.deepown]
+      iEval (rewrite /MetaTimeView.TimeV.deepown) in "Hm_Hdeepown_creationtimestamp".
+    iDestruct "Hm_Hdeepown_creationtimestamp" as %Hct.
+    iEval (rewrite Hm_Hdeepown_name) in "Hom_Name".
+    iExists _. iFrame "Hom_CreationTimestamp Hom_Name".
+    iSplit; [iPureIntro; rewrite /rs_creation_time -Hct; done|].
+    iIntros "Hom_CreationTimestamp Hom_Name".
+    iEval (rewrite /rs_name -Hm_Hdeepown_name) in "Hom_Name".
+    iCombineNamed "Hom_*" as "Hom".
+    iAssert (typed_pointsto_def (p.[code.k8s_io.api.apps.v1.v1.ReplicaSet.t, "ObjectMeta"])
+      c.(code.k8s_io.api.apps.v1.v1.ReplicaSet.ObjectMeta') dq) with "[Hom]" as "Hom".
+    { iNamed "Hom". destruct c as [tm om sp st]. destruct om. simpl. iFrame. }
+    iDestruct (struct_fields_combine _ _ _ Hom_nn with "Hom") as "Hf_ObjectMeta".
+    iCombineNamed "Hf_*" as "Hf".
+    iAssert (typed_pointsto_def p c dq) with "[Hf]" as "Hf".
+    { iNamed "Hf". destruct c. simpl. iFrame. }
+    iDestruct (struct_fields_combine _ _ _ Hnn with "Hf") as "Hl".
+    iExists c. iFrame "Hl Hdeepown_spec Hdeepown_status".
+    iSplit; [done|].
+    iCombineNamed "Hm_Hdeepown_*" as "Hm". iNamed "Hm".
+    iFrame. iFrame "%". }
+  iDestruct (own_slice_len with "Hsl") as %[Hlen _]. rewrite length_fmap in Hlen.
+  assert (entries.*1 !! sint.nat i = Some x.1) as Hpx by (rewrite list_lookup_fmap Hx //).
+  assert (entries.*1 !! sint.nat j = Some y.1) as Hpy by (rewrite list_lookup_fmap Hy //).
+  pose proof (lookup_lt_Some _ _ _ Hx) as Hi_lt.
+  pose proof (lookup_lt_Some _ _ _ Hy) as Hj_lt.
+  wp_auto_keep.
+  (* Every [rsList[k]] in Less reloads the slice element. *)
+  Local Ltac load_entry k Hp :=
+    rewrite -> decide_True by word;
+    iDestruct (own_slice_elem_acc (sint.Z k) with "Hsl") as "[Hptr Hrestore]"; [word|exact Hp|];
+    wp_auto_keep;
+    iDestruct ("Hrestore" with "Hptr") as "Hsl";
+    iEval (rewrite (list_insert_id _ _ _ Hp)) in "Hsl".
+  load_entry j Hpy. load_entry i Hpx.
+  iAssert (is_pkg_init code.k8s_io.apimachinery.pkg.apis.meta.v1.pkg_id.v1) as "#Hmeta".
+  { iPkgInit. }
+  destruct (decide (sint.nat i = sint.nat j)) as [Hij|Hij].
+  - (* The same ReplicaSet on both sides: its timestamp equals itself, and a
+       name is not less than itself. *)
+    assert (y = x) as -> by (rewrite -Hij in Hy; congruence).
+    iDestruct (big_sepL_lookup_acc with "Hentries") as "[Hex Hrest]"; [exact Hx|].
+    iDestruct ("Hacc" with "Hex") as (ctx) "(Hctx & Hnx & %Hctx & Hclose_x)".
+    assert (∃ dh, dq = dh ⋅ dh) as [dh Hdh].
+    { destruct dq as [q| |q].
+      - exists (DfracOwn (q/2)). rewrite dfrac_op_own Qp.div_2 //.
+      - exists DfracDiscarded. done.
+      - exists (DfracBoth (q/2)).
+        change (DfracBoth (q/2) ⋅ DfracBoth (q/2)) with (DfracBoth (q/2 + q/2)).
+        rewrite Qp.div_2 //. }
+    iEval (rewrite Hdh) in "Hctx". iDestruct "Hctx" as "[Hctx1 Hctx2]".
+    wp_apply_keep (New.proof.k8s_io.apimachinery.pkg.apis.meta.v1.wp_Time__Equal
+      (package_sem:=controller_meta_v1_sem) with "[$Hmeta $Hctx1 $Hctx2]").
+    iIntros "[Hctx1 Hctx2]".
+    iCombine "Hctx1 Hctx2" as "Hctx". iEval (rewrite -Hdh) in "Hctx".
+    assert (time_equal (TimeV.Time' (TimeV.of_go ctx)) (TimeV.Time' (TimeV.of_go ctx)))
+      as Hrefl by (rewrite /time_equal; case_decide; done).
+    rewrite (bool_decide_eq_true_2 _ Hrefl).
+    wp_auto_keep. load_entry i Hpx. load_entry j Hpy.
+    iDestruct ("Hclose_x" with "Hctx Hnx") as "Hex".
+    iSpecialize ("Hrest" with "Hex").
+    iSpecialize ("HΦ" with "[$Hinit $Hsl $Hrest]").
+    iExactEq "HΦ". do 2 f_equal. apply bool_decide_ext.
+    rewrite Hctx in Hrefl.
+    rewrite /rs_entry_created_before /rs_created_before decide_True //.
+  - iDestruct (big_sepL_delete with "Hentries") as "[Hex Hrest]"; [exact Hx|].
+    iDestruct (big_sepL_lookup_acc with "Hrest") as "[Hey Hrest]"; [exact Hy|].
+    rewrite decide_False; [congruence|].
+    iDestruct ("Hacc" with "Hex") as (ctx) "(Hctx & Hnx & %Hctx & Hclose_x)".
+    iDestruct ("Hacc" with "Hey") as (cty) "(Hcty & Hny & %Hcty & Hclose_y)".
+    wp_apply_keep (New.proof.k8s_io.apimachinery.pkg.apis.meta.v1.wp_Time__Equal
+      (package_sem:=controller_meta_v1_sem) with "[$Hmeta $Hctx $Hcty]").
+    iIntros "[Hctx Hcty]".
+    rewrite Hctx Hcty.
+    wp_if_destruct_keep.
+    + (* Equal times: compare names. *)
+      load_entry i Hpx. load_entry j Hpy.
+      iDestruct ("Hclose_x" with "Hctx Hnx") as "Hex".
+      iDestruct ("Hclose_y" with "Hcty Hny") as "Hey".
+      iSpecialize ("Hrest" with "Hey").
+      iAssert ([∗ list] e ∈ entries, ReplicaSetV.deepown_l e.1 e.2 dq)%I
+        with "[Hex Hrest]" as "Hentries".
+      { iApply big_sepL_delete; [exact Hx|]. iFrame. }
+      iSpecialize ("HΦ" with "[$Hinit $Hsl $Hentries]").
+      iExactEq "HΦ". do 2 f_equal. apply bool_decide_ext.
+      rewrite /rs_entry_created_before /rs_created_before decide_True //.
+    + (* Different times: Before decides. *)
+      load_entry j Hpy. load_entry i Hpx.
+      wp_apply_keep (New.proof.k8s_io.apimachinery.pkg.apis.meta.v1.wp_Time__Before
+        (package_sem:=controller_meta_v1_sem) with "[$Hmeta $Hctx $Hcty]").
+      iIntros "[Hctx Hcty]".
+      rewrite Hctx Hcty.
+      iDestruct ("Hclose_x" with "Hctx Hnx") as "Hex".
+      iDestruct ("Hclose_y" with "Hcty Hny") as "Hey".
+      iSpecialize ("Hrest" with "Hey").
+      iAssert ([∗ list] e ∈ entries, ReplicaSetV.deepown_l e.1 e.2 dq)%I
+        with "[Hex Hrest]" as "Hentries".
+      { iApply big_sepL_delete; [exact Hx|]. iFrame. }
+      iSpecialize ("HΦ" with "[$Hinit $Hsl $Hentries]").
+      wp_pures_keep. iExactEq "HΦ". do 2 f_equal. apply bool_decide_ext.
+      rewrite /rs_entry_created_before /rs_created_before decide_False //.
+Qed.
+
+Lemma wp_ReplicaSetsByCreationTimestamp__Swap dq sl entries (i j : w64) :
+  0 ≤ sint.Z i < length entries → 0 ≤ sint.Z j < length entries →
+  {{{ rs_by_creation_contents dq sl entries }}}
+    sl @! controller.ReplicaSetsByCreationTimestamp @! "Swap" #i #j
+  {{{ RET #();
+      rs_by_creation_contents dq sl (list_swap entries (sint.nat i) (sint.nat j))
+  }}}.
+Proof.
+  intros Hi Hj.
+  destruct Hi as [Hi_nonnegative Hi_upper].
+  destruct Hj as [Hj_nonnegative Hj_upper].
+  wp_start as "(#Hinit & Hsl & Hentries)".
+  wp_pures_keep.
+  iDestruct (own_slice_len with "Hsl") as %[Hlen Hnonnegative].
+  rewrite length_fmap in Hlen.
+  assert (sint.Z (slice.len sl) = Z.of_nat (length entries)) as Hlen_Z.
+  { replace (sint.Z (slice.len sl)) with
+      (Z.of_nat (sint.nat (slice.len sl))) by word.
+    rewrite <-Hlen. done. }
+  wp_auto_keep.
+  assert (∃ ci, (fst <$> entries) !! sint.nat i = Some ci)
+    as [ci Hci_lookup].
+  { apply lookup_lt_is_Some_2. rewrite length_fmap.
+    apply Nat2Z.inj_lt.
+    replace (Z.of_nat (sint.nat i)) with (sint.Z i) by word. exact Hi_upper. }
+  assert (∃ cj, (fst <$> entries) !! sint.nat j = Some cj)
+    as [cj Hcj_lookup].
+  { apply lookup_lt_is_Some_2. rewrite length_fmap.
+    apply Nat2Z.inj_lt.
+    replace (Z.of_nat (sint.nat j)) with (sint.Z j) by word. exact Hj_upper. }
+  rewrite -> decide_True by
+    (split; [exact Hj_nonnegative|rewrite Hlen_Z; exact Hj_upper]).
+  wp_apply_keep (wp_load_slice_index with "[$Hsl]");
+    [exact Hj_nonnegative|iPureIntro; exact Hcj_lookup|].
+  iIntros "Hsl". wp_auto_keep.
+  rewrite -> decide_True by
+    (split; [exact Hi_nonnegative|rewrite Hlen_Z; exact Hi_upper]).
+  wp_apply_keep (wp_load_slice_index with "[$Hsl]");
+    [exact Hi_nonnegative|iPureIntro; exact Hci_lookup|].
+  iIntros "Hsl". wp_auto_keep.
+  rewrite -> decide_True by
+    (split; [exact Hi_nonnegative|rewrite Hlen_Z; exact Hi_upper]).
+  wp_auto_keep.
+  wp_apply_keep (wp_store_slice_index with "[$Hsl]").
+  { iPureIntro. rewrite length_fmap.
+    split; [exact Hi_nonnegative|exact Hi_upper]. }
+  iIntros "Hsl". wp_auto_keep.
+  rewrite -> decide_True by
+    (split; [exact Hj_nonnegative|rewrite Hlen_Z; exact Hj_upper]).
+  wp_auto_keep.
+  wp_apply_keep (wp_store_slice_index with "[$Hsl]").
+  { iPureIntro. rewrite length_insert length_fmap.
+    split; [exact Hj_nonnegative|exact Hj_upper]. }
+  iIntros "Hsl". wp_auto_keep.
+  iApply "HΦ". rewrite /rs_by_creation_contents list_swap_fmap.
+  iFrame "Hinit".
+  iSplitL "Hsl".
+  { rewrite /list_swap Hci_lookup Hcj_lookup. iFrame "Hsl". }
+  iEval (rewrite (big_sepL_permutation
+    (fun e => ReplicaSetV.deepown_l e.1 e.2 dq)
+    entries (list_swap entries (sint.nat i) (sint.nat j))
+    (list_swap_permutation entries (sint.nat i) (sint.nat j))))
+    in "Hentries".
+  iFrame "Hentries".
+Qed.
+
+#[global] Instance rs_by_creation_sort_interface dq :
+  SortInterfaceRelSpec controller.ReplicaSetsByCreationTimestamp
+    (rs_by_creation_contents dq) rs_entry_created_before.
+Proof.
+  constructor.
+  - apply wp_ReplicaSetsByCreationTimestamp__Len.
+  - apply wp_ReplicaSetsByCreationTimestamp__Less.
+  - apply wp_ReplicaSetsByCreationTimestamp__Swap.
 Qed.
 
 Definition pod_from_template (template : PodTemplateSpecV.t) (pod : PodV.t) : Prop :=
